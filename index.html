@@ -137,8 +137,8 @@ const fmtMoney=v=>"₪"+Number(v||0).toLocaleString("he-IL");
 const pct=(a,b)=>b?Math.round((a/b)*100):0;
 const LS_KEY="postflow_v8";
 const SHEETS_KEY="pf_v8_sheets_url";
-const REMEMBER_KEY="https://script.google.com/macros/library/d/1s1RwFkOJmGBOxBDwWS_gyFfNIZmUHDiSLg1yf7U3opxCB1Y1Lk8S1ARK/1";
-const VAULT_KEY="pf_v8_vault_pass";
+const SHEETS_URL_DEFAULT="https://script.google.com/macros/library/d/1s1RwFkOJmGBOxBDwWS_gyFfNIZmUHDiSLg1yf7U3opxCB1Y1Lk8S1ARK/2"; // ← הכנס כאן את ה-URL של ה-Apps Script שלך
+const REMEMBER_KEY="pf_v8_remember";
 const ADMIN_EMAIL="uri@fpp.co.il";
 const ADMIN_PASS="0711";
 const HEB_DAYS=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
@@ -190,7 +190,7 @@ function loadLocal(){
   }catch(e){console.warn("loadLocal error",e);return defData();}
 }
 function saveLocal(d){try{localStorage.setItem(LS_KEY,JSON.stringify(d));}catch(e){console.warn("save failed",e);}}
-function getSheetsUrl(){return localStorage.getItem(SHEETS_KEY)||"";}
+function getSheetsUrl(){return localStorage.getItem(SHEETS_KEY)||SHEETS_URL_DEFAULT;}
 function setSheetsUrl(u){localStorage.setItem(SHEETS_KEY,u);}
 
 // ══════════════════════════════════════════
@@ -301,10 +301,10 @@ function Login({users,logoUrl,onLogin}){
     const em=saved.email.toLowerCase();
     if(em===ADMIN_EMAIL&&saved.pass===ADMIN_PASS){
       const u=users.find(u=>u.email===em)||{id:"u_admin",name:"אורי",email:em,role:"admin",password:saved.pass,active:"admin"};
-      onLogin(u);return;
+      onLogin({...u,role:u.role||"admin"});return;
     }
     const u=users.find(u=>(u.email||"").toLowerCase()===em&&u.password===saved.pass);
-    if(u&&u.active!=="false"&&u.active!=="0")onLogin(u);
+    if(u&&u.active!=="false"&&u.active!=="0")onLogin({...u,role:u.role||"worker"});
   // eslint-disable-next-line
   },[]);
 
@@ -359,7 +359,7 @@ function Dashboard({projects,user,logoUrl,onSelect,onGoto}){
     {id:"hours",icon:"⏱",label:"שעות",color:"#6ee7b7",roles:["admin","producer","worker"]},
     {id:"quotes",icon:"📝",label:"הצעות מחיר",color:"#c084fc",roles:["admin","producer"]},
     {id:"reports",icon:"📊",label:"דוחות",color:"#fb923c",roles:["admin","producer"]},
-    {id:"vault",icon:"🔐",label:"סיסמאות",color:"#f07070",roles:["admin","producer","worker"]},
+    {id:"vault",icon:"🔐",label:"סיסמאות",color:"#f07070",roles:["admin","producer","worker"],external:"https://uribh99-gif.github.io/flowPASS/"},
     {id:"clients",icon:"🏢",label:"לקוחות",color:"#60a5fa",roles:["admin","producer"]},
     {id:"users",icon:"👥",label:"משתמשים",color:"#4fc3f7",roles:["admin"]},
     {id:"sheets",icon:"☁️",label:"Sheets",color:"#6ee7b7",roles:["admin"]},
@@ -399,7 +399,7 @@ function Dashboard({projects,user,logoUrl,onSelect,onGoto}){
     </div>}
     <div style={{fontWeight:700,fontSize:13,color:"var(--muted2)",marginBottom:10}}>ניווט מהיר</div>
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(105px,1fr))",gap:10,marginBottom:24}}>
-      {NAV.map(n=><div key={n.id} onClick={()=>onGoto(n.id)}
+      {NAV.map(n=><div key={n.id} onClick={()=>n.external?window.open(n.external,"_blank"):onGoto(n.id)}
         style={{background:"var(--card2)",border:`1px solid ${n.color}28`,borderRadius:12,padding:"12px 8px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:5,transition:"all .18s",textAlign:"center"}}
         onMouseEnter={e=>{e.currentTarget.style.borderColor=n.color;e.currentTarget.style.background=n.color+"15";e.currentTarget.style.transform="translateY(-2px)";}}
         onMouseLeave={e=>{e.currentTarget.style.borderColor=n.color+"28";e.currentTarget.style.background="var(--card2)";e.currentTarget.style.transform="none";}}>
@@ -1044,76 +1044,20 @@ function QuoteBuilder({projects,quoteTemplates,onSave,onUpdateTemplates,user}){
 }
 
 // ══════════════════════════════════════════
-// PASSWORD VAULT — locked on every mount
+// PASSWORD VAULT — redirect to external app
 // ══════════════════════════════════════════
-function PasswordVault({passwords,onUpdate,currentUser}){
-  const savedVPass=localStorage.getItem(VAULT_KEY)||"";
-  const [unlocked,setUnlocked]=useState(false);
-  const [vpass,setVpass]=useState("");
-  const [isNew,setIsNew]=useState(!savedVPass);
-  const [conf,setConf]=useState("");
-  const [vErr,setVErr]=useState("");
-  const [search,setSearch]=useState("");
-  const [showPw,setShowPw]=useState({});
-  const [copied,setCopied]=useState(null);
-  const [form,setForm]=useState({service:"",username:"",password:"",description:"",category:"כללי",url:""});
-  const isAdmin=currentUser.role==="admin";
-  useEffect(()=>{setUnlocked(false);setVpass("");},[]);
-  const unlock=()=>{
-    if(isNew){if(vpass.length<4){setVErr("לפחות 4 תווים");return;}if(vpass!==conf){setVErr("הסיסמאות אינן תואמות");return;}localStorage.setItem(VAULT_KEY,vpass);setUnlocked(true);setIsNew(false);}
-    else{if(vpass===savedVPass||currentUser.email===ADMIN_EMAIL)setUnlocked(true);else setVErr("סיסמת כספת שגויה");}
-  };
-  if(!unlocked)return(<div className="fade">
-    <div className="section-title">🔐 כספת סיסמאות</div>
-    <div style={{maxWidth:360}}><div className="card">
-      <div style={{textAlign:"center",fontSize:52,marginBottom:16}}>🔐</div>
-      <div style={{fontWeight:700,textAlign:"center",marginBottom:16}}>{isNew?"הגדר סיסמת כספת":"הכנס סיסמת כספת"}</div>
-      <div style={{marginBottom:12}}><Lbl>סיסמת כספת</Lbl><input type="password" value={vpass} onChange={e=>setVpass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&unlock()} autoFocus/></div>
-      {isNew&&<div style={{marginBottom:12}}><Lbl>אימות</Lbl><input type="password" value={conf} onChange={e=>setConf(e.target.value)}/></div>}
-      {vErr&&<div style={{color:"var(--red)",fontSize:12,marginBottom:10}}>⚠ {vErr}</div>}
-      <button className="btn-gold" style={{width:"100%"}} onClick={unlock}>{isNew?"הגדר ✓":"פתח →"}</button>
-    </div></div>
-  </div>);
-  const cats=[...new Set(passwords.map(p=>p.category||"כללי"))];
-  const filtered=passwords.filter(p=>!search||(p.service||"").toLowerCase().includes(search.toLowerCase())||(p.username||"").toLowerCase().includes(search.toLowerCase())||(p.category||"").toLowerCase().includes(search.toLowerCase()));
-  const copyPw=(pw,id)=>{navigator.clipboard.writeText(pw).catch(()=>{});setCopied(id);setTimeout(()=>setCopied(null),2000);};
-  const addEntry=()=>{if(!form.service)return;onUpdate([...passwords,{id:uid(),...form,createdAt:todayStr()}]);setForm({service:"",username:"",password:"",description:"",category:"כללי",url:""});};
+function PasswordVault(){
+  useEffect(()=>{window.open("https://uribh99-gif.github.io/flowPASS/","_blank");},[]);
   return(<div className="fade">
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-      <div className="section-title" style={{marginBottom:0}}>🔐 כספת סיסמאות</div>
-      <button className="btn-ghost btn-sm" onClick={()=>{setUnlocked(false);setVpass("");}}>🔒 נעל</button>
+    <div className="section-title">🔐 סיסמאות</div>
+    <div className="card" style={{textAlign:"center",padding:48}}>
+      <div style={{fontSize:52,marginBottom:16}}>🔐</div>
+      <div style={{fontWeight:700,fontSize:18,marginBottom:10}}>מנהל הסיסמאות</div>
+      <div style={{fontSize:13,color:"var(--muted)",marginBottom:24}}>מנהל הסיסמאות עבר לאפליקציה ייעודית.<br/>נפתח בלשונית חדשה אוטומטית.</div>
+      <a href="https://uribh99-gif.github.io/flowPASS/" target="_blank" rel="noreferrer">
+        <button className="btn-gold" style={{padding:"12px 32px",fontSize:15}}>🔗 פתח flowPASS →</button>
+      </a>
     </div>
-    <div className="srch-wrap" style={{marginBottom:16,maxWidth:360}}><span className="srch-icon">🔍</span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="חיפוש..."/></div>
-    {isAdmin&&<div className="card" style={{marginBottom:20}}>
-      <div style={{fontWeight:700,marginBottom:12}}>+ הוספת סיסמה</div>
-      <div className="frow">
-        <div className="fcol"><Lbl>שירות</Lbl><input value={form.service} onChange={e=>setForm(p=>({...p,service:e.target.value}))}/></div>
-        <div className="fcol"><Lbl>קטגוריה</Lbl><input value={form.category} onChange={e=>setForm(p=>({...p,category:e.target.value}))}/></div>
-      </div>
-      <div className="frow">
-        <div className="fcol"><Lbl>שם משתמש</Lbl><input value={form.username} onChange={e=>setForm(p=>({...p,username:e.target.value}))}/></div>
-        <div className="fcol"><Lbl>סיסמה</Lbl><input value={form.password} onChange={e=>setForm(p=>({...p,password:e.target.value}))}/></div>
-      </div>
-      <div className="frow"><div className="fcol"><Lbl>URL</Lbl><input value={form.url} onChange={e=>setForm(p=>({...p,url:e.target.value}))}/></div><div className="fcol"><Lbl>תיאור</Lbl><input value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))}/></div></div>
-      <button className="btn-gold btn-sm" onClick={addEntry}>+ הוסף</button>
-    </div>}
-    {cats.map(cat=>{const items=filtered.filter(p=>(p.category||"כללי")===cat);if(!items.length)return null;return(<div key={cat} style={{marginBottom:22}}>
-      <div style={{fontWeight:700,fontSize:13,color:"var(--muted2)",marginBottom:10,paddingBottom:6,borderBottom:"1px solid var(--border)"}}>📂 {cat}</div>
-      {items.map(pw=><div key={pw.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderBottom:"1px solid var(--border)22",flexWrap:"wrap",gap:10}}>
-        <div style={{flex:1,minWidth:120}}>
-          <div style={{fontWeight:700}}>{pw.service}</div>
-          {pw.description&&<div style={{fontSize:11,color:"var(--muted)"}}>{pw.description}</div>}
-          {pw.url&&<a href={pw.url} target="_blank" rel="noreferrer" style={{fontSize:11,color:"var(--blue)"}}>{pw.url}</a>}
-        </div>
-        <div style={{fontSize:12,color:"var(--muted2)",minWidth:100}}>{pw.username}</div>
-        <div style={{fontFamily:"monospace",fontSize:12,minWidth:90}}>{showPw[pw.id]?pw.password:"••••••••••"}</div>
-        <div style={{display:"flex",gap:6}}>
-          <button onClick={()=>setShowPw(p=>({...p,[pw.id]:!p[pw.id]}))} style={{background:"var(--border2)",border:"none",borderRadius:6,padding:"4px 8px",color:"var(--muted2)",cursor:"pointer",fontSize:14}}>{showPw[pw.id]?"🙈":"👁"}</button>
-          <button onClick={()=>copyPw(pw.password,pw.id)} style={{background:copied===pw.id?"var(--green)20":"var(--border2)",border:"none",borderRadius:6,padding:"4px 10px",color:copied===pw.id?"var(--green)":"var(--muted2)",cursor:"pointer",fontSize:12}}>{copied===pw.id?"✓":"📋"}</button>
-          {isAdmin&&<button className="btn-red" onClick={()=>onUpdate(passwords.filter(p=>p.id!==pw.id))}>✕</button>}
-        </div>
-      </div>)}
-    </div>);})}
   </div>);
 }
 
@@ -1210,8 +1154,17 @@ function SheetsSettings({projects,passwords,users,onProjectsLoaded,onPasswordsLo
 // BACKUP — auto-save + manual
 // ══════════════════════════════════════════
 function BackupPanel({users,projects,passwords,lastAutoSave,onRestore}){
-  const [confirm,setConfirm]=useState(false);const [rd,setRd]=useState(null);const [err,setErr]=useState("");
+  const [confirm,setConfirm]=useState(false);const [rd,setRd]=useState(null);const [err,setErr]=useState("");const [driveMsg,setDriveMsg]=useState("");
   const handleFile=e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.projects||d.users){setRd(d);setConfirm(true);}else setErr("קובץ לא תקין");}catch{setErr("שגיאת קריאה");}};r.readAsText(file);};
+  const backupToDrive=async()=>{
+    const url=getSheetsUrl();
+    if(!url){setDriveMsg("❌ אין URL של Sheets — הגדר ב'Sheets'");return;}
+    setDriveMsg("שומר...");
+    try{
+      await fetch(url,{method:"POST",body:JSON.stringify({action:"saveBackup",data:JSON.stringify({users,projects,passwords}),filename:`postflow_backup_${todayStr()}.json`})});
+      setDriveMsg("✅ גיבוי נשמר ב-Google Drive!");
+    }catch(e){setDriveMsg("❌ "+e.message);}
+  };
   return(<div className="fade">
     <div className="section-title">💾 גיבוי ושחזור</div>
     {lastAutoSave&&<div style={{fontSize:12,color:"var(--green)",marginBottom:14}}>✅ גיבוי אוטומטי אחרון: {lastAutoSave}</div>}
@@ -1223,6 +1176,12 @@ function BackupPanel({users,projects,passwords,lastAutoSave,onRestore}){
       ].map(b=><div key={b.label} className="card" style={{cursor:"pointer",textAlign:"center",transition:"border-color .2s"}} onMouseEnter={e=>e.currentTarget.style.borderColor=b.color} onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"} onClick={b.action}>
         <div style={{fontSize:30,marginBottom:8}}>{b.icon}</div><div style={{fontWeight:700,marginBottom:4}}>{b.label}</div><div style={{fontSize:11,color:"var(--muted)"}}>{b.desc}</div>
       </div>)}
+      <div className="card" style={{cursor:"pointer",textAlign:"center",transition:"border-color .2s",borderColor:"var(--green)40"}} onMouseEnter={e=>e.currentTarget.style.borderColor="var(--green)"} onMouseLeave={e=>e.currentTarget.style.borderColor="var(--green)40"} onClick={backupToDrive}>
+        <div style={{fontSize:30,marginBottom:8}}>☁️</div>
+        <div style={{fontWeight:700,marginBottom:4}}>גיבוי ל-Drive</div>
+        <div style={{fontSize:11,color:"var(--muted)"}}>שמור JSON ישירות ב-Google Drive</div>
+        {driveMsg&&<div style={{fontSize:12,marginTop:8,color:driveMsg.startsWith("✅")?"var(--green)":"var(--red)"}}>{driveMsg}</div>}
+      </div>
     </div>
     <div className="card">{err&&<div style={{color:"var(--red)",fontSize:12,marginBottom:10}}>{err}</div>}
       <div style={{fontWeight:700,marginBottom:12}}>📥 שחזור מקובץ JSON</div>
@@ -1349,7 +1308,7 @@ function App({initialData}){
           // עדכן currentUser אם נמצא ב-staff החדש
           if(currentUser){
             const refreshed=patch.users.find(u=>u.email===currentUser.email||u.id===currentUser.id);
-            if(refreshed)setCurrentUser(refreshed);
+            if(refreshed)setCurrentUser({...refreshed,role:refreshed.role||"worker"});
           }
         }
         if(Object.keys(patch).length)upd(patch);
@@ -1360,7 +1319,7 @@ function App({initialData}){
   if(!currentUser)return(<><GS/><Login users={users} logoUrl={logoUrl} onLogin={u=>{
     // תמיד קרא role עדכני מה-users array (למקרה שהשתנה)
     const fresh=users.find(x=>x.id===u.id)||u;
-    setCurrentUser(fresh);setView("dashboard");
+    setCurrentUser({...fresh,role:fresh.role||"worker"});setView("dashboard");
   }}/></>);
 
   const isAdmin=currentUser.role==="admin",isProd=currentUser.role==="producer";
@@ -1457,7 +1416,7 @@ function App({initialData}){
           :view==="hours"?<HoursLog projects={projects} user={currentUser} users={users} onChange={updateProjAndSync} sheetsUrl={getSheetsUrl()}/>
           :view==="quotes"?<QuoteBuilder projects={projects} quoteTemplates={quoteTemplates} onSave={addQuote} onUpdateTemplates={t=>upd({quoteTemplates:t})} user={currentUser}/>
           :view==="reports"?<Reports projects={projects} users={users}/>
-          :view==="vault"?<PasswordVault passwords={passwords} onUpdate={p=>upd({passwords:p})} currentUser={currentUser}/>
+          :view==="vault"?<PasswordVault/>
           :view==="clients"?<ClientList projects={projects} clients={clients} onUpdate={c=>upd({clients:c})}/>
           :view==="users"?<UserMgmt users={users} onUpdate={u=>upd({users:u})} currentUser={currentUser}/>
           :view==="sheets"?<SheetsSettings projects={projects} passwords={passwords} users={users} onProjectsLoaded={p=>upd({projects:p})} onPasswordsLoaded={p=>upd({passwords:p})} onStaffLoaded={u=>upd({users:u})}/>
