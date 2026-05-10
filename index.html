@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow v8</title>
+<title>PostFlow v14 BETA</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
@@ -22,8 +22,11 @@ body{background:#07090f;margin:0;padding:0;font-family:'Heebo',sans-serif}
 </head>
 <body>
 <div id="splash">
-  <div class="sp-logo" id="splashLogo">🎞 PostFlow</div>
-  <div class="sp-sub">Post-Production Management v8</div>
+  <div class="sp-logo" id="splashLogo"><img src="https://i.imgur.com/8QfKFqA.png" onerror="this.parentElement.innerHTML='🎞 PostFlow'" style="height:72px;object-fit:contain;border-radius:12px" id="appLogo"/></div>
+  <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+    <div class="sp-sub">Post-Production Management</div>
+    <div style="background:#e8c547;color:#07090f;font-size:9px;font-weight:900;padding:2px 7px;border-radius:20px;letter-spacing:1px;text-transform:uppercase">BETA</div>
+  </div>
   <div class="sp-bar-wrap"><div class="sp-bar" id="spBar"></div></div>
   <div class="sp-msg" id="spMsg">מאתחל...</div>
 </div>
@@ -147,18 +150,23 @@ const isoDate=d=>d.toISOString().slice(0,10);
 const fmtDate=d=>d.toLocaleDateString("he-IL",{day:"2-digit",month:"2-digit"});
 const isWknd=d=>d.getDay()===5||d.getDay()===6;
 const aCol=i=>AVATAR_COLS[i%AVATAR_COLS.length];
+const DRIVE_FOLDER_KEY="pf_v14_drive_folder";
+function getDriveFolder(){return localStorage.getItem(DRIVE_FOLDER_KEY)||"";}
+function setDriveFolder(u){localStorage.setItem(DRIVE_FOLDER_KEY,u);}
 const STATUS_CFG={active:{label:"פעיל",color:"#6ee7b7"},review:{label:"בסקירה",color:"#4fc3f7"},paused:{label:"מושהה",color:"#e8c547"},completed:{label:"הושלם",color:"#a3e635"},cancelled:{label:"בוטל",color:"#f07070"}};
 const DEF_SHIFT_TYPES=[
-  {id:"editing",label:"עריכה",color:"#e8c547"},
-  {id:"color",label:"תיקון צבע",color:"#4fc3f7"},
-  {id:"sound",label:"קול",color:"#6ee7b7"},
-  {id:"vfx",label:"VFX",color:"#c084fc"},
-  {id:"screening",label:"הקרנה",color:"#f07070"},
-  {id:"shoot",label:"צילום",color:"#fb923c"},
-  {id:"delivery",label:"מסירה",color:"#a3e635"},
+  {id:"offline_int",label:"אופליין פנימי",color:"#e8c547"},
+  {id:"offline_ext",label:"אופליין חיצוני",color:"#fb923c"},
+  {id:"online",label:"אונליין",color:"#4fc3f7"},
+  {id:"color",label:"צבע",color:"#c084fc"},
+  {id:"3d",label:"תלת",color:"#6ee7b7"},
+  {id:"ai",label:"AI",color:"#a3e635"},
+  {id:"sound",label:"סאונד",color:"#60a5fa"},
+  {id:"vo",label:"קריינות",color:"#f472b6"},
+  {id:"screening_off",label:"הקרנת אופליין",color:"#f07070"},
+  {id:"screening_on",label:"הקרנת אונליין",color:"#ff6b35"},
   {id:"absence",label:"העדרות",color:"#94a3b8"},
-  {id:"wfh",label:"WFH",color:"#60a5fa"},
-  {id:"other",label:"אחר",color:"#6b7280"},
+  {id:"wfh",label:"עבודה מהבית",color:"#67e8f9"},
 ];
 const DEF_QUOTE_TMPLS=[
   {id:"doc",name:"דוקומנטרי",lines:[{id:"d1",desc:"גריסה וסנכרון",qty:1,unit:"פרויקט",price:5000},{id:"d2",desc:"עריכת תמונה – גרסה ראשונה",qty:1,unit:"פרויקט",price:18000},{id:"d3",desc:"תיקונים (3 סבבים)",qty:3,unit:"סבב",price:3500},{id:"d4",desc:"מוסיקה ו-SFX",qty:1,unit:"פרויקט",price:8000},{id:"d5",desc:"מיקס קול",qty:1,unit:"פרויקט",price:6000},{id:"d6",desc:"תיקון צבע",qty:1,unit:"פרויקט",price:7500},{id:"d7",desc:"DCP + מסירה",qty:1,unit:"פרויקט",price:4000}]},
@@ -1065,25 +1073,133 @@ function Reports({projects,users}){
 }
 
 // ══════════════════════════════════════════
-// QUOTE BUILDER — with template editor (admin only)
+// QUOTE BUILDER — with template editor + full customization
 // ══════════════════════════════════════════
 function QuoteBuilder({projects,quoteTemplates,onSave,onUpdateTemplates,user}){
   const isAdmin=user.role==="admin";
   const [step,setStep]=useState("list");
   const [projId,setProjId]=useState("");
   const [lines,setLines]=useState([]);
-  const [clientName,setClientName]=useState("");
-  const [note,setNote]=useState("");
   const [tplName,setTplName]=useState("");
   const [editingTplId,setEditingTplId]=useState(null);
   const [etName,setEtName]=useState("");
   const [etLines,setEtLines]=useState([]);
+  // Custom fields
+  const [qClient,setQClient]=useState("");
+  const [qProjName,setQProjName]=useState("");
+  const [qProjDesc,setQProjDesc]=useState("");
+  const [qDeliverables,setQDeliverables]=useState(""); // רשימת תוצרים
+  const [qFormats,setQFormats]=useState("");            // פורמטים
+  const [qResolutions,setQResolutions]=useState("");    // רזולוציות
+  const [qRatios,setQRatios]=useState("");              // פרופורציות
+  const [qPlatforms,setQPlatforms]=useState("");        // פלטפורמות שידור
+  const [qUsageRights,setQUsageRights]=useState("");    // סמן שימוש
+  const [qClientResp,setQClientResp]=useState("");      // באחריות הלקוח
+  const [qScope,setQScope]=useState("");                // תכולה מפורטת
+  const [qPayment,setQPayment]=useState("50% בחתימה, 50% במסירה"); // תנאי תשלום
+  const [qNote,setQNote]=useState("");
+
   const tmpls=quoteTemplates||DEF_QUOTE_TMPLS;
   const total=lines.reduce((s,l)=>s+l.qty*l.price,0);
   const updLine=(id,k,v)=>setLines(ls=>ls.map(l=>l.id===id?{...l,[k]:k==="qty"||k==="price"?+v||0:v}:l));
-  const loadTemplate=tid=>{const t=tmpls.find(t=>t.id===tid);if(!t)return;setTplName(t.name);setLines(t.lines.map(l=>({...l,id:uid()})));const p=projects.find(x=>x.id===projId);setClientName(p?.client||"");setStep("build");};
-  const save=()=>{if(!projId)return;const q={id:uid(),date:todayStr(),client:clientName,lines,total,note,template:tplName,approved:false};onSave(projId,q);setStep("list");setLines([]);setProjId("");setClientName("");setNote("");};
-  const print=()=>{const w=window.open("","_blank");const logo=document.querySelector("#appLogo");w.document.write(`<html dir="rtl"><head><meta charset="utf-8"><title>הצעת מחיר</title><style>body{font-family:Arial;padding:40px;direction:rtl}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #ddd;padding:10px;text-align:right}th{background:#f9f9f9}h1{color:#b8950f}.logo{height:50px;margin-bottom:16px}</style></head><body>${logo?`<img src="${logo.src}" class="logo"/>`:"<h1>📝 הצעת מחיר</h1>"}<h2>הצעת מחיר</h2><p><b>לקוח:</b> ${clientName}</p><p><b>פרויקט:</b> ${projects.find(p=>p.id===projId)?.name||""}</p><p><b>תאריך:</b> ${todayStr()}</p><table><thead><tr><th>תיאור</th><th>כמות</th><th>יחידה</th><th>מחיר</th><th>סה"כ</th></tr></thead><tbody>${lines.map(l=>`<tr><td>${l.desc}</td><td>${l.qty}</td><td>${l.unit}</td><td>₪${l.price.toLocaleString()}</td><td>₪${(l.qty*l.price).toLocaleString()}</td></tr>`).join("")}</tbody><tfoot><tr><td colspan="4"><b>סה"כ</b></td><td><b>₪${total.toLocaleString()}</b></td></tr></tfoot></table>${note?`<p><b>הערות:</b> ${note}</p>`:""}</body></html>`);w.document.close();w.print();};
+
+  const loadTemplate=tid=>{
+    const t=tmpls.find(t=>t.id===tid);if(!t)return;
+    setTplName(t.name);
+    setLines(t.lines.map(l=>({...l,id:uid()})));
+    const p=projects.find(x=>x.id===projId);
+    setQClient(p?.client||"");
+    setQProjName(p?.name||"");
+    setStep("build");
+  };
+
+  const save=()=>{
+    if(!projId)return;
+    const q={id:uid(),date:todayStr(),client:qClient,total,note:qNote,template:tplName,approved:false,
+      projId,projName:qProjName,projDesc:qProjDesc,deliverables:qDeliverables,formats:qFormats,
+      resolutions:qResolutions,ratios:qRatios,platforms:qPlatforms,usageRights:qUsageRights,
+      clientResp:qClientResp,scope:qScope,payment:qPayment,lines};
+    onSave(projId,q);
+    setStep("list");setLines([]);setProjId("");
+    setQClient("");setQProjName("");setQProjDesc("");setQDeliverables("");setQFormats("");
+    setQResolutions("");setQRatios("");setQPlatforms("");setQUsageRights("");setQClientResp("");
+    setQScope("");setQPayment("50% בחתימה, 50% במסירה");setQNote("");
+  };
+
+  const printQuote=(q,lns,tot)=>{
+    const w=window.open("","_blank");
+    const logo=document.querySelector("#appLogo");
+    const dateStr=new Date().toLocaleDateString("he-IL",{year:"numeric",month:"long",day:"numeric"});
+    const section=(label,val)=>val?`<div class="section"><div class="sec-label">${label}</div><div class="sec-val">${val.replace(/\n/g,"<br/>")}</div></div>`:"";
+    w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>הצעת מחיר — ${q.client||""}</title>
+    <style>
+      body{font-family:Arial,sans-serif;padding:36px 44px;direction:rtl;color:#1a1a2e;background:#fff;font-size:13px}
+      .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #e8c547;padding-bottom:16px;margin-bottom:22px}
+      .logo{height:52px;object-fit:contain}
+      .doc-title{font-size:22px;font-weight:900;color:#1a1a2e}
+      .doc-date{font-size:11px;color:#666;margin-top:4px}
+      .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+      .meta-item{background:#f9f9f9;border-radius:8px;padding:10px 14px}
+      .meta-label{font-size:10px;color:#888;font-weight:700;margin-bottom:3px}
+      .meta-val{font-weight:700;font-size:14px}
+      .section{margin-bottom:14px;padding:10px 14px;border:1px solid #e8e8e8;border-radius:8px}
+      .sec-label{font-size:10px;font-weight:700;color:#888;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+      .sec-val{font-size:13px;line-height:1.6}
+      table{width:100%;border-collapse:collapse;margin:18px 0}
+      th{background:#f5f5f5;padding:9px 10px;text-align:right;font-size:12px;color:#444;border-bottom:2px solid #e8c547}
+      td{padding:9px 10px;border-bottom:1px solid #f0f0f0;font-size:13px}
+      .total-row td{font-weight:900;font-size:16px;color:#b8950f;border-top:2px solid #e8c547;background:#fffbeb}
+      .payment{background:#fffbeb;border:1px solid #e8c54760;border-radius:8px;padding:12px 16px;margin:16px 0}
+      .payment-label{font-size:10px;font-weight:700;color:#888;margin-bottom:5px}
+      .sign-block{margin-top:36px;display:grid;grid-template-columns:1fr 1fr;gap:30px}
+      .sign-box{border:1px solid #ddd;border-radius:8px;padding:16px}
+      .sign-title{font-size:11px;font-weight:700;color:#888;margin-bottom:30px}
+      .sign-line{border-bottom:1px solid #ccc;margin-bottom:8px}
+      .sign-name{font-size:10px;color:#aaa}
+      .footer{margin-top:24px;border-top:1px solid #e0e0e0;padding-top:10px;font-size:9px;color:#aaa;text-align:center}
+      @media print{body{padding:18px 24px}}
+    </style></head><body>
+    <div class="header">
+      <div>${logo?`<img src="${logo.src}" class="logo"/>`:""}
+        <div class="doc-title">הצעת מחיר</div>
+        <div class="doc-date">תאריך: ${dateStr}</div>
+      </div>
+    </div>
+    <div class="meta-grid">
+      <div class="meta-item"><div class="meta-label">לקוח</div><div class="meta-val">${q.client||""}</div></div>
+      <div class="meta-item"><div class="meta-label">פרויקט</div><div class="meta-val">${q.projName||""}</div></div>
+    </div>
+    ${section("תיאור הפרויקט",q.projDesc)}
+    ${section("תכולה מפורטת",q.scope)}
+    ${q.deliverables||q.formats||q.resolutions||q.ratios||q.platforms?`
+    <div class="section">
+      <div class="sec-label">תוצרים ומפרט</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:6px">
+        ${q.deliverables?`<div><div style="font-size:10px;color:#888;margin-bottom:3px">תוצרים</div><div>${q.deliverables}</div></div>`:""}
+        ${q.formats?`<div><div style="font-size:10px;color:#888;margin-bottom:3px">פורמטים</div><div>${q.formats}</div></div>`:""}
+        ${q.resolutions?`<div><div style="font-size:10px;color:#888;margin-bottom:3px">רזולוציות</div><div>${q.resolutions}</div></div>`:""}
+        ${q.ratios?`<div><div style="font-size:10px;color:#888;margin-bottom:3px">פרופורציות</div><div>${q.ratios}</div></div>`:""}
+        ${q.platforms?`<div><div style="font-size:10px;color:#888;margin-bottom:3px">פלטפורמות</div><div>${q.platforms}</div></div>`:""}
+        ${q.usageRights?`<div><div style="font-size:10px;color:#888;margin-bottom:3px">סמן שימוש</div><div>${q.usageRights}</div></div>`:""}
+      </div>
+    </div>`:""}
+    ${section("באחריות הלקוח",q.clientResp)}
+    <table>
+      <thead><tr><th>תיאור</th><th style="width:70px">כמות</th><th style="width:90px">יחידה</th><th style="width:110px">מחיר יחידה</th><th style="width:110px">סה"כ</th></tr></thead>
+      <tbody>${(lns||[]).map(l=>`<tr><td>${l.desc}</td><td>${l.qty}</td><td>${l.unit}</td><td>₪${(l.price||0).toLocaleString("he-IL")}</td><td>₪${((l.qty||0)*(l.price||0)).toLocaleString("he-IL")}</td></tr>`).join("")}</tbody>
+      <tfoot><tr class="total-row"><td colspan="4">סה"כ כולל מע"מ</td><td>₪${(tot||0).toLocaleString("he-IL")}</td></tr></tfoot>
+    </table>
+    ${q.payment?`<div class="payment"><div class="payment-label">תנאי תשלום</div><div>${q.payment}</div></div>`:""}
+    ${q.note?`<div class="section"><div class="sec-label">הערות</div><div class="sec-val">${q.note}</div></div>`:""}
+    <div class="sign-block">
+      <div class="sign-box"><div class="sign-title">אישור הזמנת עבודה — הלקוח</div><div class="sign-line" style="margin-bottom:8px"></div><div style="display:flex;gap:20px"><div style="flex:1"><div class="sign-line"></div><div class="sign-name">חתימה</div></div><div style="flex:1"><div class="sign-line"></div><div class="sign-name">תאריך</div></div></div><div style="margin-top:12px"><div class="sign-line"></div><div class="sign-name">שם וחותמת</div></div></div>
+      <div class="sign-box"><div class="sign-title">אישור — הפקת פוסט</div><div class="sign-line" style="margin-bottom:8px"></div><div style="display:flex;gap:20px"><div style="flex:1"><div class="sign-line"></div><div class="sign-name">חתימה</div></div><div style="flex:1"><div class="sign-line"></div><div class="sign-name">תאריך</div></div></div><div style="margin-top:12px"><div class="sign-line"></div><div class="sign-name">שם וחותמת</div></div></div>
+    </div>
+    <div class="footer">PostFlow · הופק ב-${dateStr}</div>
+    </body></html>`);
+    w.document.close();setTimeout(()=>w.print(),400);
+  };
+
   const openTplEdit=tid=>{if(tid==="new"){const id=uid();setEditingTplId(id);setEtName("תבנית חדשה");setEtLines([{id:uid(),desc:"",qty:1,unit:"פרויקט",price:0}]);}else{const t=tmpls.find(t=>t.id===tid);if(!t)return;setEditingTplId(tid);setEtName(t.name);setEtLines(t.lines.map(l=>({...l})));}setStep("editTpl");};
   const saveTpl=()=>{const existing=tmpls.find(t=>t.id===editingTplId);if(existing)onUpdateTemplates(tmpls.map(t=>t.id===editingTplId?{...t,name:etName,lines:etLines}:t));else onUpdateTemplates([...tmpls,{id:editingTplId,name:etName,lines:etLines}]);setStep("list");};
 
@@ -1115,28 +1231,68 @@ function QuoteBuilder({projects,quoteTemplates,onSave,onUpdateTemplates,user}){
   if(step==="build")return(<div className="fade">
     <button className="btn-ghost btn-sm" style={{marginBottom:14}} onClick={()=>setStep("list")}>← חזרה</button>
     <div className="section-title">📝 הצעת מחיר — {tplName}</div>
-    <div style={{marginBottom:12}}><Lbl>שם לקוח</Lbl><input value={clientName} onChange={e=>setClientName(e.target.value)} style={{maxWidth:300}}/></div>
-    <div style={{overflowX:"auto",marginBottom:12}}>
-      <table style={{width:"100%",borderCollapse:"collapse"}}>
-        <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["תיאור","כמות","יחידה","מחיר יחידה",'סה"כ',""].map(h=><th key={h} style={{textAlign:"right",padding:"8px 4px",fontSize:11,color:"var(--muted)"}}>{h}</th>)}</tr></thead>
-        <tbody>
-          {lines.map(l=><tr key={l.id} style={{borderBottom:"1px solid var(--border)"}}>
-            <td style={{padding:"5px 3px",minWidth:160}}><input value={l.desc} onChange={e=>updLine(l.id,"desc",e.target.value)} style={{padding:"5px 8px"}}/></td>
-            <td style={{padding:"5px 3px",width:70}}><input type="number" value={l.qty} onChange={e=>updLine(l.id,"qty",e.target.value)} style={{padding:"5px 8px"}}/></td>
-            <td style={{padding:"5px 3px",width:100}}><input value={l.unit} onChange={e=>updLine(l.id,"unit",e.target.value)} style={{padding:"5px 8px"}}/></td>
-            <td style={{padding:"5px 3px",width:110}}><input type="number" value={l.price} onChange={e=>updLine(l.id,"price",e.target.value)} style={{padding:"5px 8px"}}/></td>
-            <td style={{padding:"5px 3px",fontWeight:700,color:"var(--gold)"}}>{fmtMoney(l.qty*l.price)}</td>
-            <td><button className="btn-red" onClick={()=>setLines(ls=>ls.filter(x=>x.id!==l.id))}>✕</button></td>
-          </tr>)}
-        </tbody>
-        <tfoot><tr><td colSpan={4} style={{padding:"10px 4px",fontWeight:700,fontSize:15}}>סה"כ</td><td style={{fontWeight:900,fontSize:20,color:"var(--gold)"}}>{fmtMoney(total)}</td><td/></tr></tfoot>
-      </table>
+
+    {/* פרטי לקוח ופרויקט */}
+    <div className="card" style={{marginBottom:14}}>
+      <div style={{fontWeight:700,marginBottom:12}}>👤 פרטי לקוח ופרויקט</div>
+      <div className="frow">
+        <div className="fcol"><Lbl>שם לקוח</Lbl><input value={qClient} onChange={e=>setQClient(e.target.value)}/></div>
+        <div className="fcol"><Lbl>שם הפרויקט</Lbl><input value={qProjName} onChange={e=>setQProjName(e.target.value)}/></div>
+      </div>
+      <div style={{marginBottom:10}}><Lbl>תיאור הפרויקט</Lbl><textarea value={qProjDesc} onChange={e=>setQProjDesc(e.target.value)} style={{minHeight:60}}/></div>
+      <div style={{marginBottom:10}}><Lbl>תכולה מפורטת</Lbl><textarea value={qScope} onChange={e=>setQScope(e.target.value)} style={{minHeight:80}} placeholder="פירוט מלא של תכולת העבודה..."/></div>
     </div>
-    <button className="btn-ghost btn-sm" style={{marginBottom:12}} onClick={()=>setLines(ls=>[...ls,{id:uid(),desc:"",qty:1,unit:"פרויקט",price:0}])}>+ שורה</button>
-    <div style={{marginBottom:12}}><Lbl>הערות</Lbl><textarea value={note} onChange={e=>setNote(e.target.value)}/></div>
+
+    {/* מפרט תוצרים */}
+    <div className="card" style={{marginBottom:14}}>
+      <div style={{fontWeight:700,marginBottom:12}}>📦 תוצרים ומפרט</div>
+      <div className="frow">
+        <div className="fcol"><Lbl>רשימת תוצרים</Lbl><input value={qDeliverables} onChange={e=>setQDeliverables(e.target.value)} placeholder="סרט, טריילר, 3 קצרים..."/></div>
+        <div className="fcol"><Lbl>פורמטים</Lbl><input value={qFormats} onChange={e=>setQFormats(e.target.value)} placeholder="ProRes, H.264, MP4..."/></div>
+      </div>
+      <div className="frow">
+        <div className="fcol"><Lbl>רזולוציות</Lbl><input value={qResolutions} onChange={e=>setQResolutions(e.target.value)} placeholder="4K, 1080p, 720p..."/></div>
+        <div className="fcol"><Lbl>פרופורציות</Lbl><input value={qRatios} onChange={e=>setQRatios(e.target.value)} placeholder="16:9, 9:16, 1:1..."/></div>
+        <div className="fcol"><Lbl>פלטפורמות שידור</Lbl><input value={qPlatforms} onChange={e=>setQPlatforms(e.target.value)} placeholder="YouTube, TV, Cinema..."/></div>
+      </div>
+      <div className="frow">
+        <div className="fcol"><Lbl>סמן שימוש</Lbl><input value={qUsageRights} onChange={e=>setQUsageRights(e.target.value)} placeholder="ישראל בלבד / עולמי / 3 שנים..."/></div>
+        <div className="fcol"><Lbl>באחריות הלקוח</Lbl><input value={qClientResp} onChange={e=>setQClientResp(e.target.value)} placeholder="חומרי גלם, גישת סטורג', סינק מוסיקה..."/></div>
+      </div>
+    </div>
+
+    {/* טבלת מחירים */}
+    <div className="card" style={{marginBottom:14}}>
+      <div style={{fontWeight:700,marginBottom:12}}>💰 פירוט עלויות</div>
+      <div style={{overflowX:"auto",marginBottom:12}}>
+        <table style={{width:"100%",borderCollapse:"collapse"}}>
+          <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["תיאור","כמות","יחידה","מחיר יחידה",'סה"כ',""].map(h=><th key={h} style={{textAlign:"right",padding:"8px 4px",fontSize:11,color:"var(--muted)"}}>{h}</th>)}</tr></thead>
+          <tbody>
+            {lines.map(l=><tr key={l.id} style={{borderBottom:"1px solid var(--border)"}}>
+              <td style={{padding:"5px 3px",minWidth:160}}><input value={l.desc} onChange={e=>updLine(l.id,"desc",e.target.value)} style={{padding:"5px 8px"}}/></td>
+              <td style={{padding:"5px 3px",width:70}}><input type="number" value={l.qty} onChange={e=>updLine(l.id,"qty",e.target.value)} style={{padding:"5px 8px"}}/></td>
+              <td style={{padding:"5px 3px",width:100}}><input value={l.unit} onChange={e=>updLine(l.id,"unit",e.target.value)} style={{padding:"5px 8px"}}/></td>
+              <td style={{padding:"5px 3px",width:110}}><input type="number" value={l.price} onChange={e=>updLine(l.id,"price",e.target.value)} style={{padding:"5px 8px"}}/></td>
+              <td style={{padding:"5px 3px",fontWeight:700,color:"var(--gold)"}}>{fmtMoney(l.qty*l.price)}</td>
+              <td><button className="btn-red" onClick={()=>setLines(ls=>ls.filter(x=>x.id!==l.id))}>✕</button></td>
+            </tr>)}
+          </tbody>
+          <tfoot><tr><td colSpan={4} style={{padding:"10px 4px",fontWeight:700,fontSize:15}}>סה"כ</td><td style={{fontWeight:900,fontSize:20,color:"var(--gold)"}}>{fmtMoney(total)}</td><td/></tr></tfoot>
+        </table>
+      </div>
+      <button className="btn-ghost btn-sm" onClick={()=>setLines(ls=>[...ls,{id:uid(),desc:"",qty:1,unit:"פרויקט",price:0}])}>+ שורה</button>
+    </div>
+
+    {/* תנאי תשלום והערות */}
+    <div className="card" style={{marginBottom:14}}>
+      <div style={{fontWeight:700,marginBottom:12}}>📋 תנאים והערות</div>
+      <div style={{marginBottom:10}}><Lbl>תנאי תשלום</Lbl><input value={qPayment} onChange={e=>setQPayment(e.target.value)}/></div>
+      <div style={{marginBottom:10}}><Lbl>הערות נוספות</Lbl><textarea value={qNote} onChange={e=>setQNote(e.target.value)}/></div>
+    </div>
+
     <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-      <button className="btn-gold" onClick={save}>💾 שמור</button>
-      <button className="btn-blue" onClick={print}>🖨️ הדפסה / PDF</button>
+      <button className="btn-gold" onClick={save}>💾 שמור הצעה</button>
+      <button className="btn-blue" onClick={()=>printQuote({client:qClient,projName:qProjName,projDesc:qProjDesc,deliverables:qDeliverables,formats:qFormats,resolutions:qResolutions,ratios:qRatios,platforms:qPlatforms,usageRights:qUsageRights,clientResp:qClientResp,scope:qScope,payment:qPayment,note:qNote},lines,total)}>🖨️ הדפסה / PDF</button>
     </div>
   </div>);
 
@@ -1154,7 +1310,7 @@ function QuoteBuilder({projects,quoteTemplates,onSave,onUpdateTemplates,user}){
       </div>)}
       {isAdmin&&<div className="card2" style={{cursor:"pointer",borderStyle:"dashed"}} onMouseEnter={e=>e.currentTarget.style.borderColor="var(--gold)"} onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
         <div onClick={()=>openTplEdit("new")} style={{fontWeight:700,marginBottom:6}}>+ תבנית חדשה</div>
-        <div onClick={()=>{setTplName("מותאם");setLines([{id:uid(),desc:"",qty:1,unit:"פרויקט",price:0}]);const p=projects.find(x=>x.id===projId);setClientName(p?.client||"");setStep("build");}} style={{fontSize:11,color:"var(--muted)",cursor:"pointer"}}>או בנה מאפס</div>
+        <div onClick={()=>{setTplName("מותאם");setLines([{id:uid(),desc:"",qty:1,unit:"פרויקט",price:0}]);const p=projects.find(x=>x.id===projId);setQClient(p?.client||"");setQProjName(p?.name||"");setStep("build");}} style={{fontSize:11,color:"var(--muted)",cursor:"pointer"}}>או בנה מאפס</div>
       </div>}
     </div>
     {projects.some(p=>(p.quotes||[]).length)&&<>
@@ -1164,6 +1320,7 @@ function QuoteBuilder({projects,quoteTemplates,onSave,onUpdateTemplates,user}){
           <div><div style={{fontWeight:700}}>{q.projName} · {q.client}</div><div style={{fontSize:11,color:"var(--muted)"}}>{q.date} · {q.template}</div></div>
           <div style={{display:"flex",gap:10,alignItems:"center"}}>
             <div style={{fontWeight:800,color:"var(--gold)"}}>{fmtMoney(q.total)}</div>
+            <button className="btn-blue btn-sm" onClick={()=>printQuote(q,q.lines||[],q.total)}>🖨️</button>
             {q.approved?<span className="tag" style={{color:"var(--green)",background:"var(--green)20"}}>✅ אושרה</span>:<button className="btn-green btn-sm" onClick={()=>onSave(q.projId,{...q,approved:true},true)}>✓ אשר</button>}
           </div>
         </div>
@@ -1274,15 +1431,15 @@ function SheetsSettings({projects,passwords,users,onProjectsLoaded,onPasswordsLo
     </div>
     <div className="card">
       <div style={{fontWeight:700,marginBottom:10}}>מבנה גיליונות</div>
-      {[{n:"staff",f:"name, role, email, phone, active, password"},{n:"projects",f:"projectNumber, name, producer, shootDate, offlineScreening, onlineScreening, deliveryDate, status, progress, client, description, statusNote"},{n:"passwords",f:"label, username, password, description, category, url, createdAt"}].map(s=><div key={s.n} style={{display:"flex",gap:12,padding:"8px 0",borderBottom:"1px solid var(--border)22"}}><div style={{fontWeight:700,color:"var(--gold)",minWidth:100}}>{s.n}</div><div style={{fontSize:11,color:"var(--muted)"}}>{s.f}</div></div>)}
+      {[{n:"staff",f:"name, role, email, phone, active, password"},{n:"projects",f:"projectNumber, name, producer, shootDate, offlineScreening, onlineScreening, deliveryDate, status, progress, client, description, statusNote"},{n:"passwords",f:"label, username, password, description, category, url, createdAt"},{n:"shifts",f:"id, projId, projName, person, personName, date, timeStart, timeEnd, tasks, note"},{n:"quotes",f:"id, projId, date, client, total, approved, template, note"}].map(s=><div key={s.n} style={{display:"flex",gap:12,padding:"8px 0",borderBottom:"1px solid var(--border)22"}}><div style={{fontWeight:700,color:"var(--gold)",minWidth:100}}>{s.n}</div><div style={{fontSize:11,color:"var(--muted)"}}>{s.f}</div></div>)}
     </div>
   </div>);
 }
 
 // ══════════════════════════════════════════
-// BACKUP — auto-save + manual
+// BACKUP — auto-save + manual + drive folder
 // ══════════════════════════════════════════
-function BackupPanel({users,projects,passwords,lastAutoSave,onRestore}){
+function BackupPanel({users,projects,passwords,lastAutoSave,onRestore,driveFolder}){
   const [confirm,setConfirm]=useState(false);const [rd,setRd]=useState(null);const [err,setErr]=useState("");const [driveMsg,setDriveMsg]=useState("");
   const handleFile=e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.projects||d.users){setRd(d);setConfirm(true);}else setErr("קובץ לא תקין");}catch{setErr("שגיאת קריאה");}};r.readAsText(file);};
   const backupToDrive=async()=>{
@@ -1290,17 +1447,21 @@ function BackupPanel({users,projects,passwords,lastAutoSave,onRestore}){
     if(!url){setDriveMsg("❌ אין URL של Sheets — הגדר ב'Sheets'");return;}
     setDriveMsg("שומר...");
     try{
-      await fetch(url,{method:"POST",body:JSON.stringify({action:"saveBackup",data:JSON.stringify({users,projects,passwords}),filename:`postflow_backup_${todayStr()}.json`})});
-      setDriveMsg("✅ גיבוי נשמר ב-Google Drive!");
+      const filename=`postflow_backup_${todayStr()}.json`;
+      const allData={users,projects,passwords,exportDate:todayStr(),version:"v14"};
+      await fetch(url,{method:"POST",body:JSON.stringify({action:"saveBackup",data:JSON.stringify(allData),filename,folderId:driveFolder||""})});
+      setDriveMsg(`✅ גיבוי נשמר${driveFolder?" בתיקיה המוגדרת":""} — ${filename}`);
     }catch(e){setDriveMsg("❌ "+e.message);}
   };
   return(<div className="fade">
     <div className="section-title">💾 גיבוי ושחזור</div>
     {lastAutoSave&&<div style={{fontSize:12,color:"var(--green)",marginBottom:14}}>✅ גיבוי אוטומטי אחרון: {lastAutoSave}</div>}
+    {driveFolder&&<div style={{fontSize:12,color:"var(--blue)",marginBottom:14,padding:"8px 12px",background:"var(--blue)15",borderRadius:8}}>📁 תיקיית Drive: <code style={{fontSize:11}}>{driveFolder}</code></div>}
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12,marginBottom:20}}>
       {[
-        {icon:"🗄️",label:"גיבוי מלא (JSON)",desc:"משתמשים + פרויקטים + סיסמאות",action:()=>dlJSON({users,projects,passwords},`postflow_backup_${todayStr()}.json`),color:"var(--blue)"},
+        {icon:"🗄️",label:"גיבוי מלא (JSON)",desc:"משתמשים + פרויקטים + סיסמאות",action:()=>dlJSON({users,projects,passwords,exportDate:todayStr(),version:"v14"},`postflow_backup_${todayStr()}.json`),color:"var(--blue)"},
         {icon:"🎬",label:"פרויקטים בלבד",desc:"JSON של כל הפרויקטים",action:()=>dlJSON({projects},`postflow_projects_${todayStr()}.json`),color:"var(--gold)"},
+        {icon:"📝",label:"הצעות מחיר",desc:"CSV לפי עמודות הגיליון",action:()=>{const rows=[["id","projId","date","client","total","approved","template","note"]];projects.forEach(p=>(p.quotes||[]).forEach(q=>rows.push([q.id||"",p.id,q.date||"",q.client||"",q.total||0,q.approved?"true":"false",q.template||"",q.note||""])));dlCSV(rows,`הצעות_מחיר_${todayStr()}.csv`);},color:"var(--purple)"},
         {icon:"⏱",label:"שעות עבודה",desc:"CSV של כל דיווחי השעות",action:()=>{const rows=[["עובד","פרויקט","תאריך","כניסה","יציאה","שעות","הערה"]];projects.forEach(p=>(p.hours||[]).forEach(h=>{const u=users.find(u=>u.id===h.worker);rows.push([u?.name||h.worker,p.name,h.date,h.timeIn||"",h.timeOut||"",h.hours.toFixed(1),h.note||""]);} ));dlCSV(rows,`שעות_${todayStr()}.csv`);},color:"var(--green)"},
       ].map(b=><div key={b.label} className="card" style={{cursor:"pointer",textAlign:"center",transition:"border-color .2s"}} onMouseEnter={e=>e.currentTarget.style.borderColor=b.color} onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"} onClick={b.action}>
         <div style={{fontSize:30,marginBottom:8}}>{b.icon}</div><div style={{fontWeight:700,marginBottom:4}}>{b.label}</div><div style={{fontSize:11,color:"var(--muted)"}}>{b.desc}</div>
@@ -1308,7 +1469,7 @@ function BackupPanel({users,projects,passwords,lastAutoSave,onRestore}){
       <div className="card" style={{cursor:"pointer",textAlign:"center",transition:"border-color .2s",borderColor:"var(--green)40"}} onMouseEnter={e=>e.currentTarget.style.borderColor="var(--green)"} onMouseLeave={e=>e.currentTarget.style.borderColor="var(--green)40"} onClick={backupToDrive}>
         <div style={{fontSize:30,marginBottom:8}}>☁️</div>
         <div style={{fontWeight:700,marginBottom:4}}>גיבוי ל-Drive</div>
-        <div style={{fontSize:11,color:"var(--muted)"}}>שמור JSON ישירות ב-Google Drive</div>
+        <div style={{fontSize:11,color:"var(--muted)"}}>שמור את כל הנתונים ב-Google Drive{driveFolder?" (תיקיה מוגדרת)":""}</div>
         {driveMsg&&<div style={{fontSize:12,marginTop:8,color:driveMsg.startsWith("✅")?"var(--green)":"var(--red)"}}>{driveMsg}</div>}
       </div>
     </div>
@@ -1327,10 +1488,11 @@ function BackupPanel({users,projects,passwords,lastAutoSave,onRestore}){
 }
 
 // ══════════════════════════════════════════
-// SETTINGS — logo + shift types + (admin only quote templates moved to QuoteBuilder)
+// SETTINGS — logo + shift types + drive folder
 // ══════════════════════════════════════════
-function Settings({shiftTypes,onUpdateShiftTypes,logoUrl,onUpdateLogo}){
+function Settings({shiftTypes,onUpdateShiftTypes,logoUrl,onUpdateLogo,driveFolder,onUpdateDriveFolder}){
   const [etSt,setEtSt]=useState(shiftTypes||DEF_SHIFT_TYPES);
+  const [dFolder,setDFolder]=useState(driveFolder||"");
   const updSt=(id,k,v)=>setEtSt(ts=>ts.map(t=>t.id===id?{...t,[k]:v}:t));
   const saveSt=()=>onUpdateShiftTypes(etSt);
   return(<div className="fade">
@@ -1343,6 +1505,16 @@ function Settings({shiftTypes,onUpdateShiftTypes,logoUrl,onUpdateLogo}){
         <div className="fcol"><Lbl>URL של תמונה (PNG/JPG/SVG)</Lbl><input value={logoUrl||""} onChange={e=>onUpdateLogo(e.target.value)} placeholder="https://..."/></div>
       </div>
       <div style={{fontSize:11,color:"var(--muted)"}}>💡 העלה תמונה ל-imgur.com או Cloudinary, הדבק את ה-URL ישירות כאן</div>
+    </div>
+    {/* Drive folder */}
+    <div className="card" style={{marginBottom:14}}>
+      <div style={{fontWeight:700,marginBottom:12}}>📁 תיקיית גיבוי ב-Google Drive</div>
+      <div style={{fontSize:12,color:"var(--muted)",marginBottom:10}}>הכנס את ה-ID של התיקיה ב-Drive לשמירת גיבויים אוטומטיים. נמצא ב-URL של התיקיה: <code style={{color:"var(--gold)"}}>drive.google.com/drive/folders/<b>FOLDER_ID</b></code></div>
+      <div className="frow">
+        <div className="fcol"><Lbl>Folder ID</Lbl><input value={dFolder} onChange={e=>setDFolder(e.target.value)} placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs..."/></div>
+      </div>
+      <button className="btn-gold btn-sm" onClick={()=>{setDriveFolder(dFolder);onUpdateDriveFolder(dFolder);}}>💾 שמור</button>
+      {dFolder&&<div style={{fontSize:11,color:"var(--green)",marginTop:8}}>✅ תיקיה מוגדרת — גיבויים ישמרו שם</div>}
     </div>
     {/* Shift types */}
     <div className="card">
@@ -1389,6 +1561,8 @@ function App({initialData}){
   const updateProject=p=>upd({projects:data.projects.map(x=>x.id===p.id?p:x)});
   const addProject=p=>upd({projects:[...data.projects,p],nextProjNum:(data.nextProjNum||1)+1});
   const addQuote=(pid,q,update)=>upd({projects:data.projects.map(p=>{if(p.id!==pid)return p;if(update)return{...p,quotes:(p.quotes||[]).map(x=>x.id===q.id?q:x)};return{...p,quotes:[...(p.quotes||[]),q]};})});
+  const [driveFolder,setDriveFolderState]=useState(getDriveFolder);
+  const handleUpdateDriveFolder=v=>{setDriveFolderState(v);setDriveFolder(v);};
 
   const [currentUser,setCurrentUser]=useState(null);
   const [view,setView]=useState("dashboard");
@@ -1468,6 +1642,8 @@ function App({initialData}){
 
   // Handle shift save/delete from calendar
   const onSaveShift=shift=>{
+    const url=getSheetsUrl();
+    const shiftRow={id:shift.id||uid(),projId:shift.projId||"",projName:projects.find(p=>p.id===shift.projId)?.name||"",person:shift.person||"",personName:users.find(u=>u.id===shift.person)?.name||"",date:shift.date||"",timeStart:shift.timeStart||"",timeEnd:shift.timeEnd||"",tasks:(shift.tasks||[]).join(", "),note:shift.note||""};
     if(!shift.projId){
       // משמרת ללא פרויקט — נשמרת ב-globalShifts
       const existing=(data.globalShifts||[]).find(s=>s.id===shift.id);
@@ -1475,13 +1651,14 @@ function App({initialData}){
         ?(data.globalShifts||[]).map(s=>s.id===shift.id?shift:s)
         :[...(data.globalShifts||[]),{...shift,id:shift.id||uid()}];
       upd({globalShifts:newGlobal});
+      if(url)sheetsPost(url,{action:"appendRow",sheet:"shifts",row:shiftRow}).catch(()=>{});
       return;
     }
     const proj=projects.find(p=>p.id===shift.projId);if(!proj)return;
     const existing=(proj.shifts||[]).find(s=>s.id===shift.id);
     const newShifts=existing?(proj.shifts||[]).map(s=>s.id===shift.id?shift:s):[...(proj.shifts||[]),shift];
     updateProject({...proj,shifts:newShifts});
-    const url=getSheetsUrl();if(url)sheetsPost(url,{action:"update",sheet:"projects",id:proj.id,row:{...proj,shifts:newShifts}}).catch(()=>{});
+    if(url){sheetsPost(url,{action:"update",sheet:"projects",id:proj.id,row:{...proj,shifts:newShifts}}).catch(()=>{});sheetsPost(url,{action:"appendRow",sheet:"shifts",row:shiftRow}).catch(()=>{});}
   };
   const onDeleteShift=shift=>{
     if(!shift.projId){
@@ -1507,7 +1684,7 @@ function App({initialData}){
       <div style={{padding:"0 6px 16px",borderBottom:"1px solid var(--border)",marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div>
           {logoUrl?<img src={logoUrl} style={{height:36,objectFit:"contain",borderRadius:5}} alt="logo"/>:<div style={{fontWeight:900,fontSize:18,color:"var(--gold)"}}>🎞 PostFlow</div>}
-          <div style={{fontSize:9,color:"var(--muted)",marginTop:2}}>v8.0</div>
+          <div style={{fontSize:9,color:"var(--muted)",marginTop:2}}>v14 <span style={{background:"var(--gold)",color:"#07090f",padding:"1px 5px",borderRadius:10,fontSize:8,fontWeight:900}}>BETA</span></div>
         </div>
         {mobile&&<button className="btn-ghost btn-sm" onClick={()=>setSidebarOpen(false)}>✕</button>}
       </div>
@@ -1565,8 +1742,8 @@ function App({initialData}){
           :view==="clients"?<ClientList projects={projects} clients={clients} onUpdate={c=>upd({clients:c})}/>
           :view==="users"?<UserMgmt users={users} onUpdate={u=>upd({users:u})} currentUser={currentUser}/>
           :view==="sheets"?<SheetsSettings projects={projects} passwords={passwords} users={users} onProjectsLoaded={p=>upd({projects:p})} onPasswordsLoaded={p=>upd({passwords:p})} onStaffLoaded={u=>upd({users:u})}/>
-          :view==="backup"?<BackupPanel users={users} projects={projects} passwords={passwords} lastAutoSave={lastAutoSave} onRestore={d=>upd({users:d.users||users,projects:d.projects||projects,passwords:d.passwords||passwords})}/>
-          :view==="settings"?<Settings shiftTypes={sts} onUpdateShiftTypes={st=>upd({shiftTypes:st})} logoUrl={logoUrl} onUpdateLogo={url=>upd({logoUrl:url})}/>
+          :view==="backup"?<BackupPanel users={users} projects={projects} passwords={passwords} lastAutoSave={lastAutoSave} driveFolder={driveFolder} onRestore={d=>upd({users:d.users||users,projects:d.projects||projects,passwords:d.passwords||passwords})}/>
+          :view==="settings"?<Settings shiftTypes={sts} onUpdateShiftTypes={st=>upd({shiftTypes:st})} logoUrl={logoUrl} onUpdateLogo={url=>upd({logoUrl:url})} driveFolder={driveFolder} onUpdateDriveFolder={handleUpdateDriveFolder}/>
           :null}
       </main>
     </div>
