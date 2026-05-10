@@ -1643,22 +1643,29 @@ function App({initialData}){
   // Handle shift save/delete from calendar
   const onSaveShift=shift=>{
     const url=getSheetsUrl();
-    const shiftRow={id:shift.id||uid(),projId:shift.projId||"",projName:projects.find(p=>p.id===shift.projId)?.name||"",person:shift.person||"",personName:users.find(u=>u.id===shift.person)?.name||"",date:shift.date||"",timeStart:shift.timeStart||"",timeEnd:shift.timeEnd||"",tasks:(shift.tasks||[]).join(", "),note:shift.note||""};
+    const finalId=shift.id||uid();
+    const shiftRow={id:finalId,date:shift.date||"",timeStart:shift.timeStart||"",timeEnd:shift.timeEnd||"",personName:users.find(u=>u.id===shift.person)?.name||"",projName:projects.find(p=>p.id===shift.projId)?.name||"",tasks:(shift.tasks||[]).map(t=>stLabel(t,sts)).join(", "),note:shift.note||"",projId:shift.projId||"",person:shift.person||""};
     if(!shift.projId){
-      // משמרת ללא פרויקט — נשמרת ב-globalShifts
       const existing=(data.globalShifts||[]).find(s=>s.id===shift.id);
       const newGlobal=existing
-        ?(data.globalShifts||[]).map(s=>s.id===shift.id?shift:s)
-        :[...(data.globalShifts||[]),{...shift,id:shift.id||uid()}];
+        ?(data.globalShifts||[]).map(s=>s.id===shift.id?{...shift,id:finalId}:s)
+        :[...(data.globalShifts||[]),{...shift,id:finalId}];
       upd({globalShifts:newGlobal});
-      if(url)sheetsPost(url,{action:"appendRow",sheet:"shifts",row:shiftRow}).catch(()=>{});
+      if(url){
+        if(existing)sheetsPost(url,{action:"update",sheet:"calendar",id:finalId,row:shiftRow}).catch(()=>{});
+        else sheetsPost(url,{action:"appendRow",sheet:"calendar",row:shiftRow}).catch(()=>{});
+      }
       return;
     }
     const proj=projects.find(p=>p.id===shift.projId);if(!proj)return;
     const existing=(proj.shifts||[]).find(s=>s.id===shift.id);
-    const newShifts=existing?(proj.shifts||[]).map(s=>s.id===shift.id?shift:s):[...(proj.shifts||[]),shift];
+    const newShifts=existing?(proj.shifts||[]).map(s=>s.id===shift.id?{...shift,id:finalId}:s):[...(proj.shifts||[]),{...shift,id:finalId}];
     updateProject({...proj,shifts:newShifts});
-    if(url){sheetsPost(url,{action:"update",sheet:"projects",id:proj.id,row:{...proj,shifts:newShifts}}).catch(()=>{});sheetsPost(url,{action:"appendRow",sheet:"shifts",row:shiftRow}).catch(()=>{});}
+    if(url){
+      sheetsPost(url,{action:"update",sheet:"projects",id:proj.id,row:{...proj,shifts:newShifts}}).catch(()=>{});
+      if(existing)sheetsPost(url,{action:"update",sheet:"calendar",id:finalId,row:shiftRow}).catch(()=>{});
+      else sheetsPost(url,{action:"appendRow",sheet:"calendar",row:shiftRow}).catch(()=>{});
+    }
   };
   const onDeleteShift=shift=>{
     if(!shift.projId){
