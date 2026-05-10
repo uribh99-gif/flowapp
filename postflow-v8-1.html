@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PostFlow v8</title>
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+<style>
+body{background:#07090f;margin:0;padding:0;font-family:'Heebo',sans-serif}
+#splash{position:fixed;inset:0;z-index:9999;background:#07090f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .6s,visibility .6s}
+#splash.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.sp-logo{font-size:40px;font-weight:900;color:#e8c547;letter-spacing:-2px}
+.sp-sub{font-size:11px;color:#5a6478;letter-spacing:3px;text-transform:uppercase}
+.sp-bar-wrap{width:220px;height:3px;background:#1a1f2b;border-radius:99px;overflow:hidden}
+.sp-bar{height:100%;background:linear-gradient(90deg,#e8c547,#fb923c);border-radius:99px;width:0%;transition:width .35s}
+.sp-msg{font-size:11px;color:#3a4258;min-height:14px;text-align:center}
+#root{opacity:0;transition:opacity .5s}
+#root.visible{opacity:1}
+</style>
+</head>
+<body>
+<div id="splash">
+  <div class="sp-logo" id="splashLogo">🎞 PostFlow</div>
+  <div class="sp-sub">Post-Production Management v8</div>
+  <div class="sp-bar-wrap"><div class="sp-bar" id="spBar"></div></div>
+  <div class="sp-msg" id="spMsg">מאתחל...</div>
+</div>
+<div id="root"></div>
+<script>
+const Splash={
+  set(p,t){const b=document.getElementById('spBar'),m=document.getElementById('spMsg');if(b)b.style.width=p+'%';if(m&&t)m.textContent=t;},
+  hide(){document.getElementById('splash').classList.add('hidden');document.getElementById('root').classList.add('visible');},
+  setLogo(url){if(!url)return;const el=document.getElementById('splashLogo');if(el)el.innerHTML=`<img src="${url}" style="height:56px;object-fit:contain;border-radius:8px" id="appLogo"/>`;}
+};
+Splash.set(10,'טוען...');
+</script>
+<script type="text/babel">
+const {useState,useEffect,useRef,useMemo,useCallback}=React;
+
+// ══════════════════════════════════════════
+// GLOBAL STYLES
+// ══════════════════════════════════════════
+const GS=()=>(
+<style>{`
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07090f;--surf:#0e1118;--card:#141820;--card2:#1a1f2b;
+  --border:#252b38;--border2:#2f3748;
+  --gold:#e8c547;--blue:#4fc3f7;--green:#6ee7b7;
+  --red:#f07070;--purple:#c084fc;--orange:#fb923c;
+  --text:#dde2ef;--muted:#5a6478;--muted2:#7a8498;
+}
+body{background:var(--bg);color:var(--text);font-family:'Heebo',sans-serif;direction:rtl;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+input,select,textarea{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 11px;font-family:'Heebo',sans-serif;font-size:13px;width:100%;outline:none;transition:border-color .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--gold)}
+input[type=checkbox]{width:auto;accent-color:var(--gold);cursor:pointer}
+input[type=range]{width:100%;accent-color:var(--gold)}
+textarea{resize:vertical;min-height:60px}
+button{font-family:'Heebo',sans-serif;cursor:pointer;border:none;border-radius:8px;font-size:13px;font-weight:600;transition:all .18s}
+.btn-gold{background:var(--gold);color:#07090f;padding:8px 18px}
+.btn-gold:hover{background:#f5d45a;transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--muted2);padding:7px 14px;border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text)}
+.btn-blue{background:#4fc3f720;color:var(--blue);padding:7px 14px;border:1px solid #4fc3f740}
+.btn-blue:hover{background:#4fc3f730}
+.btn-red{background:transparent;color:var(--red);padding:5px 10px;border:1px solid #f0707040;font-size:11px}
+.btn-red:hover{background:#f0707015}
+.btn-green{background:#6ee7b720;color:var(--green);padding:7px 14px;border:1px solid #6ee7b740}
+.btn-green:hover{background:#6ee7b730}
+.btn-orange{background:#fb923c20;color:#fb923c;padding:7px 14px;border:1px solid #fb923c40}
+.btn-sm{padding:5px 12px!important;font-size:12px!important}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
+.card2{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px}
+.fade{animation:fi .25s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.82);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:1000}
+.modal{background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:28px;width:min(680px,96vw);max-height:92vh;overflow-y:auto}
+.pbar{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.pfill{height:100%;border-radius:3px;transition:width .5s}
+.pulse{animation:pl 1.8s ease-in-out infinite}
+@keyframes pl{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
+.lbl{font-size:11px;color:var(--muted);display:block;margin-bottom:5px;font-weight:600}
+.frow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
+.fcol{flex:1;min-width:110px}
+.divider{height:1px;background:var(--border);margin:18px 0}
+.section-title{font-size:20px;font-weight:800;margin-bottom:20px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted2);transition:all .15s;user-select:none}
+.nav-item:hover{background:var(--card);color:var(--text)}
+.nav-item.active{background:#e8c54718;color:var(--gold)}
+.tab-btn{background:none;border:none;color:var(--muted2);padding:10px 14px;font-family:'Heebo',sans-serif;font-weight:700;font-size:13px;border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px;white-space:nowrap;transition:color .15s}
+.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
+.proj-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;cursor:pointer;transition:border-color .2s,transform .15s}
+.proj-card:hover{border-color:var(--gold)60;transform:translateY(-2px)}
+/* Calendar */
+.cal-day{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 6px;min-height:110px;transition:border-color .15s;cursor:pointer}
+.cal-day:hover{border-color:var(--gold)40}
+.cal-day.today{border-color:var(--gold)70;border-top:2px solid var(--gold)}
+.cal-day.weekend{background:#0b0d13;border-color:#1a1f2b;opacity:.85;cursor:default}
+.cal-day.weekend:hover{border-color:#1a1f2b}
+.cal-ev{border-radius:6px;padding:4px 7px;font-size:10px;font-weight:600;margin-bottom:3px;cursor:pointer;transition:opacity .15s;line-height:1.4}
+.cal-ev:hover{opacity:.75}
+/* Search */
+.srch-wrap{position:relative}
+.srch-wrap input{padding-right:34px}
+.srch-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.srch-drop{position:absolute;top:calc(100% + 4px);right:0;left:0;background:var(--card);border:1px solid var(--border2);border-radius:10px;z-index:300;max-height:280px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.srch-item{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)}
+.srch-item:last-child{border-bottom:none}
+.srch-item:hover{background:var(--card2)}
+/* Chips */
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;cursor:pointer;font-size:11px;font-weight:600;border:1px solid var(--border);transition:all .15s;user-select:none}
+.chip.sel{border-color:currentColor}
+/* Mobile */
+@media(max-width:768px){
+  .desktop-sidebar{display:none!important}
+  .mob-bar{display:flex!important}
+}
+.mob-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1px solid var(--border);padding:6px 0;z-index:800;justify-content:space-around}
+.mob-btn{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--muted2);font-size:9px;font-family:'Heebo',sans-serif;cursor:pointer;padding:4px 6px}
+.mob-btn.active{color:var(--gold)}
+select option{background:var(--card)}
+`}</style>);
+
+// ══════════════════════════════════════════
+// CONSTANTS & CONFIG
+// ══════════════════════════════════════════
+const uid=()=>Math.random().toString(36).slice(2,9);
+const todayStr=()=>new Date().toISOString().slice(0,10);
+const fmtMoney=v=>"₪"+Number(v||0).toLocaleString("he-IL");
+const pct=(a,b)=>b?Math.round((a/b)*100):0;
+const LS_KEY="postflow_v8";
+const SHEETS_KEY="pf_v8_sheets_url";
+const REMEMBER_KEY="pf_v8_remember";
+const VAULT_KEY="pf_v8_vault_pass";
+const ADMIN_EMAIL="uri@fpp.co.il";
+const ADMIN_PASS="0711";
+const HEB_DAYS=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+const AVATAR_COLS=["#e8c547","#4fc3f7","#6ee7b7","#c084fc","#f07070","#fb923c","#a3e635","#60a5fa"];
+const isoDate=d=>d.toISOString().slice(0,10);
+const fmtDate=d=>d.toLocaleDateString("he-IL",{day:"2-digit",month:"2-digit"});
+const isWknd=d=>d.getDay()===5||d.getDay()===6;
+const aCol=i=>AVATAR_COLS[i%AVATAR_COLS.length];
+const STATUS_CFG={active:{label:"פעיל",color:"#6ee7b7"},review:{label:"בסקירה",color:"#4fc3f7"},paused:{label:"מושהה",color:"#e8c547"},completed:{label:"הושלם",color:"#a3e635"},cancelled:{label:"בוטל",color:"#f07070"}};
+const DEF_SHIFT_TYPES=[
+  {id:"editing",label:"עריכה",color:"#e8c547"},
+  {id:"color",label:"תיקון צבע",color:"#4fc3f7"},
+  {id:"sound",label:"קול",color:"#6ee7b7"},
+  {id:"vfx",label:"VFX",color:"#c084fc"},
+  {id:"screening",label:"הקרנה",color:"#f07070"},
+  {id:"shoot",label:"צילום",color:"#fb923c"},
+  {id:"delivery",label:"מסירה",color:"#a3e635"},
+  {id:"absence",label:"העדרות",color:"#94a3b8"},
+  {id:"wfh",label:"WFH",color:"#60a5fa"},
+  {id:"other",label:"אחר",color:"#6b7280"},
+];
+const DEF_QUOTE_TMPLS=[
+  {id:"doc",name:"דוקומנטרי",lines:[{id:"d1",desc:"גריסה וסנכרון",qty:1,unit:"פרויקט",price:5000},{id:"d2",desc:"עריכת תמונה – גרסה ראשונה",qty:1,unit:"פרויקט",price:18000},{id:"d3",desc:"תיקונים (3 סבבים)",qty:3,unit:"סבב",price:3500},{id:"d4",desc:"מוסיקה ו-SFX",qty:1,unit:"פרויקט",price:8000},{id:"d5",desc:"מיקס קול",qty:1,unit:"פרויקט",price:6000},{id:"d6",desc:"תיקון צבע",qty:1,unit:"פרויקט",price:7500},{id:"d7",desc:"DCP + מסירה",qty:1,unit:"פרויקט",price:4000}]},
+  {id:"ad",name:"פרסומת",lines:[{id:"a1",desc:"עריכת גרסה ראשית",qty:1,unit:"פרויקט",price:12000},{id:"a2",desc:"גרסאות קצרות",qty:2,unit:"גרסה",price:3000},{id:"a3",desc:"תיקון צבע",qty:1,unit:"פרויקט",price:5000},{id:"a4",desc:"מיקס קול + VO",qty:1,unit:"פרויקט",price:4000},{id:"a5",desc:"Cut-downs סושיאל",qty:4,unit:"גרסה",price:2000}]},
+  {id:"series",name:"סדרה (לפרק)",lines:[{id:"s1",desc:"גריסה",qty:1,unit:"פרק",price:2500},{id:"s2",desc:"עריכת תמונה",qty:1,unit:"פרק",price:14000},{id:"s3",desc:"תיקון צבע",qty:1,unit:"פרק",price:5000},{id:"s4",desc:"מיקס קול",qty:1,unit:"פרק",price:5000},{id:"s5",desc:"גרפיקה",qty:1,unit:"פרק",price:3000}]},
+];
+
+// ══════════════════════════════════════════
+// STORAGE
+// ══════════════════════════════════════════
+function defData(){return{users:[{id:"u_admin",name:"אורי",email:ADMIN_EMAIL,role:"admin",password:ADMIN_PASS,phone:"",active:"admin"}],projects:[],passwords:[],shiftTypes:[...DEF_SHIFT_TYPES],quoteTemplates:[...DEF_QUOTE_TMPLS],nextProjNum:1,logoUrl:"",clients:[]};}
+function loadLocal(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(!raw)return defData();
+    const d=JSON.parse(raw);
+    if(!d||typeof d!=="object")return defData();
+    const def=defData();
+    return{
+      users:          Array.isArray(d.users)&&d.users.length           ?d.users          :def.users,
+      projects:       Array.isArray(d.projects)                         ?d.projects       :def.projects,
+      passwords:      Array.isArray(d.passwords)                        ?d.passwords      :def.passwords,
+      shiftTypes:     Array.isArray(d.shiftTypes)&&d.shiftTypes.length  ?d.shiftTypes     :def.shiftTypes,
+      quoteTemplates: Array.isArray(d.quoteTemplates)&&d.quoteTemplates.length?d.quoteTemplates:def.quoteTemplates,
+      nextProjNum:    typeof d.nextProjNum==="number"                   ?d.nextProjNum    :def.nextProjNum,
+      logoUrl:        typeof d.logoUrl==="string"                       ?d.logoUrl        :def.logoUrl,
+      clients:        Array.isArray(d.clients)                          ?d.clients        :def.clients,
+    };
+  }catch(e){console.warn("loadLocal error",e);return defData();}
+}
+function saveLocal(d){try{localStorage.setItem(LS_KEY,JSON.stringify(d));}catch(e){console.warn("save failed",e);}}
+function getSheetsUrl(){return localStorage.getItem(SHEETS_KEY)||"";}
+function setSheetsUrl(u){localStorage.setItem(SHEETS_KEY,u);}
+
+// ══════════════════════════════════════════
+// SHEETS
+// ══════════════════════════════════════════
+async function sheetsCall(url,params){try{const r=await fetch(`${url}?${new URLSearchParams(params)}`);const j=await r.json();return j.ok?j.data:null;}catch{return null;}}
+async function sheetsPost(url,body){try{await fetch(url,{method:"POST",body:JSON.stringify(body)});}catch{}}
+const mapStaff=r=>({id:r.id||uid(),name:r.name||"",email:(r.email||"").toLowerCase().trim(),role:r.role||"worker",phone:r.phone||"",active:r.active||"true",password:r.password||"1234"});
+const mapProject=r=>({id:r.id||uid(),projectNumber:r.projectNumber||"",name:r.name||"",producer:r.producer||"",shootDate:r.shootDate||"",offlineScreening:r.offlineScreening||"",onlineScreening:r.onlineScreening||"",deliveryDate:r.deliveryDate||"",status:r.status||"active",progress:Number(r.progress||0),client:r.client||"",description:r.description||"",statusNote:r.statusNote||"",tasks:[],shifts:[],hours:[],quotes:[],plan:{crew:[],milestones:[],notes:""}});
+const mapPassword=r=>({id:r.id||uid(),service:r.label||r.service||"",username:r.username||"",password:r.password||"",description:r.description||r.note||"",category:r.category||"כללי",url:r.url||"",createdAt:r.createdAt||""});
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function dlCSV(rows,fn){const csv=rows.map(r=>r.map(c=>`"${String(c||"").replace(/"/g,'""')}"`).join(",")).join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"}));a.download=fn;a.click();}
+function dlJSON(obj,fn){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:"application/json"}));a.download=fn;a.click();}
+function gcalLink(s,projName,client){
+  const d=(s.date||"").replace(/-/g,"");
+  const ts=(s.timeStart||"09:00").replace(":","");
+  const te=(s.timeEnd||"18:00").replace(":","");
+  const T=encodeURIComponent(`[${projName||"ללא פרויקט"}] ${(s.tasks||[]).join(", ")||""}`);
+  const D=encodeURIComponent(`פרויקט: ${projName||"—"}\nלקוח: ${client||""}${s.note?"\n"+s.note:""}`);
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${T}&dates=${d}T${ts}00/${d}T${te}00&details=${D}`;
+}
+const stColor=(id,sts)=>(sts||DEF_SHIFT_TYPES).find(t=>t.id===id)?.color||"#aaa";
+const stLabel=(id,sts)=>(sts||DEF_SHIFT_TYPES).find(t=>t.id===id)?.label||id;
+
+// ══════════════════════════════════════════
+// SMALL COMPONENTS
+// ══════════════════════════════════════════
+const PBar=({v,color="var(--gold)"})=><div className="pbar"><div className="pfill" style={{width:`${Math.min(v||0,100)}%`,background:color}}/></div>;
+const Lbl=({children,c})=><span className="lbl" style={c?{color:c}:{}}>{children}</span>;
+const Divider=()=><div className="divider"/>;
+const StatusBadge=({s})=>{const c=STATUS_CFG[s]||STATUS_CFG.active;return <span className="tag" style={{color:c.color,background:c.color+"20"}}><span className="pulse" style={{width:6,height:6,borderRadius:"50%",background:c.color,display:"inline-block"}}/>{c.label}</span>;};
+const RoleBadge=({role})=>{const M={admin:{l:"מנהל",c:"#e8c547"},producer:{l:"מפיקה",c:"#6ee7b7"},worker:{l:"עובד",c:"#4fc3f7"}};const r=M[role]||{l:role,c:"#aaa"};return <span className="tag" style={{color:r.c,background:r.c+"20",border:`1px solid ${r.c}40`}}>{r.l}</span>;};
+const Avatar=({name,idx,size=30})=>{const col=aCol(idx||0);return <div style={{width:size,height:size,borderRadius:"50%",background:col+"25",border:`2px solid ${col}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:size*.38,color:col,flexShrink:0}}>{(name||"?")[0]}</div>;};
+
+// Smart Search
+function SmartSearch({projects,onSelect,placeholder}){
+  const [q,setQ]=useState("");const [open,setOpen]=useState(false);const ref=useRef();
+  useEffect(()=>{const h=e=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h);},[]);
+  const res=useMemo(()=>{if(!q.trim())return[];const lq=q.toLowerCase();return projects.filter(p=>(p.name||"").toLowerCase().includes(lq)||(p.projectNumber||"").toString().includes(lq)||(p.client||"").toLowerCase().includes(lq)).slice(0,8);},[q,projects]);
+  return(<div className="srch-wrap" ref={ref} style={{position:"relative",flex:1,maxWidth:380}}>
+    <span className="srch-icon">🔍</span>
+    <input value={q} onChange={e=>{setQ(e.target.value);setOpen(true);}} onFocus={()=>setOpen(true)} placeholder={placeholder||"חיפוש לפי שם, מספר, לקוח..."} style={{paddingRight:34}}/>
+    {open&&res.length>0&&<div className="srch-drop">
+      {res.map(p=><div key={p.id} className="srch-item" onClick={()=>{setQ("");setOpen(false);onSelect(p.id);}}>
+        <span style={{fontWeight:800,color:"var(--gold)",marginLeft:8}}>#{p.projectNumber||"—"}</span>
+        <span style={{fontWeight:700}}>{p.name}</span>
+        <span style={{fontSize:11,color:"var(--muted)",marginRight:8}}> · {p.client}</span>
+        <StatusBadge s={p.status}/>
+      </div>)}
+    </div>}
+  </div>);
+}
+
+// Task Chips — multi-select
+function TaskChips({shiftTypes,selected,onChange}){
+  const sts=shiftTypes||DEF_SHIFT_TYPES;
+  const toggle=id=>{if(selected.includes(id))onChange(selected.filter(x=>x!==id));else onChange([...selected,id]);};
+  return(<div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>
+    {sts.map(t=>{const sel=selected.includes(t.id);return(
+      <div key={t.id} className={`chip${sel?" sel":""}`}
+        style={{color:sel?t.color:"var(--muted2)",borderColor:sel?t.color:"var(--border)",background:sel?t.color+"20":"transparent"}}
+        onClick={()=>toggle(t.id)}>
+        {sel&&"✓ "}{t.label}
+      </div>
+    );})}
+  </div>);
+}
+
+// Project search inside modals
+function ProjSearchSelect({projects,value,onChange}){
+  const [q,setQ]=useState(()=>projects.find(p=>p.id===value)?.name||"");
+  const [open,setOpen]=useState(false);const ref=useRef();
+  useEffect(()=>{const h=e=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h);},[]);
+  const res=useMemo(()=>{if(!q.trim())return projects.filter(p=>p.status==="active").slice(0,8);const lq=q.toLowerCase();return projects.filter(p=>p.status==="active"&&((p.name||"").toLowerCase().includes(lq)||(p.projectNumber||"").toString().includes(lq))).slice(0,8);},[q,projects]);
+  return(<div ref={ref} style={{position:"relative"}}>
+    <div style={{display:"flex",gap:6}}>
+      <input value={q} onChange={e=>{setQ(e.target.value);setOpen(true);if(!e.target.value)onChange("");}} onFocus={()=>setOpen(true)} placeholder="חפש פרויקט..."/>
+      {value&&<button className="btn-ghost btn-sm" onClick={()=>{setQ("");onChange("");}}>✕</button>}
+    </div>
+    {open&&<div className="srch-drop">
+      <div className="srch-item" style={{color:"var(--muted)"}} onClick={()=>{setQ("");onChange("");setOpen(false);}}>— ללא פרויקט —</div>
+      {res.map(p=><div key={p.id} className="srch-item" onClick={()=>{setQ(p.name);onChange(p.id);setOpen(false);}}>
+        <span style={{color:"var(--gold)",fontWeight:800,marginLeft:8}}>#{p.projectNumber||"—"}</span>{p.name}
+        <span style={{fontSize:10,color:"var(--muted)",marginRight:8}}> · {p.client}</span>
+      </div>)}
+    </div>}
+  </div>);
+}
+
+// ══════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════
+function Login({users,logoUrl,onLogin}){
+  const saved=useMemo(()=>{try{return JSON.parse(localStorage.getItem(REMEMBER_KEY)||"null");}catch{return null;}},[]);
+  const [email,setEmail]=useState(saved?.email||"");
+  const [pass,setPass]=useState(saved?.pass||"");
+  const [showPw,setShowPw]=useState(false);
+  const [remember,setRemember]=useState(!!saved);
+  const [err,setErr]=useState("");
+  const [busy,setBusy]=useState(false);
+
+  // כניסה אוטומטית אם "זכור אותי" מופעל
+  useEffect(()=>{
+    if(!saved?.email||!saved?.pass)return;
+    const em=saved.email.toLowerCase();
+    if(em===ADMIN_EMAIL&&saved.pass===ADMIN_PASS){
+      const u=users.find(u=>u.email===em)||{id:"u_admin",name:"אורי",email:em,role:"admin",password:saved.pass,active:"admin"};
+      onLogin(u);return;
+    }
+    const u=users.find(u=>(u.email||"").toLowerCase()===em&&u.password===saved.pass);
+    if(u&&u.active!=="false"&&u.active!=="0")onLogin(u);
+  // eslint-disable-next-line
+  },[]);
+
+  const submit=async()=>{
+    setErr("");setBusy(true);
+    await new Promise(r=>setTimeout(r,250));
+    const em=email.trim().toLowerCase();
+    if(em===ADMIN_EMAIL&&pass===ADMIN_PASS){
+      const u=users.find(u=>u.email===em)||{id:"u_admin",name:"אורי",email:em,role:"admin",password:pass,active:"admin"};
+      if(remember)localStorage.setItem(REMEMBER_KEY,JSON.stringify({email:em,pass}));else localStorage.removeItem(REMEMBER_KEY);
+      onLogin(u);setBusy(false);return;
+    }
+    const u=users.find(u=>(u.email||"").toLowerCase()===em&&u.password===pass);
+    if(!u){setErr("אימייל או סיסמה שגויים");setBusy(false);return;}
+    if(u.active==="false"||u.active==="0"){setErr("משתמש זה אינו פעיל");setBusy(false);return;}
+    if(remember)localStorage.setItem(REMEMBER_KEY,JSON.stringify({email:em,pass}));else localStorage.removeItem(REMEMBER_KEY);
+    onLogin(u);setBusy(false);
+  };
+  return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"var(--bg)"}}>
+    <div className="card fade" style={{width:"min(400px,95vw)",padding:36}}>
+      <div style={{textAlign:"center",marginBottom:28}}>
+        {logoUrl?<img src={logoUrl} id="appLogo" style={{height:56,objectFit:"contain",borderRadius:8,marginBottom:12}} alt="logo"/>:<div style={{fontSize:38,marginBottom:8}}>🎞</div>}
+        <div style={{fontWeight:900,fontSize:24,color:"var(--gold)"}}>PostFlow</div>
+        <div style={{fontSize:12,color:"var(--muted)",marginTop:4}}>ניהול פוסט-פרודקשן</div>
+      </div>
+      <div style={{marginBottom:12}}><Lbl>אימייל</Lbl><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="your@email.com" onKeyDown={e=>e.key==="Enter"&&submit()}/></div>
+      <div style={{marginBottom:14,position:"relative"}}><Lbl>סיסמה</Lbl>
+        <input type={showPw?"text":"password"} value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()} style={{paddingLeft:38}}/>
+        <button onClick={()=>setShowPw(x=>!x)} style={{position:"absolute",left:10,bottom:8,background:"none",border:"none",color:"var(--muted)",fontSize:16,cursor:"pointer",padding:0}}>{showPw?"🙈":"👁"}</button>
+      </div>
+      <label style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:"var(--muted2)",marginBottom:16,cursor:"pointer"}}>
+        <input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}/>זכור אותי
+      </label>
+      {err&&<div style={{color:"var(--red)",fontSize:12,marginBottom:12,padding:"8px 12px",background:"var(--red)15",borderRadius:8}}>⚠ {err}</div>}
+      <button className="btn-gold" style={{width:"100%",padding:12,fontSize:15,opacity:busy?.6:1}} onClick={submit} disabled={busy}>{busy?"מתחבר...":"כניסה →"}</button>
+    </div>
+  </div>);
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+function Dashboard({projects,user,logoUrl,onSelect,onGoto}){
+  const myP=user.role==="worker"?projects.filter(p=>(p.shifts||[]).some(s=>s.person===user.id)||(p.hours||[]).some(h=>h.worker===user.id)):projects;
+  const active=myP.filter(p=>p.status==="active").length;
+  const totalH=myP.reduce((s,p)=>s+(p.hours||[]).reduce((a,h)=>a+h.hours,0),0);
+  const upcoming=myP.filter(p=>p.onlineScreening&&p.onlineScreening>=todayStr()).sort((a,b)=>a.onlineScreening.localeCompare(b.onlineScreening)).slice(0,5);
+  const todayShifts=projects.flatMap(p=>(p.shifts||[]).filter(s=>s.date===todayStr()&&(user.role!=="worker"||s.person===user.id)).map(s=>({...s,projName:p.name})));
+  const NAV=[
+    {id:"calendar",icon:"📅",label:"לוח שבועי",color:"#4fc3f7",roles:["admin","producer","worker"]},
+    {id:"projects",icon:"🎬",label:"פרויקטים",color:"#e8c547",roles:["admin","producer"]},
+    {id:"hours",icon:"⏱",label:"שעות",color:"#6ee7b7",roles:["admin","producer","worker"]},
+    {id:"quotes",icon:"📝",label:"הצעות מחיר",color:"#c084fc",roles:["admin","producer"]},
+    {id:"reports",icon:"📊",label:"דוחות",color:"#fb923c",roles:["admin","producer"]},
+    {id:"vault",icon:"🔐",label:"סיסמאות",color:"#f07070",roles:["admin","producer","worker"]},
+    {id:"clients",icon:"🏢",label:"לקוחות",color:"#60a5fa",roles:["admin","producer"]},
+    {id:"users",icon:"👥",label:"משתמשים",color:"#4fc3f7",roles:["admin"]},
+    {id:"sheets",icon:"☁️",label:"Sheets",color:"#6ee7b7",roles:["admin"]},
+    {id:"backup",icon:"💾",label:"גיבוי",color:"#94a3b8",roles:["admin"]},
+    {id:"settings",icon:"⚙️",label:"הגדרות",color:"#e8c547",roles:["admin"]},
+  ].filter(n=>n.roles.includes(user.role));
+  return(<div className="fade">
+    {logoUrl&&<div style={{marginBottom:20}}><img src={logoUrl} id="appLogo" style={{height:42,objectFit:"contain",borderRadius:6}} alt="logo"/></div>}
+    <div className="section-title">לוח בקרה</div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12,marginBottom:24}}>
+      {[{icon:"🎬",label:"פרויקטים פעילים",val:active,color:"var(--green)"},{icon:"⏱",label:'סה"כ שעות',val:totalH.toFixed(0)+"h",color:"var(--gold)"},{icon:"📽",label:"הקרנות קרובות",val:upcoming.length,color:"var(--red)"},{icon:"✅",label:"הושלמו",val:myP.filter(p=>p.status==="completed").length,color:"var(--blue)"}].map(s=>(
+        <div key={s.label} className="card">
+          <div style={{fontSize:22,marginBottom:6}}>{s.icon}</div>
+          <div style={{fontSize:26,fontWeight:900,color:s.color}}>{s.val}</div>
+          <div style={{fontSize:11,color:"var(--muted)",marginTop:3}}>{s.label}</div>
+        </div>
+      ))}
+    </div>
+    {todayShifts.length>0&&<div style={{marginBottom:20}}>
+      <div style={{fontWeight:700,fontSize:13,color:"var(--muted2)",marginBottom:10}}>📅 היום — {new Date().toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long"})}</div>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+        {todayShifts.map(s=><div key={s.id} className="card2" style={{borderRight:"3px solid var(--gold)",minWidth:150}}>
+          <div style={{fontWeight:700,fontSize:12}}>{s.projName||"ללא פרויקט"}</div>
+          <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{(s.tasks||[]).join(", ")||"—"}</div>
+        </div>)}
+      </div>
+    </div>}
+    {upcoming.length>0&&<div style={{marginBottom:20}}>
+      <div style={{fontWeight:700,fontSize:13,color:"var(--muted2)",marginBottom:10}}>⚡ הקרנות קרובות</div>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+        {upcoming.map(p=><div key={p.id} className="card2" style={{cursor:"pointer",borderRight:"3px solid var(--red)",minWidth:155}} onClick={()=>onSelect(p.id)}>
+          <div style={{fontWeight:700,fontSize:13}}>{p.name}</div>
+          <div style={{fontSize:11,color:"var(--red)",marginTop:4}}>📽 {p.onlineScreening}</div>
+          <div style={{fontSize:11,color:"var(--muted)"}}>{p.client}</div>
+        </div>)}
+      </div>
+    </div>}
+    <div style={{fontWeight:700,fontSize:13,color:"var(--muted2)",marginBottom:10}}>ניווט מהיר</div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(105px,1fr))",gap:10,marginBottom:24}}>
+      {NAV.map(n=><div key={n.id} onClick={()=>onGoto(n.id)}
+        style={{background:"var(--card2)",border:`1px solid ${n.color}28`,borderRadius:12,padding:"12px 8px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:5,transition:"all .18s",textAlign:"center"}}
+        onMouseEnter={e=>{e.currentTarget.style.borderColor=n.color;e.currentTarget.style.background=n.color+"15";e.currentTarget.style.transform="translateY(-2px)";}}
+        onMouseLeave={e=>{e.currentTarget.style.borderColor=n.color+"28";e.currentTarget.style.background="var(--card2)";e.currentTarget.style.transform="none";}}>
+        <span style={{fontSize:20}}>{n.icon}</span>
+        <span style={{fontSize:10,fontWeight:700}}>{n.label}</span>
+      </div>)}
+    </div>
+    <div style={{fontWeight:700,fontSize:13,color:"var(--muted2)",marginBottom:10}}>פרויקטים פעילים</div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:12}}>
+      {myP.filter(p=>p.status==="active").map(p=><div key={p.id} className="proj-card" onClick={()=>onSelect(p.id)}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+          <div>
+            <div style={{fontSize:10,color:"var(--gold)",fontWeight:800}}>#{p.projectNumber||"—"}</div>
+            <div style={{fontWeight:700,fontSize:13}}>{p.name}</div>
+            <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{p.client}</div>
+          </div>
+          <StatusBadge s={p.status}/>
+        </div>
+        <PBar v={p.progress}/>
+        <div style={{display:"flex",gap:10,marginTop:8,fontSize:11,color:"var(--muted)",flexWrap:"wrap"}}>
+          {p.onlineScreening&&<span style={{color:"var(--red)"}}>📽 {p.onlineScreening}</span>}
+          {p.producer&&<span>👤 {p.producer}</span>}
+        </div>
+      </div>)}
+    </div>
+  </div>);
+}
+
+// ══════════════════════════════════════════
+// WEEKLY CALENDAR — day-based, task chips, edit-in-place, Fri/Sat allowed
+// ══════════════════════════════════════════
+function WeeklyCalendar({projects,user,users,shiftTypes,onSaveShift,onDeleteShift}){
+  const [weekStart,setWeekStart]=useState(()=>{const d=new Date();d.setDate(d.getDate()-d.getDay());return d;});
+  const [editModal,setEditModal]=useState(null);
+  const [detailModal,setDetailModal]=useState(null);
+  const canEdit=user.role==="admin"||user.role==="producer";
+  const canSeeAll=user.role==="admin"||user.role==="producer";
+  const sts=shiftTypes||DEF_SHIFT_TYPES;
+  const allDays=Array.from({length:14},(_,i)=>{const d=new Date(weekStart);d.setDate(d.getDate()+i);return d;});
+  const week1=allDays.slice(0,7),week2=allDays.slice(7,14);
+
+  // Build event map: date → [{...shift, projName, client}]
+  const evMap=useMemo(()=>{
+    const m={};
+    projects.forEach(proj=>(proj.shifts||[]).forEach(s=>{
+      if(!m[s.date])m[s.date]=[];
+      const show=canSeeAll||s.person===user.id;
+      if(show)m[s.date].push({...s,projName:proj.name,client:proj.client,projId:proj.id});
+    }));
+    return m;
+  },[projects,canSeeAll,user.id]);
+
+  const openNew=date=>{
+    if(!canEdit)return;
+    setEditModal({mode:"new",shift:{id:null,date,tasks:[],person:"",projId:"",note:"",timeStart:"09:00",timeEnd:"18:00"}});
+  };
+  const openEdit=ev=>{
+    if(!canEdit){setDetailModal(ev);return;}
+    setEditModal({mode:"edit",shift:{...ev,tasks:ev.tasks||[]}});
+  };
+
+  const renderWeek=(days,label)=>(
+    <div style={{marginBottom:28}}>
+      <div style={{fontSize:12,fontWeight:700,color:"var(--muted2)",marginBottom:8,padding:"4px 10px",background:"var(--card2)",borderRadius:8,display:"inline-block"}}>
+        {label} · {fmtDate(days[0])} – {fmtDate(days[6])}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6,minWidth:560}}>
+        {days.map(d=>{
+          const key=isoDate(d);const isToday=key===todayStr();const wknd=isWknd(d);
+          const evs=evMap[key]||[];
+          // Group by worker
+          const byWorker={};
+          evs.forEach(ev=>{const wid=ev.person||"_";if(!byWorker[wid])byWorker[wid]=[];byWorker[wid].push(ev);});
+          return(<div key={key}
+            className={`cal-day${isToday?" today":""}${wknd?" weekend":""}`}
+            onClick={()=>!wknd&&openNew(key)}>
+            {/* Header */}
+            <div style={{textAlign:"center",marginBottom:6}}>
+              <div style={{fontSize:10,fontWeight:700,color:isToday?"var(--gold)":wknd?"var(--red)":"var(--muted2)"}}>{HEB_DAYS[d.getDay()]}</div>
+              <div style={{fontSize:13,fontWeight:800,color:isToday?"var(--gold)":wknd?"var(--muted)":"var(--text)"}}>{fmtDate(d)}</div>
+              {wknd&&<div style={{fontSize:8,color:"var(--red)",opacity:.6}}>שישי/שבת</div>}
+            </div>
+            {/* Events grouped by worker */}
+            {Object.entries(byWorker).map(([wid,wevs])=>{
+              const workerObj=users.find(u=>u.id===wid);
+              const wColor=aCol(users.indexOf(workerObj)||0);
+              return(<div key={wid} style={{marginBottom:4}} onClick={e=>e.stopPropagation()}>
+                {canSeeAll&&workerObj&&(
+                  <div style={{fontSize:8,color:wColor,fontWeight:700,marginBottom:2,display:"flex",alignItems:"center",gap:2}}>
+                    <span style={{width:8,height:8,borderRadius:"50%",background:wColor,display:"inline-block"}}/>
+                    {workerObj.name.split(" ")[0]}
+                  </div>
+                )}
+                {wevs.map(ev=>{
+                  const tasks=ev.tasks||[];const firstCol=stColor(tasks[0]||"other",sts);
+                  return(<div key={ev.id} className="cal-ev"
+                    style={{background:firstCol+"25",color:firstCol,border:`1px solid ${firstCol}40`}}
+                    onClick={e=>{e.stopPropagation();openEdit(ev);}}>
+                    {ev.projName&&<div style={{fontSize:8,opacity:.65,fontWeight:400}}>{ev.projName.slice(0,14)}</div>}
+                    <div>{tasks.map(t=>stLabel(t,sts)).join(", ").slice(0,20)||"—"}</div>
+                    {ev.timeStart&&<div style={{fontSize:8,opacity:.55,fontWeight:400}}>{ev.timeStart}–{ev.timeEnd}</div>}
+                  </div>);
+                })}
+              </div>);
+            })}
+            {canEdit&&!wknd&&evs.length===0&&<div style={{fontSize:9,color:"var(--muted)",opacity:.3,textAlign:"center",marginTop:10}}>+ לחץ</div>}
+          </div>);
+        })}
+      </div>
+    </div>
+  );
+
+  return(<div className="fade">
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
+      <div className="section-title" style={{marginBottom:0}}>לוח שבועי</div>
+      <div style={{display:"flex",gap:8}}>
+        <button className="btn-ghost btn-sm" onClick={()=>{const d=new Date();d.setDate(d.getDate()-d.getDay());setWeekStart(d);}}>היום</button>
+        <button className="btn-ghost btn-sm" onClick={()=>{const d=new Date(weekStart);d.setDate(d.getDate()-14);setWeekStart(d);}}>← קודם</button>
+        <button className="btn-ghost btn-sm" onClick={()=>{const d=new Date(weekStart);d.setDate(d.getDate()+14);setWeekStart(d);}}>הבא →</button>
+      </div>
+    </div>
+    <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+      {sts.map(t=><span key={t.id} className="tag" style={{color:t.color,background:t.color+"20",border:`1px solid ${t.color}30`}}>{t.label}</span>)}
+      <span className="tag" style={{background:"var(--red)15",color:"var(--red)",border:"1px solid var(--red)30"}}>🟥 שישי/שבת</span>
+    </div>
+    {renderWeek(week1,"שבוע ראשון")}
+    {renderWeek(week2,"שבוע שני")}
+
+    {editModal&&<ShiftModal mode={editModal.mode} initialShift={editModal.shift} projects={projects} users={users} shiftTypes={sts}
+      onSave={s=>{onSaveShift(s);setEditModal(null);}}
+      onDelete={editModal.mode==="edit"?s=>{onDeleteShift(s);setEditModal(null);}:null}
+      onClose={()=>setEditModal(null)}/>}
+
+    {detailModal&&<div className="modal-bg" onClick={()=>setDetailModal(null)}>
+      <div className="modal" style={{maxWidth:400}} onClick={e=>e.stopPropagation()}>
+        <div style={{fontWeight:800,fontSize:18,marginBottom:14}}>פרטי אירוע</div>
+        <div style={{lineHeight:2,fontSize:13}}>
+          <div>📁 {detailModal.projName||"ללא פרויקט"}</div>
+          <div>🎬 {(detailModal.tasks||[]).map(t=>stLabel(t,sts)).join(", ")||"—"}</div>
+          <div>👤 {users.find(u=>u.id===detailModal.person)?.name||"—"}</div>
+          <div>📅 {detailModal.date} · {detailModal.timeStart}–{detailModal.timeEnd}</div>
+          {detailModal.note&&<div>📝 {detailModal.note}</div>}
+        </div>
+        <div style={{marginTop:16,display:"flex",gap:10}}>
+          <a href={gcalLink(detailModal,detailModal.projName,detailModal.client)} target="_blank" rel="noreferrer">
+            <button className="btn-blue btn-sm">📅 Google Calendar</button>
+          </a>
+          <button className="btn-ghost btn-sm" onClick={()=>setDetailModal(null)}>סגור</button>
+        </div>
+      </div>
+    </div>}
+  </div>);
+}
+
+// Shift modal — new or edit
+function ShiftModal({mode,initialShift,projects,users,shiftTypes,onSave,onDelete,onClose}){
+  const [s,setS]=useState({...initialShift,tasks:initialShift.tasks||[]});
+  const upd=k=>e=>setS(x=>({...x,[k]:e.target.value}));
+  const sts=shiftTypes||DEF_SHIFT_TYPES;
+  const proj=projects.find(p=>p.id===s.projId);
+  return(<div className="modal-bg" onClick={onClose}>
+    <div className="modal" style={{maxWidth:560}} onClick={e=>e.stopPropagation()}>
+      <div style={{fontWeight:800,fontSize:18,marginBottom:4}}>{mode==="new"?"+ הוספת אירוע":"✏️ עריכת אירוע"}</div>
+      <div style={{fontSize:12,color:"var(--muted)",marginBottom:18}}>📅 {s.date}</div>
+      <div style={{marginBottom:12}}><Lbl>פרויקט (אופציונלי)</Lbl><ProjSearchSelect projects={projects} value={s.projId} onChange={v=>setS(x=>({...x,projId:v}))}/></div>
+      <div className="frow">
+        <div className="fcol"><Lbl>עובד</Lbl>
+          <select value={s.person} onChange={upd("person")}>
+            <option value="">— בחר עובד —</option>
+            {users.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
+          </select>
+        </div>
+        <div className="fcol"><Lbl>משעה</Lbl><input type="time" value={s.timeStart||"09:00"} onChange={upd("timeStart")}/></div>
+        <div className="fcol"><Lbl>עד שעה</Lbl><input type="time" value={s.timeEnd||"18:00"} onChange={upd("timeEnd")}/></div>
+      </div>
+      <div style={{marginBottom:12}}><Lbl>משימות</Lbl><TaskChips shiftTypes={sts} selected={s.tasks} onChange={tasks=>setS(x=>({...x,tasks}))}/></div>
+      <div style={{marginBottom:16}}><Lbl>הערה</Lbl><input value={s.note||""} onChange={upd("note")} placeholder="הערה חופשית..."/></div>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+        <button className="btn-gold" onClick={()=>{if(!s.date)return;onSave({...s,id:s.id||uid()});}}>💾 שמור</button>
+        {onDelete&&<button className="btn-red" onClick={()=>onDelete(s)}>🗑 מחק</button>}
+        <a href={gcalLink(s,proj?.name||"",proj?.client||"")} target="_blank" rel="noreferrer">
+          <button className="btn-blue btn-sm">📅 Google Calendar</button>
+        </a>
+        <button className="btn-ghost" onClick={onClose}>ביטול</button>
+      </div>
+    </div>
+  </div>);
+}
+
+
+// ══════════════════════════════════════════
+// PROJECTS LIST
+// ══════════════════════════════════════════
+function ProjectsList({projects,user,onSelect,onNew}){
+  const [search,setSearch]=useState("");
+  const [statusFilter,setStatusFilter]=useState("active");
+  const filtered=projects.filter(p=>(statusFilter==="all"||p.status===statusFilter)&&(!search||(p.name||"").toLowerCase().includes(search.toLowerCase())||(p.projectNumber||"").toString().includes(search)||(p.client||"").toLowerCase().includes(search.toLowerCase())||(p.producer||"").toLowerCase().includes(search.toLowerCase())));
+  return(<div className="fade">
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:10}}>
+      <div className="section-title" style={{marginBottom:0}}>פרויקטים</div>
+      {user.role==="admin"&&<button className="btn-gold btn-sm" onClick={onNew}>+ פרויקט חדש</button>}
+    </div>
+    <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
+      <SmartSearch projects={projects} onSelect={onSelect}/>
+      <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} style={{width:"auto",fontSize:12}}>
+        <option value="all">כל הסטטוסים</option>
+        {Object.entries(STATUS_CFG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+      </select>
+    </div>
+    {filtered.length===0&&<div style={{color:"var(--muted)",padding:32,textAlign:"center"}}>לא נמצאו פרויקטים</div>}
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      {filtered.map(p=><div key={p.id} className="proj-card" onClick={()=>onSelect(p.id)}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,flex:1,minWidth:0}}>
+            <div style={{fontWeight:900,fontSize:11,color:"var(--gold)",background:"var(--gold)18",border:"1px solid var(--gold)40",borderRadius:6,padding:"2px 8px",flexShrink:0}}>#{p.projectNumber||"—"}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:700,fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
+              <div style={{fontSize:11,color:"var(--muted)",marginTop:2,display:"flex",gap:8,flexWrap:"wrap"}}>
+                {p.client&&<span>🏢 {p.client}</span>}
+                {p.producer&&<span style={{color:"var(--green)"}}>👤 {p.producer}</span>}
+                {p.onlineScreening&&<span style={{color:"var(--red)"}}>📽 {p.onlineScreening}</span>}
+              </div>
+            </div>
+          </div>
+          <StatusBadge s={p.status}/>
+        </div>
+        {p.progress>0&&<div style={{marginTop:10}}><PBar v={p.progress}/></div>}
+      </div>)}
+    </div>
+  </div>);
+}
+
+// ══════════════════════════════════════════
+// HOURS LOG — monthly view by worker or project
+// ══════════════════════════════════════════
+function HoursLog({projects,user,users,onChange,sheetsUrl}){
+  const isAdmin=user.role==="admin",isProd=user.role==="producer";
+  const [form,setForm]=useState({projId:"",worker:user.id,date:todayStr(),timeIn:"09:00",timeOut:"18:00",note:""});
+  const f=k=>e=>setForm(p=>({...p,[k]:e.target.value}));
+  const [viewBy,setViewBy]=useState("worker");
+  const [month,setMonth]=useState(()=>new Date().toISOString().slice(0,7));
+  const calcH=()=>{if(form.timeIn&&form.timeOut){const[h1,m1]=form.timeIn.split(":").map(Number);const[h2,m2]=form.timeOut.split(":").map(Number);return Math.max(0,((h2*60+m2)-(h1*60+m1))/60).toFixed(1);}return"0";};
+  const submit=()=>{
+    if(!form.projId)return;const proj=projects.find(p=>p.id===form.projId);if(!proj)return;
+    const h=parseFloat(calcH())||0;const wName=users.find(u=>u.id===form.worker)?.name||form.worker;
+    const entry={id:uid(),worker:form.worker,date:form.date,timeIn:form.timeIn,timeOut:form.timeOut,hours:h,note:form.note,correction:false};
+    onChange({...proj,hours:[...(proj.hours||[]),entry]});
+    if(sheetsUrl){sheetsPost(sheetsUrl,{action:"appendRow",sheet:"hours_report",row:{id:entry.id,workerName:wName,date:form.date,timeIn:form.timeIn,timeOut:form.timeOut,totalHours:h,note:form.note}}).catch(()=>{});sheetsPost(sheetsUrl,{action:"appendRow",sheet:"project_hours",row:{id:entry.id,workerName:wName,date:form.date,projectName:proj.name,hours:h,note:form.note}}).catch(()=>{});}
+    setForm(p=>({...p,projId:"",note:""}));
+  };
+  const allHours=[];projects.forEach(p=>(p.hours||[]).filter(h=>h.date&&h.date.startsWith(month)&&(isAdmin||isProd||h.worker===user.id)).forEach(h=>{const u=users.find(u=>u.id===h.worker);allHours.push({...h,projName:p.name,projId:p.id,workerName:u?.name||h.worker});}));
+  allHours.sort((a,b)=>b.date.localeCompare(a.date));
+  const grouped=useMemo(()=>{
+    if(viewBy==="worker"){const m={};allHours.forEach(h=>{if(!m[h.worker])m[h.worker]={name:h.workerName,items:[]};m[h.worker].items.push(h);});return Object.values(m);}
+    else{const m={};allHours.forEach(h=>{if(!m[h.projId])m[h.projId]={name:h.projName,items:[]};m[h.projId].items.push(h);});return Object.values(m);}
+  },[allHours,viewBy]);
+  return(<div className="fade">
+    <div className="section-title">⏱ דיווח שעות</div>
+    <div className="card" style={{marginBottom:20}}>
+      <div style={{fontWeight:700,marginBottom:14}}>+ הוספת דיווח</div>
+      <div className="frow">
+        <div className="fcol"><Lbl>פרויקט</Lbl><select value={form.projId} onChange={f("projId")}><option value="">— בחר —</option>{projects.filter(p=>p.status==="active").map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+        {(isAdmin||isProd)&&<div className="fcol"><Lbl>עובד</Lbl><select value={form.worker} onChange={f("worker")}>{users.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select></div>}
+        <div className="fcol"><Lbl>תאריך</Lbl><input type="date" value={form.date} onChange={f("date")}/></div>
+      </div>
+      <div className="frow">
+        <div className="fcol"><Lbl>כניסה</Lbl><input type="time" value={form.timeIn} onChange={f("timeIn")}/></div>
+        <div className="fcol"><Lbl>יציאה</Lbl><input type="time" value={form.timeOut} onChange={f("timeOut")}/></div>
+        <div className="fcol" style={{maxWidth:90}}><Lbl>סה"כ</Lbl><div style={{fontWeight:900,color:"var(--gold)",fontSize:20,paddingTop:6}}>{calcH()}h</div></div>
+      </div>
+      <div style={{marginBottom:12}}><Lbl>הערה</Lbl><input value={form.note} onChange={f("note")} placeholder="תיאור..."/></div>
+      <button className="btn-gold" onClick={submit}>+ הוסף</button>
+    </div>
+    <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:16,flexWrap:"wrap"}}>
+      <input type="month" value={month} onChange={e=>setMonth(e.target.value)} style={{width:"auto"}}/>
+      <button className={`btn-sm ${viewBy==="worker"?"btn-gold":"btn-ghost"}`} onClick={()=>setViewBy("worker")}>👤 לפי עובד</button>
+      <button className={`btn-sm ${viewBy==="project"?"btn-gold":"btn-ghost"}`} onClick={()=>setViewBy("project")}>🎬 לפי פרויקט</button>
+      {(isAdmin||isProd)&&<button className="btn-green btn-sm" onClick={()=>{const rows=[["עובד","פרויקט","תאריך","כניסה","יציאה","שעות","הערה"]];allHours.forEach(h=>rows.push([h.workerName,h.projName,h.date,h.timeIn||"",h.timeOut||"",h.hours.toFixed(1),h.note||""]));dlCSV(rows,`שעות_${month}.csv`);}}>📤 ייצוא CSV</button>}
+    </div>
+    <div style={{marginBottom:14,color:"var(--muted2)",fontSize:13}}>חודש {month} · סה"כ: <span style={{color:"var(--gold)",fontWeight:800}}>{allHours.reduce((s,h)=>s+h.hours,0).toFixed(1)}h</span></div>
+    {grouped.map(g=><div key={g.name} className="card" style={{marginBottom:14}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
+        <div style={{fontWeight:700,fontSize:15}}>{g.name}</div>
+        <div style={{fontWeight:900,color:"var(--gold)",fontSize:18}}>{g.items.reduce((s,h)=>s+h.hours,0).toFixed(1)}h</div>
+      </div>
+      {g.items.map(h=><div key={h.id} style={{display:"flex",gap:8,justifyContent:"space-between",fontSize:12,color:"var(--muted)",padding:"5px 0",borderBottom:"1px solid var(--border)",flexWrap:"wrap"}}>
+        <span style={{minWidth:80}}>{h.date}</span>
+        <span style={{flex:1,minWidth:80}}>{viewBy==="worker"?h.projName:h.workerName}</span>
+        <span>{h.timeIn&&h.timeOut?`${h.timeIn}–${h.timeOut}`:""}</span>
+        <span style={{color:h.correction?"var(--orange)":"var(--text)",fontWeight:700}}>{h.correction?"[תיקון]":h.hours.toFixed(1)+"h"}</span>
+        <span style={{opacity:.6,maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.note}</span>
+      </div>)}
+    </div>)}
+    {grouped.length===0&&<div style={{color:"var(--muted)",textAlign:"center",padding:32}}>אין דיווחים לחודש זה</div>}
+  </div>);
+}
+
+// ══════════════════════════════════════════
+// PROJECT DETAIL
+// ══════════════════════════════════════════
+function ProjectDetail({project,user,users,shiftTypes,onChange,onBack}){
+  const [tab,setTab]=useState("overview");
+  const isAdmin=user.role==="admin",canEdit=user.role==="admin"||user.role==="producer";
+  const sts=shiftTypes||DEF_SHIFT_TYPES;
+  const wName=id=>users.find(u=>u.id===id)?.name||id;
+
+  const [nt,setNt]=useState({title:"",type:"editing"});
+  const addTask=()=>{if(!nt.title.trim())return;onChange({...project,tasks:[...(project.tasks||[]),{id:uid(),title:nt.title,type:nt.type,done:false}]});setNt(p=>({...p,title:""}));};
+
+  const [ns,setNs]=useState({date:"",tasks:[],person:"",timeStart:"09:00",timeEnd:"18:00",note:""});
+  const addShift=()=>{if(!ns.date)return;onChange({...project,shifts:[...(project.shifts||[]),{id:uid(),...ns}]});setNs(p=>({...p,date:"",note:"",tasks:[]}));};
+
+  const [nh,setNh]=useState({worker:user.id,date:todayStr(),timeIn:"09:00",timeOut:"18:00",note:""});
+  const addHour=()=>{const[h1,m1]=nh.timeIn.split(":").map(Number);const[h2,m2]=nh.timeOut.split(":").map(Number);const h=Math.max(0,((h2*60+m2)-(h1*60+m1))/60);onChange({...project,hours:[...(project.hours||[]),{id:uid(),...nh,hours:h,correction:false}]});setNh(p=>({...p,note:""}));};
+
+  const done=(project.tasks||[]).filter(t=>t.done).length;
+  const taskPct=(project.tasks||[]).length?pct(done,(project.tasks||[]).length):0;
+  const TABS=[{id:"overview",label:"סקירה"},...(canEdit?[{id:"tasks",label:"משימות"},{id:"schedule",label:"לוז"}]:[]),{id:"hours",label:"שעות"},...(canEdit?[{id:"planning",label:"תכנון"}]:[]),...(isAdmin?[{id:"budget",label:"תקציב"}]:[])];
+
+  return(<div className="fade">
+    <button className="btn-ghost btn-sm" style={{marginBottom:14}} onClick={onBack}>← חזרה</button>
+    <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:10,marginBottom:14}}>
+      <div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontWeight:800,fontSize:11,color:"var(--gold)",background:"var(--gold)18",border:"1px solid var(--gold)40",borderRadius:6,padding:"2px 8px"}}>#{project.projectNumber||"—"}</span>
+          <span style={{fontSize:22,fontWeight:900}}>{project.name}</span>
+        </div>
+        <div style={{fontSize:12,color:"var(--muted)",marginTop:4}}>{project.client}{project.producer?` · 👤 ${project.producer}`:""}</div>
+      </div>
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        <StatusBadge s={project.status}/>
+        {canEdit&&<select value={project.status} onChange={e=>onChange({...project,status:e.target.value})} style={{width:"auto",fontSize:12}}>{Object.entries(STATUS_CFG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}</select>}
+      </div>
+    </div>
+    <div className="card2" style={{marginBottom:16,borderRight:"3px solid var(--blue)"}}>
+      <div style={{fontSize:11,color:"var(--blue)",fontWeight:700,marginBottom:5}}>סטטוס עדכני</div>
+      {canEdit?<textarea value={project.statusNote||""} onChange={e=>onChange({...project,statusNote:e.target.value})} placeholder="מה הסטטוס הנוכחי?" style={{background:"transparent",border:"none",padding:0,minHeight:40,fontSize:13,width:"100%"}}/>:<div style={{fontSize:13}}>{project.statusNote||"—"}</div>}
+    </div>
+    <div style={{display:"flex",gap:0,marginBottom:20,borderBottom:"1px solid var(--border)",overflowX:"auto"}}>
+      {TABS.map(t=><button key={t.id} className={`tab-btn${tab===t.id?" active":""}`} onClick={()=>setTab(t.id)}>{t.label}</button>)}
+    </div>
+
+    {tab==="overview"&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:14}}>
+      <div className="card"><Lbl>התקדמות</Lbl><div style={{fontSize:34,fontWeight:900,color:"var(--gold)"}}>{project.progress}%</div><PBar v={project.progress}/>{canEdit&&<input type="range" min={0} max={100} value={project.progress} onChange={e=>onChange({...project,progress:+e.target.value})} style={{width:"100%",marginTop:8}}/>}</div>
+      <div className="card"><Lbl>משימות</Lbl><div style={{fontSize:34,fontWeight:900,color:"var(--blue)"}}>{done}/{(project.tasks||[]).length}</div><PBar v={taskPct} color="var(--blue)"/></div>
+      <div className="card"><Lbl>שעות עבודה</Lbl><div style={{fontSize:34,fontWeight:900,color:"var(--gold)"}}>{(project.hours||[]).reduce((s,h)=>s+h.hours,0).toFixed(1)}h</div></div>
+      <div className="card"><Lbl>תאריכים</Lbl>
+        {[{l:"📷 צילום",v:project.shootDate},{l:"🎬 אופליין",v:project.offlineScreening},{l:"📽 אונליין",v:project.onlineScreening},{l:"📦 מסירה",v:project.deliveryDate}].filter(x=>x.v).map(x=><div key={x.l} style={{fontSize:12,marginBottom:4}}><span style={{color:"var(--muted)"}}>{x.l}:</span> <b style={{color:"var(--red)"}}>{x.v}</b></div>)}
+        {canEdit&&<div style={{marginTop:8}}><Lbl>הקרנת אונליין</Lbl><input type="date" value={project.onlineScreening||""} onChange={e=>onChange({...project,onlineScreening:e.target.value})}/></div>}
+      </div>
+    </div>}
+
+    {tab==="tasks"&&<div>
+      <div className="frow">
+        <div className="fcol"><input placeholder="שם משימה" value={nt.title} onChange={e=>setNt(p=>({...p,title:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addTask()}/></div>
+        <div className="fcol" style={{maxWidth:160}}><select value={nt.type} onChange={e=>setNt(p=>({...p,type:e.target.value}))}>{sts.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}</select></div>
+        <button className="btn-gold btn-sm" onClick={addTask}>+ הוסף</button>
+      </div>
+      {(project.tasks||[]).map(t=>{const col=stColor(t.type,sts);return(<div key={t.id} style={{display:"flex",gap:12,alignItems:"center",padding:"10px 0",borderBottom:"1px solid var(--border)"}}>
+        <div style={{width:20,height:20,borderRadius:6,background:t.done?"var(--green)":"transparent",border:`2px solid ${t.done?"var(--green)":"var(--border2)"}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all .2s",flexShrink:0}} onClick={()=>onChange({...project,tasks:(project.tasks||[]).map(x=>x.id===t.id?{...x,done:!x.done}:x)})}>
+          {t.done&&<span style={{color:"#07090f",fontSize:11,fontWeight:900}}>✓</span>}
+        </div>
+        <div style={{flex:1,fontWeight:600,textDecoration:t.done?"line-through":"none",color:t.done?"var(--muted)":"var(--text)"}}>{t.title}</div>
+        <span className="tag" style={{background:col+"20",color:col}}>{stLabel(t.type,sts)}</span>
+        <button className="btn-red" style={{fontSize:10,padding:"3px 8px"}} onClick={()=>onChange({...project,tasks:(project.tasks||[]).filter(x=>x.id!==t.id)})}>✕</button>
+      </div>);})}
+    </div>}
+
+    {tab==="schedule"&&<div>
+      <div className="card" style={{marginBottom:16}}>
+        <div style={{fontWeight:700,marginBottom:12}}>+ הוספת משמרת</div>
+        <div className="frow">
+          <div className="fcol"><Lbl>תאריך</Lbl><input type="date" value={ns.date} onChange={e=>setNs(x=>({...x,date:e.target.value}))}/></div>
+          <div className="fcol"><Lbl>עובד</Lbl><select value={ns.person} onChange={e=>setNs(x=>({...x,person:e.target.value}))}><option value="">— בחר —</option>{users.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select></div>
+          <div className="fcol"><Lbl>משעה</Lbl><input type="time" value={ns.timeStart} onChange={e=>setNs(x=>({...x,timeStart:e.target.value}))}/></div>
+          <div className="fcol"><Lbl>עד שעה</Lbl><input type="time" value={ns.timeEnd} onChange={e=>setNs(x=>({...x,timeEnd:e.target.value}))}/></div>
+        </div>
+        <div style={{marginBottom:10}}><Lbl>משימות</Lbl><TaskChips shiftTypes={sts} selected={ns.tasks} onChange={tasks=>setNs(x=>({...x,tasks}))}/></div>
+        <div style={{marginBottom:12}}><Lbl>הערה</Lbl><input value={ns.note} onChange={e=>setNs(x=>({...x,note:e.target.value}))}/></div>
+        <button className="btn-gold btn-sm" onClick={addShift}>+ הוסף</button>
+      </div>
+      {(project.shifts||[]).sort((a,b)=>a.date.localeCompare(b.date)).map(s=>{const tasks=s.tasks||[];const firstCol=stColor(tasks[0]||"other",sts);return(<div key={s.id} className="card2" style={{marginBottom:8,borderRight:`3px solid ${firstCol}`}}>
+        <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+          <div>
+            <div style={{fontWeight:700,fontSize:13}}>{s.date} · {s.timeStart}–{s.timeEnd}</div>
+            <div style={{fontSize:12,color:"var(--muted)",marginTop:3}}>
+              {tasks.map(t=><span key={t} className="tag" style={{background:stColor(t,sts)+"20",color:stColor(t,sts),marginLeft:4}}>{stLabel(t,sts)}</span>)}
+              {s.person&&<span style={{marginRight:6}}>{wName(s.person)}</span>}
+              {s.note&&<span style={{opacity:.7}}>· {s.note}</span>}
+            </div>
+          </div>
+          <div style={{display:"flex",gap:6}}>
+            <a href={gcalLink(s,project.name,project.client)} target="_blank" rel="noreferrer"><button className="btn-blue btn-sm">📅</button></a>
+            <button className="btn-red" onClick={()=>onChange({...project,shifts:(project.shifts||[]).filter(x=>x.id!==s.id)})}>הסר</button>
+          </div>
+        </div>
+      </div>);})}
+    </div>}
+
+    {tab==="hours"&&<div>
+      {canEdit&&<div className="card" style={{marginBottom:16}}>
+        <div style={{fontWeight:700,marginBottom:12}}>הוספת שעות</div>
+        <div className="frow">
+          {isAdmin&&<div className="fcol"><Lbl>עובד</Lbl><select value={nh.worker} onChange={e=>setNh(x=>({...x,worker:e.target.value}))}>{users.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select></div>}
+          <div className="fcol"><Lbl>תאריך</Lbl><input type="date" value={nh.date} onChange={e=>setNh(x=>({...x,date:e.target.value}))}/></div>
+          <div className="fcol"><Lbl>כניסה</Lbl><input type="time" value={nh.timeIn} onChange={e=>setNh(x=>({...x,timeIn:e.target.value}))}/></div>
+          <div className="fcol"><Lbl>יציאה</Lbl><input type="time" value={nh.timeOut} onChange={e=>setNh(x=>({...x,timeOut:e.target.value}))}/></div>
+        </div>
+        <div style={{marginBottom:12}}><Lbl>הערה</Lbl><input value={nh.note} onChange={e=>setNh(x=>({...x,note:e.target.value}))}/></div>
+        <button className="btn-gold btn-sm" onClick={addHour}>+ הוסף</button>
+      </div>}
+      {users.map(u=>{const wh=(project.hours||[]).filter(h=>h.worker===u.id);if(!wh.length)return null;return(<div key={u.id} className="card" style={{marginBottom:12}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><div style={{fontWeight:700}}>{u.name}</div><div style={{fontWeight:900,color:"var(--gold)",fontSize:18}}>{wh.reduce((s,h)=>s+h.hours,0).toFixed(1)}h</div></div>
+        {wh.sort((a,b)=>b.date.localeCompare(a.date)).map(h=><div key={h.id} style={{display:"flex",gap:8,justifyContent:"space-between",fontSize:12,color:"var(--muted)",padding:"5px 0",borderBottom:"1px solid var(--border)"}}>
+          <span>{h.date}</span><span>{h.timeIn&&h.timeOut?`${h.timeIn}–${h.timeOut}`:""}</span>
+          <span style={{color:h.correction?"var(--orange)":"var(--text)",fontWeight:700}}>{h.correction?"[תיקון]":h.hours.toFixed(1)+"h"}</span>
+          <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.note}</span>
+        </div>)}
+      </div>);})}
+    </div>}
+
+    {tab==="planning"&&<ProjectPlanning project={project} users={users} onChange={onChange} canEdit={canEdit}/>}
+
+    {tab==="budget"&&isAdmin&&<div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+        <div className="card"><Lbl>תקציב מתוכנן</Lbl><div style={{fontSize:30,fontWeight:900,color:"var(--blue)"}}>{fmtMoney(project.budgetPlanned)}</div><div style={{marginTop:10}}><Lbl>עדכון</Lbl><input type="number" value={project.budgetPlanned||0} onChange={e=>onChange({...project,budgetPlanned:+e.target.value})}/></div></div>
+        <div className="card"><Lbl>תקציב בפועל</Lbl><div style={{fontSize:30,fontWeight:900,color:pct(project.budgetActual,project.budgetPlanned)>80?"var(--red)":"var(--green)"}}>{fmtMoney(project.budgetActual)}</div><div style={{marginTop:10}}><Lbl>עדכון</Lbl><input type="number" value={project.budgetActual||0} onChange={e=>onChange({...project,budgetActual:+e.target.value})}/></div></div>
+      </div>
+      <div className="card"><Lbl>ניצול</Lbl><div style={{fontSize:26,fontWeight:900,color:"var(--gold)",marginBottom:8}}>{pct(project.budgetActual,project.budgetPlanned)}%</div><PBar v={pct(project.budgetActual,project.budgetPlanned)} color={pct(project.budgetActual,project.budgetPlanned)>80?"var(--red)":"var(--green)"}/></div>
+    </div>}
+  </div>);
+}
+
+function ProjectPlanning({project,users,onChange,canEdit}){
+  const plan=project.plan||{crew:[],milestones:[],notes:""};
+  const upd=p=>onChange({...project,plan:{...plan,...p}});
+  const [nc,setNc]=useState({userId:"",role:""});
+  const [nm,setNm]=useState({title:"",date:"",done:false});
+  return(<div>
+    <div className="card" style={{marginBottom:14}}>
+      <div style={{fontWeight:700,marginBottom:12}}>📅 תאריכי מפתח</div>
+      <div className="frow">
+        {[["shootDate","צילום"],["offlineScreening","אופליין"],["onlineScreening","אונליין"],["deliveryDate","מסירה"]].map(([k,l])=><div key={k} className="fcol"><Lbl>{l}</Lbl><input type="date" value={project[k]||""} disabled={!canEdit} onChange={e=>onChange({...project,[k]:e.target.value})}/></div>)}
+      </div>
+    </div>
+    <div className="card" style={{marginBottom:14}}>
+      <div style={{fontWeight:700,marginBottom:12}}>👥 צוות</div>
+      {canEdit&&<div className="frow">
+        <div className="fcol"><select value={nc.userId} onChange={e=>setNc(x=>({...x,userId:e.target.value}))}><option value="">— בחר עובד —</option>{users.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select></div>
+        <div className="fcol"><input placeholder="תפקיד" value={nc.role} onChange={e=>setNc(x=>({...x,role:e.target.value}))}/></div>
+        <button className="btn-gold btn-sm" onClick={()=>{if(!nc.userId)return;upd({crew:[...(plan.crew||[]),{id:uid(),...nc}]});setNc({userId:"",role:""});}}>+ הוסף</button>
+      </div>}
+      {(plan.crew||[]).map(c=>{const u=users.find(u=>u.id===c.userId);return(<div key={c.id} className="card2" style={{marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{fontWeight:700}}>{u?.name||c.userId} <span style={{color:"var(--muted)",fontWeight:400,fontSize:12}}>· {c.role}</span></div>
+        {canEdit&&<button className="btn-red" onClick={()=>upd({crew:(plan.crew||[]).filter(x=>x.id!==c.id)})}>הסר</button>}
+      </div>);})}
+    </div>
+    <div className="card" style={{marginBottom:14}}>
+      <div style={{fontWeight:700,marginBottom:12}}>🏁 אבני דרך</div>
+      {canEdit&&<div className="frow">
+        <div className="fcol"><input placeholder="כותרת" value={nm.title} onChange={e=>setNm(x=>({...x,title:e.target.value}))}/></div>
+        <div className="fcol"><input type="date" value={nm.date} onChange={e=>setNm(x=>({...x,date:e.target.value}))}/></div>
+        <button className="btn-gold btn-sm" onClick={()=>{if(!nm.title)return;upd({milestones:[...(plan.milestones||[]),{id:uid(),...nm}]});setNm({title:"",date:"",done:false});}}>+ הוסף</button>
+      </div>}
+      {(plan.milestones||[]).map(m=><div key={m.id} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 0",borderBottom:"1px solid var(--border)"}}>
+        <div style={{width:18,height:18,borderRadius:4,background:m.done?"var(--green)":"transparent",border:`2px solid ${m.done?"var(--green)":"var(--border2)"}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}} onClick={()=>upd({milestones:(plan.milestones||[]).map(x=>x.id===m.id?{...x,done:!x.done}:x)})}>
+          {m.done&&<span style={{color:"#07090f",fontSize:10,fontWeight:900}}>✓</span>}
+        </div>
+        <div style={{flex:1,textDecoration:m.done?"line-through":"none",color:m.done?"var(--muted)":"var(--text)"}}>{m.title}</div>
+        {m.date&&<div style={{fontSize:11,color:"var(--red)"}}>{m.date}</div>}
+      </div>)}
+    </div>
+    <div className="card"><div style={{fontWeight:700,marginBottom:8}}>📝 הערות תכנון</div><textarea value={plan.notes||""} onChange={e=>upd({notes:e.target.value})} disabled={!canEdit} style={{minHeight:80,width:"100%"}}/></div>
+  </div>);
+}
+
+// ══════════════════════════════════════════
+// REPORTS
+// ══════════════════════════════════════════
+function Reports({projects,users}){
+  const [tab,setTab]=useState("projects");
+  const [month,setMonth]=useState(()=>new Date().toISOString().slice(0,7));
+  return(<div className="fade">
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:10}}>
+      <div className="section-title" style={{marginBottom:0}}>📊 דוחות</div>
+      <input type="month" value={month} onChange={e=>setMonth(e.target.value)} style={{width:"auto"}}/>
+    </div>
+    <div style={{display:"flex",gap:0,marginBottom:20,borderBottom:"1px solid var(--border)",overflowX:"auto"}}>
+      {[{id:"projects",l:"🎬 פרויקטים"},{id:"hours",l:"⏱ שעות"},{id:"monthly",l:"📅 חודשי"}].map(t=><button key={t.id} className={`tab-btn${tab===t.id?" active":""}`} onClick={()=>setTab(t.id)}>{t.l}</button>)}
+    </div>
+    {tab==="projects"&&<div>
+      <button className="btn-green btn-sm" style={{marginBottom:14}} onClick={()=>{const rows=[["#","שם","לקוח","מפיקה","סטטוס","התקדמות","הקרנה","הערות"]];projects.filter(p=>p.status!=="cancelled").forEach(p=>rows.push([p.projectNumber||"",p.name,p.client,p.producer,STATUS_CFG[p.status]?.label||"",p.progress+"%",p.onlineScreening||"",p.statusNote||""]));dlCSV(rows,`סטטוס_${todayStr()}.csv`);}}>📤 יצוא CSV</button>
+      <div style={{overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+          <thead><tr style={{borderBottom:"2px solid var(--border)"}}>{["#","שם","לקוח","מפיקה","סטטוס","התקדמות","הקרנה","הערות"].map(h=><th key={h} style={{textAlign:"right",padding:"8px 6px",color:"var(--muted)",fontWeight:700,whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
+          <tbody>
+            {projects.filter(p=>p.status!=="cancelled").map(p=><tr key={p.id} style={{borderBottom:"1px solid var(--border)"}}>
+              <td style={{padding:"8px 6px",fontWeight:800,color:"var(--gold)"}}>{p.projectNumber||"—"}</td>
+              <td style={{padding:"8px 6px",fontWeight:700}}>{p.name}</td>
+              <td style={{padding:"8px 6px",color:"var(--muted)"}}>{p.client}</td>
+              <td style={{padding:"8px 6px",color:"var(--green)"}}>{p.producer}</td>
+              <td style={{padding:"8px 6px"}}><StatusBadge s={p.status}/></td>
+              <td style={{padding:"8px 6px"}}><div style={{display:"flex",gap:6,alignItems:"center"}}><div style={{width:40}}><PBar v={p.progress}/></div><span style={{color:"var(--gold)"}}>{p.progress}%</span></div></td>
+              <td style={{padding:"8px 6px",color:"var(--red)"}}>{p.onlineScreening||"—"}</td>
+              <td style={{padding:"8px 6px",color:"var(--muted)",maxWidth:130,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.statusNote||"—"}</td>
+            </tr>)}
+          </tbody>
+        </table>
+      </div>
+    </div>}
+    {tab==="hours"&&(()=>{
+      const all=[];projects.forEach(p=>(p.hours||[]).filter(h=>h.date&&h.date.startsWith(month)).forEach(h=>{const u=users.find(u=>u.id===h.worker);all.push({...h,projName:p.name,workerName:u?.name||h.worker});}));
+      all.sort((a,b)=>b.date.localeCompare(a.date));
+      return(<div>
+        <div style={{display:"flex",gap:10,marginBottom:14,alignItems:"center",flexWrap:"wrap"}}>
+          <div style={{color:"var(--muted2)"}}>סה"כ <span style={{color:"var(--gold)",fontWeight:800}}>{all.reduce((s,h)=>s+h.hours,0).toFixed(1)}h</span></div>
+          <button className="btn-green btn-sm" onClick={()=>{const rows=[["עובד","פרויקט","תאריך","כניסה","יציאה","שעות","הערה"]];all.forEach(h=>rows.push([h.workerName,h.projName,h.date,h.timeIn||"",h.timeOut||"",h.hours.toFixed(1),h.note||""]));dlCSV(rows,`שעות_${month}.csv`);}}>📤 ייצוא CSV</button>
+        </div>
+        {[...new Set(all.map(h=>h.worker))].map(wid=>{const wh=all.filter(h=>h.worker===wid);const wt=wh.reduce((s,h)=>s+h.hours,0);return(<div key={wid} className="card" style={{marginBottom:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><div style={{fontWeight:700,fontSize:15}}>{wh[0]?.workerName}</div><div style={{fontWeight:900,color:"var(--gold)",fontSize:18}}>{wt.toFixed(1)}h</div></div>
+          {wh.map(h=><div key={h.id} style={{display:"flex",gap:8,justifyContent:"space-between",fontSize:12,color:"var(--muted)",padding:"5px 0",borderBottom:"1px solid var(--border)"}}>
+            <span style={{minWidth:80}}>{h.date}</span><span style={{flex:1}}>{h.projName}</span><span>{h.timeIn&&h.timeOut?`${h.timeIn}–${h.timeOut}`:""}</span><span style={{color:"var(--text)",fontWeight:700}}>{h.hours.toFixed(1)}h</span>
+          </div>)}
+        </div>);})}
+      </div>);
+    })()}
+    {tab==="monthly"&&projects.filter(p=>{const d=p.onlineScreening||p.deliveryDate||"";return d.startsWith(month);}).map(p=><div key={p.id} className="card" style={{marginBottom:14}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:10,flexWrap:"wrap",gap:8}}><div><div style={{fontWeight:800}}>{p.name}</div><div style={{fontSize:12,color:"var(--muted)"}}>{p.client}</div></div><StatusBadge s={p.status}/></div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:10}}>
+        {[{l:"התקדמות",v:`${p.progress}%`,c:"var(--gold)"},{l:"משימות",v:`${(p.tasks||[]).filter(t=>t.done).length}/${(p.tasks||[]).length}`,c:"var(--blue)"},{l:"שעות",v:`${(p.hours||[]).reduce((s,h)=>s+h.hours,0).toFixed(1)}h`,c:"var(--green)"},{l:"הקרנה",v:p.onlineScreening||"—",c:"var(--red)"}].map(x=><div key={x.l} className="card2" style={{padding:"10px 12px"}}><div style={{fontSize:10,color:"var(--muted)",marginBottom:3}}>{x.l}</div><div style={{fontWeight:800,color:x.c}}>{x.v}</div></div>)}
+      </div>
+    </div>)}
+  </div>);
+}
+
+// ══════════════════════════════════════════
+// QUOTE BUILDER — with template editor (admin only)
+// ══════════════════════════════════════════
+function QuoteBuilder({projects,quoteTemplates,onSave,onUpdateTemplates,user}){
+  const isAdmin=user.role==="admin";
+  const [step,setStep]=useState("list");
+  const [projId,setProjId]=useState("");
+  const [lines,setLines]=useState([]);
+  const [clientName,setClientName]=useState("");
+  const [note,setNote]=useState("");
+  const [tplName,setTplName]=useState("");
+  const [editingTplId,setEditingTplId]=useState(null);
+  const [etName,setEtName]=useState("");
+  const [etLines,setEtLines]=useState([]);
+  const tmpls=quoteTemplates||DEF_QUOTE_TMPLS;
+  const total=lines.reduce((s,l)=>s+l.qty*l.price,0);
+  const updLine=(id,k,v)=>setLines(ls=>ls.map(l=>l.id===id?{...l,[k]:k==="qty"||k==="price"?+v||0:v}:l));
+  const loadTemplate=tid=>{const t=tmpls.find(t=>t.id===tid);if(!t)return;setTplName(t.name);setLines(t.lines.map(l=>({...l,id:uid()})));const p=projects.find(x=>x.id===projId);setClientName(p?.client||"");setStep("build");};
+  const save=()=>{if(!projId)return;const q={id:uid(),date:todayStr(),client:clientName,lines,total,note,template:tplName,approved:false};onSave(projId,q);setStep("list");setLines([]);setProjId("");setClientName("");setNote("");};
+  const print=()=>{const w=window.open("","_blank");const logo=document.querySelector("#appLogo");w.document.write(`<html dir="rtl"><head><meta charset="utf-8"><title>הצעת מחיר</title><style>body{font-family:Arial;padding:40px;direction:rtl}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #ddd;padding:10px;text-align:right}th{background:#f9f9f9}h1{color:#b8950f}.logo{height:50px;margin-bottom:16px}</style></head><body>${logo?`<img src="${logo.src}" class="logo"/>`:"<h1>📝 הצעת מחיר</h1>"}<h2>הצעת מחיר</h2><p><b>לקוח:</b> ${clientName}</p><p><b>פרויקט:</b> ${projects.find(p=>p.id===projId)?.name||""}</p><p><b>תאריך:</b> ${todayStr()}</p><table><thead><tr><th>תיאור</th><th>כמות</th><th>יחידה</th><th>מחיר</th><th>סה"כ</th></tr></thead><tbody>${lines.map(l=>`<tr><td>${l.desc}</td><td>${l.qty}</td><td>${l.unit}</td><td>₪${l.price.toLocaleString()}</td><td>₪${(l.qty*l.price).toLocaleString()}</td></tr>`).join("")}</tbody><tfoot><tr><td colspan="4"><b>סה"כ</b></td><td><b>₪${total.toLocaleString()}</b></td></tr></tfoot></table>${note?`<p><b>הערות:</b> ${note}</p>`:""}</body></html>`);w.document.close();w.print();};
+  const openTplEdit=tid=>{if(tid==="new"){const id=uid();setEditingTplId(id);setEtName("תבנית חדשה");setEtLines([{id:uid(),desc:"",qty:1,unit:"פרויקט",price:0}]);}else{const t=tmpls.find(t=>t.id===tid);if(!t)return;setEditingTplId(tid);setEtName(t.name);setEtLines(t.lines.map(l=>({...l})));}setStep("editTpl");};
+  const saveTpl=()=>{const existing=tmpls.find(t=>t.id===editingTplId);if(existing)onUpdateTemplates(tmpls.map(t=>t.id===editingTplId?{...t,name:etName,lines:etLines}:t));else onUpdateTemplates([...tmpls,{id:editingTplId,name:etName,lines:etLines}]);setStep("list");};
+
+  if(step==="editTpl"&&isAdmin)return(<div className="fade">
+    <button className="btn-ghost btn-sm" style={{marginBottom:14}} onClick={()=>setStep("list")}>← חזרה</button>
+    <div className="section-title">✏️ עריכת תבנית</div>
+    <div style={{marginBottom:12}}><Lbl>שם תבנית</Lbl><input value={etName} onChange={e=>setEtName(e.target.value)} style={{maxWidth:300}}/></div>
+    <div style={{overflowX:"auto",marginBottom:12}}>
+      <table style={{width:"100%",borderCollapse:"collapse"}}>
+        <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["תיאור","כמות","יחידה","מחיר",""].map(h=><th key={h} style={{textAlign:"right",padding:"6px 4px",fontSize:11,color:"var(--muted)"}}>{h}</th>)}</tr></thead>
+        <tbody>
+          {etLines.map(l=><tr key={l.id} style={{borderBottom:"1px solid var(--border)22"}}>
+            <td style={{padding:"4px 3px",minWidth:160}}><input value={l.desc} onChange={e=>setEtLines(ls=>ls.map(x=>x.id===l.id?{...x,desc:e.target.value}:x))} style={{padding:"4px 8px"}}/></td>
+            <td style={{padding:"4px 3px",width:60}}><input type="number" value={l.qty} onChange={e=>setEtLines(ls=>ls.map(x=>x.id===l.id?{...x,qty:+e.target.value||1}:x))} style={{padding:"4px 6px"}}/></td>
+            <td style={{padding:"4px 3px",width:80}}><input value={l.unit} onChange={e=>setEtLines(ls=>ls.map(x=>x.id===l.id?{...x,unit:e.target.value}:x))} style={{padding:"4px 6px"}}/></td>
+            <td style={{padding:"4px 3px",width:100}}><input type="number" value={l.price} onChange={e=>setEtLines(ls=>ls.map(x=>x.id===l.id?{...x,price:+e.target.value||0}:x))} style={{padding:"4px 6px"}}/></td>
+            <td style={{padding:"4px 3px"}}><button className="btn-red" onClick={()=>setEtLines(ls=>ls.filter(x=>x.id!==l.id))}>✕</button></td>
+          </tr>)}
+        </tbody>
+        <tfoot><tr><td colSpan={3} style={{padding:"8px 4px",fontWeight:700}}>סה"כ תבנית</td><td style={{fontWeight:900,color:"var(--gold)"}}>{fmtMoney(etLines.reduce((s,l)=>s+l.qty*l.price,0))}</td><td/></tr></tfoot>
+      </table>
+    </div>
+    <div style={{display:"flex",gap:10}}>
+      <button className="btn-ghost btn-sm" onClick={()=>setEtLines(ls=>[...ls,{id:uid(),desc:"",qty:1,unit:"פרויקט",price:0}])}>+ שורה</button>
+      <button className="btn-gold" onClick={saveTpl}>💾 שמור תבנית</button>
+    </div>
+  </div>);
+
+  if(step==="build")return(<div className="fade">
+    <button className="btn-ghost btn-sm" style={{marginBottom:14}} onClick={()=>setStep("list")}>← חזרה</button>
+    <div className="section-title">📝 הצעת מחיר — {tplName}</div>
+    <div style={{marginBottom:12}}><Lbl>שם לקוח</Lbl><input value={clientName} onChange={e=>setClientName(e.target.value)} style={{maxWidth:300}}/></div>
+    <div style={{overflowX:"auto",marginBottom:12}}>
+      <table style={{width:"100%",borderCollapse:"collapse"}}>
+        <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["תיאור","כמות","יחידה","מחיר יחידה",'סה"כ',""].map(h=><th key={h} style={{textAlign:"right",padding:"8px 4px",fontSize:11,color:"var(--muted)"}}>{h}</th>)}</tr></thead>
+        <tbody>
+          {lines.map(l=><tr key={l.id} style={{borderBottom:"1px solid var(--border)"}}>
+            <td style={{padding:"5px 3px",minWidth:160}}><input value={l.desc} onChange={e=>updLine(l.id,"desc",e.target.value)} style={{padding:"5px 8px"}}/></td>
+            <td style={{padding:"5px 3px",width:70}}><input type="number" value={l.qty} onChange={e=>updLine(l.id,"qty",e.target.value)} style={{padding:"5px 8px"}}/></td>
+            <td style={{padding:"5px 3px",width:100}}><input value={l.unit} onChange={e=>updLine(l.id,"unit",e.target.value)} style={{padding:"5px 8px"}}/></td>
+            <td style={{padding:"5px 3px",width:110}}><input type="number" value={l.price} onChange={e=>updLine(l.id,"price",e.target.value)} style={{padding:"5px 8px"}}/></td>
+            <td style={{padding:"5px 3px",fontWeight:700,color:"var(--gold)"}}>{fmtMoney(l.qty*l.price)}</td>
+            <td><button className="btn-red" onClick={()=>setLines(ls=>ls.filter(x=>x.id!==l.id))}>✕</button></td>
+          </tr>)}
+        </tbody>
+        <tfoot><tr><td colSpan={4} style={{padding:"10px 4px",fontWeight:700,fontSize:15}}>סה"כ</td><td style={{fontWeight:900,fontSize:20,color:"var(--gold)"}}>{fmtMoney(total)}</td><td/></tr></tfoot>
+      </table>
+    </div>
+    <button className="btn-ghost btn-sm" style={{marginBottom:12}} onClick={()=>setLines(ls=>[...ls,{id:uid(),desc:"",qty:1,unit:"פרויקט",price:0}])}>+ שורה</button>
+    <div style={{marginBottom:12}}><Lbl>הערות</Lbl><textarea value={note} onChange={e=>setNote(e.target.value)}/></div>
+    <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+      <button className="btn-gold" onClick={save}>💾 שמור</button>
+      <button className="btn-blue" onClick={print}>🖨️ הדפסה / PDF</button>
+    </div>
+  </div>);
+
+  return(<div className="fade">
+    <div className="section-title">📝 הצעות מחיר</div>
+    <div style={{marginBottom:16}}><Lbl>פרויקט</Lbl><select value={projId} onChange={e=>setProjId(e.target.value)} style={{maxWidth:400}}><option value="">— בחר פרויקט —</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+    <div style={{fontWeight:700,marginBottom:12}}>תבניות</div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(175px,1fr))",gap:10,marginBottom:20}}>
+      {tmpls.map(t=><div key={t.id} className="card2" style={{cursor:"pointer",transition:"border-color .2s"}} onMouseEnter={e=>e.currentTarget.style.borderColor="var(--gold)"} onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
+        <div onClick={()=>loadTemplate(t.id)} style={{marginBottom:8}}>
+          <div style={{fontWeight:700,marginBottom:4}}>{t.name}</div>
+          <div style={{fontSize:11,color:"var(--muted)"}}>{t.lines.length} סעיפים · {fmtMoney(t.lines.reduce((s,l)=>s+l.qty*l.price,0))}</div>
+        </div>
+        {isAdmin&&<button className="btn-ghost btn-sm" style={{fontSize:10}} onClick={e=>{e.stopPropagation();openTplEdit(t.id);}}>✏️ ערוך</button>}
+      </div>)}
+      {isAdmin&&<div className="card2" style={{cursor:"pointer",borderStyle:"dashed"}} onMouseEnter={e=>e.currentTarget.style.borderColor="var(--gold)"} onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
+        <div onClick={()=>openTplEdit("new")} style={{fontWeight:700,marginBottom:6}}>+ תבנית חדשה</div>
+        <div onClick={()=>{setTplName("מותאם");setLines([{id:uid(),desc:"",qty:1,unit:"פרויקט",price:0}]);const p=projects.find(x=>x.id===projId);setClientName(p?.client||"");setStep("build");}} style={{fontSize:11,color:"var(--muted)",cursor:"pointer"}}>או בנה מאפס</div>
+      </div>}
+    </div>
+    {projects.some(p=>(p.quotes||[]).length)&&<>
+      <div style={{fontWeight:700,fontSize:13,color:"var(--muted2)",marginBottom:10}}>הצעות שמורות</div>
+      {projects.flatMap(p=>(p.quotes||[]).map(q=>({...q,projName:p.name,projId:p.id}))).map(q=><div key={q.id} className="card2" style={{marginBottom:8,borderRight:`3px solid ${q.approved?"var(--green)":"var(--border2)"}`}}>
+        <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+          <div><div style={{fontWeight:700}}>{q.projName} · {q.client}</div><div style={{fontSize:11,color:"var(--muted)"}}>{q.date} · {q.template}</div></div>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            <div style={{fontWeight:800,color:"var(--gold)"}}>{fmtMoney(q.total)}</div>
+            {q.approved?<span className="tag" style={{color:"var(--green)",background:"var(--green)20"}}>✅ אושרה</span>:<button className="btn-green btn-sm" onClick={()=>onSave(q.projId,{...q,approved:true},true)}>✓ אשר</button>}
+          </div>
+        </div>
+      </div>)}
+    </>}
+  </div>);
+}
+
+// ══════════════════════════════════════════
+// PASSWORD VAULT — locked on every mount
+// ══════════════════════════════════════════
+function PasswordVault({passwords,onUpdate,currentUser}){
+  const savedVPass=localStorage.getItem(VAULT_KEY)||"";
+  const [unlocked,setUnlocked]=useState(false);
+  const [vpass,setVpass]=useState("");
+  const [isNew,setIsNew]=useState(!savedVPass);
+  const [conf,setConf]=useState("");
+  const [vErr,setVErr]=useState("");
+  const [search,setSearch]=useState("");
+  const [showPw,setShowPw]=useState({});
+  const [copied,setCopied]=useState(null);
+  const [form,setForm]=useState({service:"",username:"",password:"",description:"",category:"כללי",url:""});
+  const isAdmin=currentUser.role==="admin";
+  useEffect(()=>{setUnlocked(false);setVpass("");},[]);
+  const unlock=()=>{
+    if(isNew){if(vpass.length<4){setVErr("לפחות 4 תווים");return;}if(vpass!==conf){setVErr("הסיסמאות אינן תואמות");return;}localStorage.setItem(VAULT_KEY,vpass);setUnlocked(true);setIsNew(false);}
+    else{if(vpass===savedVPass||currentUser.email===ADMIN_EMAIL)setUnlocked(true);else setVErr("סיסמת כספת שגויה");}
+  };
+  if(!unlocked)return(<div className="fade">
+    <div className="section-title">🔐 כספת סיסמאות</div>
+    <div style={{maxWidth:360}}><div className="card">
+      <div style={{textAlign:"center",fontSize:52,marginBottom:16}}>🔐</div>
+      <div style={{fontWeight:700,textAlign:"center",marginBottom:16}}>{isNew?"הגדר סיסמת כספת":"הכנס סיסמת כספת"}</div>
+      <div style={{marginBottom:12}}><Lbl>סיסמת כספת</Lbl><input type="password" value={vpass} onChange={e=>setVpass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&unlock()} autoFocus/></div>
+      {isNew&&<div style={{marginBottom:12}}><Lbl>אימות</Lbl><input type="password" value={conf} onChange={e=>setConf(e.target.value)}/></div>}
+      {vErr&&<div style={{color:"var(--red)",fontSize:12,marginBottom:10}}>⚠ {vErr}</div>}
+      <button className="btn-gold" style={{width:"100%"}} onClick={unlock}>{isNew?"הגדר ✓":"פתח →"}</button>
+    </div></div>
+  </div>);
+  const cats=[...new Set(passwords.map(p=>p.category||"כללי"))];
+  const filtered=passwords.filter(p=>!search||(p.service||"").toLowerCase().includes(search.toLowerCase())||(p.username||"").toLowerCase().includes(search.toLowerCase())||(p.category||"").toLowerCase().includes(search.toLowerCase()));
+  const copyPw=(pw,id)=>{navigator.clipboard.writeText(pw).catch(()=>{});setCopied(id);setTimeout(()=>setCopied(null),2000);};
+  const addEntry=()=>{if(!form.service)return;onUpdate([...passwords,{id:uid(),...form,createdAt:todayStr()}]);setForm({service:"",username:"",password:"",description:"",category:"כללי",url:""});};
+  return(<div className="fade">
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+      <div className="section-title" style={{marginBottom:0}}>🔐 כספת סיסמאות</div>
+      <button className="btn-ghost btn-sm" onClick={()=>{setUnlocked(false);setVpass("");}}>🔒 נעל</button>
+    </div>
+    <div className="srch-wrap" style={{marginBottom:16,maxWidth:360}}><span className="srch-icon">🔍</span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="חיפוש..."/></div>
+    {isAdmin&&<div className="card" style={{marginBottom:20}}>
+      <div style={{fontWeight:700,marginBottom:12}}>+ הוספת סיסמה</div>
+      <div className="frow">
+        <div className="fcol"><Lbl>שירות</Lbl><input value={form.service} onChange={e=>setForm(p=>({...p,service:e.target.value}))}/></div>
+        <div className="fcol"><Lbl>קטגוריה</Lbl><input value={form.category} onChange={e=>setForm(p=>({...p,category:e.target.value}))}/></div>
+      </div>
+      <div className="frow">
+        <div className="fcol"><Lbl>שם משתמש</Lbl><input value={form.username} onChange={e=>setForm(p=>({...p,username:e.target.value}))}/></div>
+        <div className="fcol"><Lbl>סיסמה</Lbl><input value={form.password} onChange={e=>setForm(p=>({...p,password:e.target.value}))}/></div>
+      </div>
+      <div className="frow"><div className="fcol"><Lbl>URL</Lbl><input value={form.url} onChange={e=>setForm(p=>({...p,url:e.target.value}))}/></div><div className="fcol"><Lbl>תיאור</Lbl><input value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))}/></div></div>
+      <button className="btn-gold btn-sm" onClick={addEntry}>+ הוסף</button>
+    </div>}
+    {cats.map(cat=>{const items=filtered.filter(p=>(p.category||"כללי")===cat);if(!items.length)return null;return(<div key={cat} style={{marginBottom:22}}>
+      <div style={{fontWeight:700,fontSize:13,color:"var(--muted2)",marginBottom:10,paddingBottom:6,borderBottom:"1px solid var(--border)"}}>📂 {cat}</div>
+      {items.map(pw=><div key={pw.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderBottom:"1px solid var(--border)22",flexWrap:"wrap",gap:10}}>
+        <div style={{flex:1,minWidth:120}}>
+          <div style={{fontWeight:700}}>{pw.service}</div>
+          {pw.description&&<div style={{fontSize:11,color:"var(--muted)"}}>{pw.description}</div>}
+          {pw.url&&<a href={pw.url} target="_blank" rel="noreferrer" style={{fontSize:11,color:"var(--blue)"}}>{pw.url}</a>}
+        </div>
+        <div style={{fontSize:12,color:"var(--muted2)",minWidth:100}}>{pw.username}</div>
+        <div style={{fontFamily:"monospace",fontSize:12,minWidth:90}}>{showPw[pw.id]?pw.password:"••••••••••"}</div>
+        <div style={{display:"flex",gap:6}}>
+          <button onClick={()=>setShowPw(p=>({...p,[pw.id]:!p[pw.id]}))} style={{background:"var(--border2)",border:"none",borderRadius:6,padding:"4px 8px",color:"var(--muted2)",cursor:"pointer",fontSize:14}}>{showPw[pw.id]?"🙈":"👁"}</button>
+          <button onClick={()=>copyPw(pw.password,pw.id)} style={{background:copied===pw.id?"var(--green)20":"var(--border2)",border:"none",borderRadius:6,padding:"4px 10px",color:copied===pw.id?"var(--green)":"var(--muted2)",cursor:"pointer",fontSize:12}}>{copied===pw.id?"✓":"📋"}</button>
+          {isAdmin&&<button className="btn-red" onClick={()=>onUpdate(passwords.filter(p=>p.id!==pw.id))}>✕</button>}
+        </div>
+      </div>)}
+    </div>);})}
+  </div>);
+}
+
+// ══════════════════════════════════════════
+// CLIENT LIST
+// ══════════════════════════════════════════
+function ClientList({projects,clients,onUpdate}){
+  const derived=[...new Set(projects.map(p=>p.client).filter(Boolean))];
+  const all=[...new Set([...derived,...(clients||[])])].sort();
+  const [mc,setMc]=useState("");
+  return(<div className="fade">
+    <div className="section-title">🏢 רשימת לקוחות</div>
+    <div className="card2" style={{marginBottom:16,fontSize:12,color:"var(--muted2)"}}>נגזרת אוטומטית מעמודת הלקוחות בפרויקטים. ניתן להוסיף ידנית.</div>
+    <div style={{display:"flex",gap:10,marginBottom:16}}>
+      <input value={mc} onChange={e=>setMc(e.target.value)} placeholder="שם לקוח חדש..." style={{flex:1}}/>
+      <button className="btn-gold btn-sm" onClick={()=>{if(mc.trim()){onUpdate([...(clients||[]),mc.trim()]);setMc("");}}} >+ הוסף</button>
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10}}>
+      {all.map(c=><div key={c} className="card2" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div><div style={{fontWeight:700}}>{c}</div><div style={{fontSize:11,color:"var(--muted)"}}>{projects.filter(p=>p.client===c).length} פרויקטים</div></div>
+        {(clients||[]).includes(c)&&<button className="btn-red" onClick={()=>onUpdate((clients||[]).filter(x=>x!==c))}>✕</button>}
+      </div>)}
+    </div>
+  </div>);
+}
+
+// ══════════════════════════════════════════
+// USER MANAGEMENT
+// ══════════════════════════════════════════
+function UserMgmt({users,onUpdate,currentUser}){
+  const [form,setForm]=useState({name:"",email:"",role:"worker",password:"",phone:"",active:"true"});
+  const [editId,setEditId]=useState(null);
+  const f=k=>e=>setForm(p=>({...p,[k]:e.target.value}));
+  const save=()=>{if(!form.name||!form.email)return;if(editId)onUpdate(users.map(u=>u.id===editId?{...u,...form}:u));else onUpdate([...users,{id:uid(),...form}]);setEditId(null);setForm({name:"",email:"",role:"worker",password:"",phone:"",active:"true"});};
+  return(<div className="fade">
+    <div className="section-title">👥 ניהול משתמשים</div>
+    <div className="card" style={{marginBottom:20}}>
+      <div style={{fontWeight:700,marginBottom:14}}>{editId?"✏️ עריכת משתמש":"+ הוספת משתמש"}</div>
+      <div className="frow"><div className="fcol"><Lbl>שם מלא</Lbl><input value={form.name} onChange={f("name")}/></div><div className="fcol"><Lbl>אימייל *</Lbl><input type="email" value={form.email} onChange={f("email")}/></div><div className="fcol"><Lbl>טלפון</Lbl><input value={form.phone} onChange={f("phone")}/></div></div>
+      <div className="frow">
+        <div className="fcol"><Lbl>תפקיד</Lbl><select value={form.role} onChange={f("role")}><option value="admin">מנהל — גישה מלאה</option><option value="producer">מפיקה — ניהול פרויקט</option><option value="worker">עובד — לוח + שעות</option></select></div>
+        <div className="fcol"><Lbl>סיסמה</Lbl><input type="text" value={form.password} onChange={f("password")}/></div>
+        <div className="fcol"><Lbl>פעיל</Lbl><select value={form.active} onChange={f("active")}><option value="true">פעיל</option><option value="false">לא פעיל</option></select></div>
+      </div>
+      <div style={{display:"flex",gap:10}}><button className="btn-gold btn-sm" onClick={save}>{editId?"💾 שמור":"+ הוסף"}</button>{editId&&<button className="btn-ghost btn-sm" onClick={()=>{setEditId(null);setForm({name:"",email:"",role:"worker",password:"",phone:"",active:"true"});}}>ביטול</button>}</div>
+    </div>
+    <div style={{display:"grid",gap:10}}>
+      {users.map(u=><div key={u.id} className="card2" style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+        <div style={{display:"flex",gap:12,alignItems:"center"}}><Avatar name={u.name} idx={users.indexOf(u)} size={36}/><div><div style={{fontWeight:700}}>{u.name}</div><div style={{fontSize:11,color:"var(--muted)"}}>{u.email}{u.phone?` · ${u.phone}`:""}</div></div></div>
+        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+          <RoleBadge role={u.role}/>
+          {u.id!==currentUser.id&&<>
+            <button className="btn-blue btn-sm" onClick={()=>{setEditId(u.id);setForm({name:u.name,email:u.email,role:u.role,password:u.password||"",phone:u.phone||"",active:u.active||"true"});}}>✏️ ערוך</button>
+            <button className="btn-ghost btn-sm" onClick={()=>onUpdate(users.map(x=>x.id===u.id?{...x,password:"1234"}:x))}>🔑 אפס</button>
+            <button className="btn-red" onClick={()=>onUpdate(users.filter(x=>x.id!==u.id))}>הסר</button>
+          </>}
+        </div>
+      </div>)}
+    </div>
+  </div>);
+}
+
+// ══════════════════════════════════════════
+// SHEETS SETTINGS
+// ══════════════════════════════════════════
+function SheetsSettings({projects,passwords,users,onProjectsLoaded,onPasswordsLoaded,onStaffLoaded}){
+  const [url,setUrl]=useState(getSheetsUrl);const [msg,setMsg]=useState("");const [syncing,setSyncing]=useState(false);
+  const [lastSync,setLastSync]=useState(()=>localStorage.getItem("pf_v8_last_sync")||"");
+  const save=()=>{setSheetsUrl(url.trim());setMsg("✅ URL נשמר");};
+  const test=async()=>{setMsg("בודק...");try{const r=await fetch(`${url.trim()}?action=ping`);const j=await r.json();setMsg(j.ok?"✅ מחובר!":"❌ "+j.error);}catch(e){setMsg("❌ "+e.message);}};
+  const pull=async()=>{setSyncing(true);setMsg("מושך...");try{const u=getSheetsUrl();const[projs,pws,staff]=await Promise.all([sheetsCall(u,{action:"getAll",sheet:"projects"}),sheetsCall(u,{action:"getAll",sheet:"passwords"}),sheetsCall(u,{action:"getAll",sheet:"staff"})]);if(projs)onProjectsLoaded(projs.map(r=>({tasks:[],shifts:[],hours:[],quotes:[],plan:{crew:[],milestones:[],notes:""},...mapProject(r)})));if(pws)onPasswordsLoaded(pws.map(mapPassword));if(staff)onStaffLoaded(staff.map(mapStaff));const now=new Date().toLocaleString("he-IL");setLastSync(now);localStorage.setItem("pf_v8_last_sync",now);setMsg("✅ עודכן!");}catch(e){setMsg("❌ "+e.message);}setSyncing(false);};
+  const push=async()=>{setSyncing(true);setMsg("שולח...");try{const u=getSheetsUrl();await Promise.all([sheetsPost(u,{action:"batchUpdate",sheet:"projects",rows:projects}),sheetsPost(u,{action:"batchUpdate",sheet:"passwords",rows:passwords}),sheetsPost(u,{action:"batchUpdate",sheet:"staff",rows:users})]);const now=new Date().toLocaleString("he-IL");setLastSync(now);localStorage.setItem("pf_v8_last_sync",now);setMsg("✅ עודכן!");}catch(e){setMsg("❌ "+e.message);}setSyncing(false);};
+  return(<div className="fade">
+    <div className="section-title">☁️ Google Sheets Sync</div>
+    {lastSync&&<div style={{fontSize:12,color:"var(--muted)",marginBottom:14}}>סנכרון אחרון: {lastSync}</div>}
+    <div className="card" style={{marginBottom:14}}>
+      <div style={{fontWeight:700,marginBottom:12}}>Web App URL</div>
+      <input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://script.google.com/macros/s/.../exec" style={{fontFamily:"monospace",fontSize:12,marginBottom:12}}/>
+      <div style={{display:"flex",gap:10}}><button className="btn-gold btn-sm" onClick={save}>💾 שמור</button><button className="btn-blue btn-sm" onClick={test} disabled={!url.trim()}>🔌 בדוק</button></div>
+      {msg&&<div style={{marginTop:10,fontSize:13,color:msg.startsWith("✅")?"var(--green)":"var(--red)"}}>{msg}</div>}
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+      <div className="card" style={{textAlign:"center"}}><div style={{fontSize:32,marginBottom:8}}>⬇️</div><div style={{fontWeight:700,marginBottom:10}}>משוך מ-Sheets</div><button className="btn-blue" onClick={pull} disabled={syncing||!getSheetsUrl()}>{syncing?"⏳":"⬇️ משוך הכל"}</button></div>
+      <div className="card" style={{textAlign:"center"}}><div style={{fontSize:32,marginBottom:8}}>⬆️</div><div style={{fontWeight:700,marginBottom:10}}>דחוף ל-Sheets</div><button className="btn-green" onClick={push} disabled={syncing||!getSheetsUrl()}>{syncing?"⏳":"⬆️ דחוף הכל"}</button></div>
+    </div>
+    <div className="card">
+      <div style={{fontWeight:700,marginBottom:10}}>מבנה גיליונות</div>
+      {[{n:"staff",f:"name, role, email, phone, active, password"},{n:"projects",f:"projectNumber, name, producer, shootDate, offlineScreening, onlineScreening, deliveryDate, status, progress, client, description, statusNote"},{n:"passwords",f:"label, username, password, description, category, url, createdAt"}].map(s=><div key={s.n} style={{display:"flex",gap:12,padding:"8px 0",borderBottom:"1px solid var(--border)22"}}><div style={{fontWeight:700,color:"var(--gold)",minWidth:100}}>{s.n}</div><div style={{fontSize:11,color:"var(--muted)"}}>{s.f}</div></div>)}
+    </div>
+  </div>);
+}
+
+// ══════════════════════════════════════════
+// BACKUP — auto-save + manual
+// ══════════════════════════════════════════
+function BackupPanel({users,projects,passwords,lastAutoSave,onRestore}){
+  const [confirm,setConfirm]=useState(false);const [rd,setRd]=useState(null);const [err,setErr]=useState("");
+  const handleFile=e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.projects||d.users){setRd(d);setConfirm(true);}else setErr("קובץ לא תקין");}catch{setErr("שגיאת קריאה");}};r.readAsText(file);};
+  return(<div className="fade">
+    <div className="section-title">💾 גיבוי ושחזור</div>
+    {lastAutoSave&&<div style={{fontSize:12,color:"var(--green)",marginBottom:14}}>✅ גיבוי אוטומטי אחרון: {lastAutoSave}</div>}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12,marginBottom:20}}>
+      {[
+        {icon:"🗄️",label:"גיבוי מלא (JSON)",desc:"משתמשים + פרויקטים + סיסמאות",action:()=>dlJSON({users,projects,passwords},`postflow_backup_${todayStr()}.json`),color:"var(--blue)"},
+        {icon:"🎬",label:"פרויקטים בלבד",desc:"JSON של כל הפרויקטים",action:()=>dlJSON({projects},`postflow_projects_${todayStr()}.json`),color:"var(--gold)"},
+        {icon:"⏱",label:"שעות עבודה",desc:"CSV של כל דיווחי השעות",action:()=>{const rows=[["עובד","פרויקט","תאריך","כניסה","יציאה","שעות","הערה"]];projects.forEach(p=>(p.hours||[]).forEach(h=>{const u=users.find(u=>u.id===h.worker);rows.push([u?.name||h.worker,p.name,h.date,h.timeIn||"",h.timeOut||"",h.hours.toFixed(1),h.note||""]);} ));dlCSV(rows,`שעות_${todayStr()}.csv`);},color:"var(--green)"},
+      ].map(b=><div key={b.label} className="card" style={{cursor:"pointer",textAlign:"center",transition:"border-color .2s"}} onMouseEnter={e=>e.currentTarget.style.borderColor=b.color} onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"} onClick={b.action}>
+        <div style={{fontSize:30,marginBottom:8}}>{b.icon}</div><div style={{fontWeight:700,marginBottom:4}}>{b.label}</div><div style={{fontSize:11,color:"var(--muted)"}}>{b.desc}</div>
+      </div>)}
+    </div>
+    <div className="card">{err&&<div style={{color:"var(--red)",fontSize:12,marginBottom:10}}>{err}</div>}
+      <div style={{fontWeight:700,marginBottom:12}}>📥 שחזור מקובץ JSON</div>
+      <label className="btn-ghost" style={{cursor:"pointer",display:"inline-block"}}>📁 בחר קובץ JSON<input type="file" accept=".json" style={{display:"none"}} onChange={handleFile}/></label>
+    </div>
+    {confirm&&rd&&<div className="modal-bg" onClick={()=>setConfirm(false)}>
+      <div className="modal" style={{maxWidth:420}} onClick={e=>e.stopPropagation()}>
+        <div style={{fontWeight:800,fontSize:18,marginBottom:14}}>⚠️ אישור שחזור</div>
+        <div style={{fontSize:13,color:"var(--muted2)",marginBottom:20}}>נמצאו: {rd.projects?.length||0} פרויקטים · {rd.users?.length||0} משתמשים · {rd.passwords?.length||0} סיסמאות<br/><br/><b style={{color:"var(--red)"}}>פעולה זו תחליף את כל הנתונים!</b></div>
+        <div style={{display:"flex",gap:10}}><button className="btn-gold" onClick={()=>{onRestore(rd);setConfirm(false);}}>✓ אשר שחזור</button><button className="btn-ghost" onClick={()=>setConfirm(false)}>ביטול</button></div>
+      </div>
+    </div>}
+  </div>);
+}
+
+// ══════════════════════════════════════════
+// SETTINGS — logo + shift types + (admin only quote templates moved to QuoteBuilder)
+// ══════════════════════════════════════════
+function Settings({shiftTypes,onUpdateShiftTypes,logoUrl,onUpdateLogo}){
+  const [etSt,setEtSt]=useState(shiftTypes||DEF_SHIFT_TYPES);
+  const updSt=(id,k,v)=>setEtSt(ts=>ts.map(t=>t.id===id?{...t,[k]:v}:t));
+  const saveSt=()=>onUpdateShiftTypes(etSt);
+  return(<div className="fade">
+    <div className="section-title">⚙️ הגדרות מערכת</div>
+    {/* Logo */}
+    <div className="card" style={{marginBottom:14}}>
+      <div style={{fontWeight:700,marginBottom:12}}>🖼 לוגו מותאם אישית</div>
+      {logoUrl&&<div style={{marginBottom:12}}><img src={logoUrl} style={{height:50,objectFit:"contain",borderRadius:6}} alt="logo"/></div>}
+      <div className="frow">
+        <div className="fcol"><Lbl>URL של תמונה (PNG/JPG/SVG)</Lbl><input value={logoUrl||""} onChange={e=>onUpdateLogo(e.target.value)} placeholder="https://..."/></div>
+      </div>
+      <div style={{fontSize:11,color:"var(--muted)"}}>💡 העלה תמונה ל-imgur.com או Cloudinary, הדבק את ה-URL ישירות כאן</div>
+    </div>
+    {/* Shift types */}
+    <div className="card">
+      <div style={{fontWeight:700,marginBottom:14}}>🎬 סוגי משמרות / משימות</div>
+      {etSt.map(t=><div key={t.id} style={{display:"flex",gap:10,alignItems:"center",marginBottom:10}}>
+        <input type="color" value={t.color} onChange={e=>updSt(t.id,"color",e.target.value)} style={{width:36,height:36,padding:2,cursor:"pointer",background:"none",border:"1px solid var(--border)",borderRadius:6}}/>
+        <input value={t.label} onChange={e=>updSt(t.id,"label",e.target.value)} style={{flex:1}}/>
+        <span className="tag" style={{background:t.color+"20",color:t.color,border:`1px solid ${t.color}40`,minWidth:80,justifyContent:"center"}}>{t.label}</span>
+        <button className="btn-red" onClick={()=>setEtSt(ts=>ts.filter(x=>x.id!==t.id))}>✕</button>
+      </div>)}
+      <div style={{display:"flex",gap:10,marginTop:8}}>
+        <button className="btn-ghost btn-sm" onClick={()=>setEtSt(ts=>[...ts,{id:uid(),label:"חדש",color:"#94a3b8"}])}>+ הוסף סוג</button>
+        <button className="btn-gold btn-sm" onClick={saveSt}>💾 שמור</button>
+      </div>
+    </div>
+  </div>);
+}
+
+// ══════════════════════════════════════════
+// NEW PROJECT MODAL
+// ══════════════════════════════════════════
+function NewProjectModal({onClose,onAdd,nextNum}){
+  const [form,setForm]=useState({name:"",client:"",producer:"",status:"active",description:""});
+  const f=k=>e=>setForm(p=>({...p,[k]:e.target.value}));
+  const submit=()=>{if(!form.name)return;const pn=String(nextNum).padStart(3,"0");onAdd({id:uid(),projectNumber:pn,...form,progress:0,shootDate:"",offlineScreening:"",onlineScreening:"",deliveryDate:"",statusNote:"",budgetPlanned:0,budgetActual:0,tasks:[],shifts:[],hours:[],quotes:[],plan:{crew:[],milestones:[],notes:""}});onClose();};
+  return(<div className="modal-bg" onClick={onClose}>
+    <div className="modal" style={{maxWidth:500}} onClick={e=>e.stopPropagation()}>
+      <div style={{fontWeight:800,fontSize:18,marginBottom:20}}>פרויקט חדש #{String(nextNum).padStart(3,"0")}</div>
+      <div className="frow"><div className="fcol"><Lbl>שם הפרויקט *</Lbl><input value={form.name} onChange={f("name")} autoFocus/></div><div className="fcol"><Lbl>לקוח</Lbl><input value={form.client} onChange={f("client")}/></div></div>
+      <div className="frow"><div className="fcol"><Lbl>מפיקה אחראית</Lbl><input value={form.producer} onChange={f("producer")}/></div><div className="fcol"><Lbl>סטטוס</Lbl><select value={form.status} onChange={f("status")}>{Object.entries(STATUS_CFG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}</select></div></div>
+      <div style={{marginBottom:14}}><Lbl>תיאור</Lbl><textarea value={form.description} onChange={f("description")} style={{minHeight:60}}/></div>
+      <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}><button className="btn-ghost" onClick={onClose}>ביטול</button><button className="btn-gold" onClick={submit}>✓ צור פרויקט</button></div>
+    </div>
+  </div>);
+}
+
+// ══════════════════════════════════════════
+// MAIN APP
+// ══════════════════════════════════════════
+function App({initialData}){
+  const [data,setData]=useState(initialData);
+  const {users,projects,passwords,shiftTypes,quoteTemplates,nextProjNum,logoUrl,clients}=data;
+  const upd=patch=>setData(d=>({...d,...patch}));
+  const updateProject=p=>upd({projects:data.projects.map(x=>x.id===p.id?p:x)});
+  const addProject=p=>upd({projects:[...data.projects,p],nextProjNum:(data.nextProjNum||1)+1});
+  const addQuote=(pid,q,update)=>upd({projects:data.projects.map(p=>{if(p.id!==pid)return p;if(update)return{...p,quotes:(p.quotes||[]).map(x=>x.id===q.id?q:x)};return{...p,quotes:[...(p.quotes||[]),q]};})});
+
+  const [currentUser,setCurrentUser]=useState(null);
+  const [view,setView]=useState("dashboard");
+  const [selProjId,setSelProjId]=useState(null);
+  const [sidebarOpen,setSidebarOpen]=useState(false);
+  const [showNewProj,setShowNewProj]=useState(false);
+  const [lastAutoSave,setLastAutoSave]=useState("");
+
+  // Persist to localStorage
+  useEffect(()=>{saveLocal(data);},[data]);
+
+  // Auto-save every 2 minutes
+  useEffect(()=>{
+    const t=setInterval(()=>{
+      saveLocal(data);
+      const now=new Date().toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"});
+      setLastAutoSave(now);
+    },120000);
+    return()=>clearInterval(t);
+  },[data]);
+
+  // Save before tab close
+  useEffect(()=>{
+    const h=()=>saveLocal(data);
+    window.addEventListener("beforeunload",h);
+    return()=>window.removeEventListener("beforeunload",h);
+  },[data]);
+
+  // Update logo in splash
+  useEffect(()=>{if(logoUrl)Splash.setLogo(logoUrl);},[logoUrl]);
+
+  // Auto-sync Sheets on login
+  useEffect(()=>{
+    const url=getSheetsUrl();
+    if(!url||!currentUser)return;
+    (async()=>{
+      try{
+        const[projs,pws,staff]=await Promise.all([sheetsCall(url,{action:"getAll",sheet:"projects"}),sheetsCall(url,{action:"getAll",sheet:"passwords"}),sheetsCall(url,{action:"getAll",sheet:"staff"})]);
+        const patch={};
+        if(projs&&projs.length)patch.projects=projs.map(r=>({tasks:[],shifts:[],hours:[],quotes:[],plan:{crew:[],milestones:[],notes:""},...mapProject(r)}));
+        if(pws&&pws.length)patch.passwords=pws.map(mapPassword);
+        if(staff&&staff.length){
+          patch.users=staff.map(mapStaff);
+          const maxNum=Math.max(0,...(patch.projects||projects).map(p=>parseInt(p.projectNumber||0)||0));
+          patch.nextProjNum=maxNum+1;
+          // עדכן currentUser אם נמצא ב-staff החדש
+          if(currentUser){
+            const refreshed=patch.users.find(u=>u.email===currentUser.email||u.id===currentUser.id);
+            if(refreshed)setCurrentUser(refreshed);
+          }
+        }
+        if(Object.keys(patch).length)upd(patch);
+      }catch{}
+    })();
+  },[currentUser]);
+
+  if(!currentUser)return(<><GS/><Login users={users} logoUrl={logoUrl} onLogin={u=>{
+    // תמיד קרא role עדכני מה-users array (למקרה שהשתנה)
+    const fresh=users.find(x=>x.id===u.id)||u;
+    setCurrentUser(fresh);setView("dashboard");
+  }}/></>);
+
+  const isAdmin=currentUser.role==="admin",isProd=currentUser.role==="producer";
+  const selProj=projects.find(p=>p.id===selProjId);
+  const goto=id=>{setView(id);setSelProjId(null);setSidebarOpen(false);};
+  const gotoProj=id=>{setSelProjId(id);setView("project");setSidebarOpen(false);};
+
+  const sts=shiftTypes||DEF_SHIFT_TYPES;
+
+  // Handle shift save/delete from calendar
+  const onSaveShift=shift=>{
+    if(!shift.projId){
+      // No-project shift — store in a virtual global project or skip
+      // For now skip (ideally would have a "global_shifts" array in data)
+      return;
+    }
+    const proj=projects.find(p=>p.id===shift.projId);if(!proj)return;
+    const existing=(proj.shifts||[]).find(s=>s.id===shift.id);
+    const newShifts=existing?(proj.shifts||[]).map(s=>s.id===shift.id?shift:s):[...(proj.shifts||[]),shift];
+    updateProject({...proj,shifts:newShifts});
+    const url=getSheetsUrl();if(url)sheetsPost(url,{action:"update",sheet:"projects",id:proj.id,row:{...proj,shifts:newShifts}}).catch(()=>{});
+  };
+  const onDeleteShift=shift=>{
+    const proj=projects.find(p=>p.id===shift.projId);if(!proj)return;
+    updateProject({...proj,shifts:(proj.shifts||[]).filter(s=>s.id!==shift.id)});
+  };
+
+  const NAV=[
+    {id:"dashboard",icon:"⬛",label:"לוח בקרה"},
+    {id:"calendar",icon:"📅",label:"לוח שבועי"},
+    ...((isAdmin||isProd)?[{id:"projects",icon:"🎬",label:"פרויקטים"}]:[]),
+    {id:"hours",icon:"⏱",label:"שעות"},
+    ...((isAdmin||isProd)?[{id:"quotes",icon:"📝",label:"הצעות מחיר"},{id:"reports",icon:"📊",label:"דוחות"}]:[]),
+    {id:"vault",icon:"🔐",label:"סיסמאות"},
+    ...(isAdmin?[{id:"clients",icon:"🏢",label:"לקוחות"},{id:"users",icon:"👥",label:"משתמשים"},{id:"sheets",icon:"☁️",label:"Sheets"},{id:"backup",icon:"💾",label:"גיבוי"},{id:"settings",icon:"⚙️",label:"הגדרות"}]:[]),
+  ];
+
+  const Sidebar=({mobile})=>(
+    <aside style={{background:"var(--surf)",borderLeft:"1px solid var(--border)",padding:"18px 10px",display:"flex",flexDirection:"column",gap:2,width:mobile?"100%":220,height:"100vh",overflowY:"auto",flexShrink:0,position:mobile?"fixed":"sticky",inset:mobile?0:"auto",top:0,zIndex:mobile?900:"auto"}}>
+      <div style={{padding:"0 6px 16px",borderBottom:"1px solid var(--border)",marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div>
+          {logoUrl?<img src={logoUrl} style={{height:36,objectFit:"contain",borderRadius:5}} alt="logo"/>:<div style={{fontWeight:900,fontSize:18,color:"var(--gold)"}}>🎞 PostFlow</div>}
+          <div style={{fontSize:9,color:"var(--muted)",marginTop:2}}>v8.0</div>
+        </div>
+        {mobile&&<button className="btn-ghost btn-sm" onClick={()=>setSidebarOpen(false)}>✕</button>}
+      </div>
+      <div style={{padding:"6px 8px 12px",borderBottom:"1px solid var(--border)",marginBottom:6}}>
+        <div style={{fontWeight:700,fontSize:13}}>{currentUser.name}</div>
+        <div style={{marginTop:4}}><RoleBadge role={currentUser.role}/></div>
+        <div style={{fontSize:10,color:"var(--muted)",marginTop:3}}>{currentUser.email}</div>
+      </div>
+      {NAV.map(n=><div key={n.id} className={`nav-item${view===n.id&&!selProjId?" active":""}`} onClick={()=>goto(n.id)}><span>{n.icon}</span>{n.label}</div>)}
+      {(isAdmin||isProd)&&projects.filter(p=>p.status==="active").length>0&&<>
+        <div style={{fontSize:10,color:"var(--muted)",padding:"10px 8px 3px",fontWeight:700,letterSpacing:1}}>פעיל</div>
+        {projects.filter(p=>p.status==="active").map(p=><div key={p.id} className={`nav-item${selProjId===p.id?" active":""}`} style={{fontSize:11,padding:"7px 10px"}} onClick={()=>gotoProj(p.id)}>
+          <span className="pulse" style={{width:6,height:6,borderRadius:"50%",background:"var(--green)",display:"inline-block",flexShrink:0}}/>
+          <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</span>
+        </div>)}
+      </>}
+      <div style={{marginTop:"auto",paddingTop:12,borderTop:"1px solid var(--border)",display:"flex",flexDirection:"column",gap:8}}>
+        {isAdmin&&<button className="btn-green btn-sm" style={{width:"100%"}} onClick={()=>{const rows=[["#","שם","לקוח","מפיקה","סטטוס","הקרנה","הערות"]];projects.filter(p=>p.status!=="cancelled"&&p.status!=="completed").forEach(p=>rows.push([p.projectNumber||"",p.name,p.client,p.producer,STATUS_CFG[p.status]?.label||"",p.onlineScreening||"",p.statusNote||""]));dlCSV(rows,`סטטוסים_${todayStr()}.csv`);}}>📤 יצוא סטטוסים</button>}
+        <button className="btn-ghost btn-sm" style={{width:"100%"}} onClick={()=>{setCurrentUser(null);localStorage.removeItem(REMEMBER_KEY);}}>🚪 התנתקות</button>
+      </div>
+    </aside>
+  );
+
+  const updateProjAndSync=proj=>{
+    updateProject(proj);
+    const url=getSheetsUrl();if(url)sheetsPost(url,{action:"update",sheet:"projects",id:proj.id,row:proj}).catch(()=>{});
+  };
+
+  return(<>
+    <GS/>
+    <div style={{display:"flex",minHeight:"100vh"}}>
+      <div className="desktop-sidebar" style={{display:"flex",flexShrink:0,width:220}}><Sidebar/></div>
+      {sidebarOpen&&<><Sidebar mobile/><div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:899}} onClick={()=>setSidebarOpen(false)}/></>}
+      <main style={{flex:1,padding:"24px 22px 90px",overflowY:"auto",minWidth:0}}>
+        {/* Topbar */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22,flexWrap:"wrap",gap:10}}>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            <button className="btn-ghost btn-sm" onClick={()=>setSidebarOpen(true)} style={{display:"none"}} id="mob-menu-btn">☰</button>
+            <div style={{fontSize:12,color:"var(--muted)"}}>{new Date().toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long"})}</div>
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            {isAdmin&&view==="projects"&&<button className="btn-gold btn-sm" onClick={()=>setShowNewProj(true)}>+ פרויקט חדש</button>}
+            {isAdmin&&<button className="btn-green btn-sm" onClick={()=>{saveLocal(data);const now=new Date().toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"});setLastAutoSave(now);}}>💾</button>}
+          </div>
+        </div>
+        {/* Views */}
+        {view==="project"&&selProj?<ProjectDetail project={selProj} user={currentUser} users={users} shiftTypes={sts} onChange={updateProjAndSync} onBack={()=>{setSelProjId(null);setView("projects");}}/>
+          :view==="dashboard"?<Dashboard projects={projects} user={currentUser} logoUrl={logoUrl} onSelect={gotoProj} onGoto={goto}/>
+          :view==="calendar"?<WeeklyCalendar projects={projects} user={currentUser} users={users} shiftTypes={sts} onSaveShift={onSaveShift} onDeleteShift={onDeleteShift}/>
+          :(view==="projects"&&(isAdmin||isProd))?<ProjectsList projects={projects} user={currentUser} onSelect={gotoProj} onNew={()=>setShowNewProj(true)}/>
+          :view==="hours"?<HoursLog projects={projects} user={currentUser} users={users} onChange={updateProjAndSync} sheetsUrl={getSheetsUrl()}/>
+          :view==="quotes"?<QuoteBuilder projects={projects} quoteTemplates={quoteTemplates} onSave={addQuote} onUpdateTemplates={t=>upd({quoteTemplates:t})} user={currentUser}/>
+          :view==="reports"?<Reports projects={projects} users={users}/>
+          :view==="vault"?<PasswordVault passwords={passwords} onUpdate={p=>upd({passwords:p})} currentUser={currentUser}/>
+          :view==="clients"?<ClientList projects={projects} clients={clients} onUpdate={c=>upd({clients:c})}/>
+          :view==="users"?<UserMgmt users={users} onUpdate={u=>upd({users:u})} currentUser={currentUser}/>
+          :view==="sheets"?<SheetsSettings projects={projects} passwords={passwords} users={users} onProjectsLoaded={p=>upd({projects:p})} onPasswordsLoaded={p=>upd({passwords:p})} onStaffLoaded={u=>upd({users:u})}/>
+          :view==="backup"?<BackupPanel users={users} projects={projects} passwords={passwords} lastAutoSave={lastAutoSave} onRestore={d=>upd({users:d.users||users,projects:d.projects||projects,passwords:d.passwords||passwords})}/>
+          :view==="settings"?<Settings shiftTypes={sts} onUpdateShiftTypes={st=>upd({shiftTypes:st})} logoUrl={logoUrl} onUpdateLogo={url=>upd({logoUrl:url})}/>
+          :null}
+      </main>
+    </div>
+    {/* Mobile bottom nav */}
+    <div className="mob-bar">
+      <button className="mob-btn" onClick={()=>setSidebarOpen(true)}>☰<span>תפריט</span></button>
+      {NAV.slice(0,4).map(n=><button key={n.id} className={`mob-btn${view===n.id?" active":""}`} onClick={()=>goto(n.id)}>{n.icon}<span>{n.label}</span></button>)}
+    </div>
+    {showNewProj&&<NewProjectModal onClose={()=>setShowNewProj(false)} onAdd={p=>{addProject(p);gotoProj(p.id);}} nextNum={nextProjNum||1}/>}
+  </>);
+}
+
+// ══════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════
+function AppLoader(){
+  const [initData,setInitData]=useState(null);
+  useEffect(()=>{(async()=>{
+    Splash.set(20,"טוען נתונים...");
+    const local=loadLocal();
+    Splash.set(50,"בודק Google Sheets...");
+    const url=getSheetsUrl();
+    if(url){try{
+      const[projs,pws,staff]=await Promise.all([sheetsCall(url,{action:"getAll",sheet:"projects"}),sheetsCall(url,{action:"getAll",sheet:"passwords"}),sheetsCall(url,{action:"getAll",sheet:"staff"})]);
+      Splash.set(85,"מעבד נתונים...");
+      const patch={};
+      if(projs&&projs.length)patch.projects=projs.map(r=>({tasks:[],shifts:[],hours:[],quotes:[],plan:{crew:[],milestones:[],notes:""},...mapProject(r)}));
+      if(pws&&pws.length)patch.passwords=pws.map(mapPassword);
+      if(staff&&staff.length){patch.users=staff.map(mapStaff);const maxNum=Math.max(0,...(patch.projects||local.projects||[]).map(p=>parseInt(p.projectNumber||0)||0));patch.nextProjNum=maxNum+1;}
+      setInitData({...local,...patch});
+    }catch{setInitData(local);}}
+    else setInitData(local);
+    Splash.set(100,"מוכן!");
+    if(local.logoUrl)Splash.setLogo(local.logoUrl);
+    setTimeout(()=>Splash.hide(),500);
+  })();},[]);
+  if(!initData)return null;
+  return <App initialData={initData}/>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<AppLoader/>);
+
+</script>
+</body>
+</html>
