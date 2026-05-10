@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow v14 BETA</title>
+<title>PostFlow v16</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
@@ -25,7 +25,7 @@ body{background:#07090f;margin:0;padding:0;font-family:'Heebo',sans-serif}
   <div class="sp-logo" id="splashLogo"><img src="https://i.imgur.com/8QfKFqA.png" onerror="this.parentElement.innerHTML='🎞 PostFlow'" style="height:72px;object-fit:contain;border-radius:12px" id="appLogo"/></div>
   <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
     <div class="sp-sub">Post-Production Management</div>
-    <div style="background:#e8c547;color:#07090f;font-size:9px;font-weight:900;padding:2px 7px;border-radius:20px;letter-spacing:1px;text-transform:uppercase">BETA</div>
+    <div style="background:#e8c547;color:#07090f;font-size:9px;font-weight:900;padding:2px 7px;border-radius:20px;letter-spacing:1px;text-transform:uppercase">v16</div>
   </div>
   <div class="sp-bar-wrap"><div class="sp-bar" id="spBar"></div></div>
   <div class="sp-msg" id="spMsg">מאתחל...</div>
@@ -140,7 +140,7 @@ const fmtMoney=v=>"₪"+Number(v||0).toLocaleString("he-IL");
 const pct=(a,b)=>b?Math.round((a/b)*100):0;
 const LS_KEY="postflow_v8";
 const SHEETS_KEY="pf_v8_sheets_url";
-const SHEETS_URL_DEFAULT="https://script.google.com/macros/s/AKfycbyDxfWHyGKzNofBzJZPiNyaBqa6Cjq_CpGTxzO7DVAI4F3mAT0gQiwcONA9229OyTaZ/exec"; // ← הכנס כאן את ה-URL של ה-Apps Script שלך
+const SHEETS_URL_DEFAULT="https://script.google.com/macros/s/AKfycbx97vFEdyGV5e0kYuRV23qVtl-MbiFeOEzlNHvfpxkfmtDOsNazY9vp4wUc_Y2yOjL-/exec"; // ← הכנס כאן את ה-URL של ה-Apps Script שלך
 const REMEMBER_KEY="pf_v8_remember";
 const ADMIN_EMAIL="uri@fpp.co.il";
 const ADMIN_PASS="0711";
@@ -259,6 +259,16 @@ function SmartSearch({projects,onSelect,placeholder}){
 // Task Chips — multi-select
 function TaskChips({shiftTypes,selected,onChange}){
   const sts=shiftTypes||DEF_SHIFT_TYPES;
+
+  const syncSettingsToSheets=(key,value,label)=>{
+    const url=getSheetsUrl();if(!url)return;
+    sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:typeof value==="object"?JSON.stringify(value):String(value),label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}}).catch(()=>{});
+  };
+  const onSaveShiftTypesToSheets=st=>syncSettingsToSheets("shiftTypes",st,"סוגי משמרות");
+  const onSyncUser=u=>{
+    const url=getSheetsUrl();if(!url)return;
+    sheetsPost(url,{action:"upsert",sheet:"staff",id:u.id,row:u}).catch(()=>{});
+  };
   const toggle=id=>{if(selected.includes(id))onChange(selected.filter(x=>x!==id));else onChange([...selected,id]);};
   return(<div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>
     {sts.map(t=>{const sel=selected.includes(t.id);return(
@@ -276,16 +286,21 @@ function ProjSearchSelect({projects,value,onChange}){
   const [q,setQ]=useState(()=>projects.find(p=>p.id===value)?.name||"");
   const [open,setOpen]=useState(false);const ref=useRef();
   useEffect(()=>{const h=e=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h);},[]);
-  const res=useMemo(()=>{if(!q.trim())return projects.filter(p=>p.status==="active");const lq=q.toLowerCase();return projects.filter(p=>p.status==="active"&&((p.name||"").toLowerCase().includes(lq)||(p.projectNumber||"").toString().includes(lq)||(p.client||"").toLowerCase().includes(lq)));},[q,projects]);
+  const activeProjects=useMemo(()=>projects.filter(p=>p.status==="active"),[projects]);
+  const res=useMemo(()=>{if(!q.trim())return activeProjects;const lq=q.toLowerCase();return activeProjects.filter(p=>((p.name||"").toLowerCase().includes(lq)||(p.projectNumber||"").toString().includes(lq)||(p.client||"").toLowerCase().includes(lq)));},[q,activeProjects]);
+  const selProj=activeProjects.find(p=>p.id===value);
   return(<div ref={ref} style={{position:"relative"}}>
     <div style={{display:"flex",gap:6}}>
-      <input value={q} onChange={e=>{setQ(e.target.value);setOpen(true);if(!e.target.value)onChange("");}} onFocus={()=>setOpen(true)} placeholder="חפש פרויקט..."/>
+      <input value={q} onChange={e=>{setQ(e.target.value);setOpen(true);if(!e.target.value)onChange("");}} onFocus={()=>setOpen(true)} placeholder={`חפש מתוך ${activeProjects.length} פרויקטים פעילים...`}/>
       {value&&<button className="btn-ghost btn-sm" onClick={()=>{setQ("");onChange("");}}>✕</button>}
     </div>
-    {open&&<div className="srch-drop">
-      <div className="srch-item" style={{color:"var(--muted)"}} onClick={()=>{setQ("");onChange("");setOpen(false);}}>— ללא פרויקט —</div>
+    {value&&selProj&&!open&&<div style={{fontSize:11,color:"var(--green)",marginTop:4}}>✓ #{selProj.projectNumber||"—"} {selProj.name}</div>}
+    {open&&<div className="srch-drop" style={{maxHeight:360}}>
+      <div className="srch-item" style={{color:"var(--muted)",fontSize:11}} onClick={()=>{setQ("");onChange("");setOpen(false);}}>— ללא פרויקט —</div>
+      {res.length===0&&<div style={{padding:"12px 14px",color:"var(--muted)",fontSize:12}}>לא נמצאו פרויקטים</div>}
       {res.map(p=><div key={p.id} className="srch-item" onClick={()=>{setQ(p.name);onChange(p.id);setOpen(false);}}>
-        <span style={{color:"var(--gold)",fontWeight:800,marginLeft:8}}>#{p.projectNumber||"—"}</span>{p.name}
+        <span style={{color:"var(--gold)",fontWeight:800,marginLeft:8}}>#{p.projectNumber||"—"}</span>
+        <span style={{fontWeight:600}}>{p.name}</span>
         <span style={{fontSize:10,color:"var(--muted)",marginRight:8}}> · {p.client}</span>
       </div>)}
     </div>}
@@ -446,6 +461,16 @@ function WeeklyCalendar({projects,user,users,shiftTypes,globalShifts,onSaveShift
   const canEdit=user.role==="admin"||user.role==="producer";
   const canSeeAll=user.role==="admin"||user.role==="producer";
   const sts=shiftTypes||DEF_SHIFT_TYPES;
+
+  const syncSettingsToSheets=(key,value,label)=>{
+    const url=getSheetsUrl();if(!url)return;
+    sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:typeof value==="object"?JSON.stringify(value):String(value),label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}}).catch(()=>{});
+  };
+  const onSaveShiftTypesToSheets=st=>syncSettingsToSheets("shiftTypes",st,"סוגי משמרות");
+  const onSyncUser=u=>{
+    const url=getSheetsUrl();if(!url)return;
+    sheetsPost(url,{action:"upsert",sheet:"staff",id:u.id,row:u}).catch(()=>{});
+  };
   const allDays=Array.from({length:14},(_,i)=>{const d=new Date(weekStart);d.setDate(d.getDate()+i);return d;});
   const week1=allDays.slice(0,7),week2=allDays.slice(7,14);
 
@@ -574,6 +599,16 @@ function ShiftModal({mode,initialShift,projects,users,shiftTypes,onSave,onDelete
   const [s,setS]=useState({...initialShift,tasks:initialShift.tasks||[]});
   const upd=k=>e=>setS(x=>({...x,[k]:e.target.value}));
   const sts=shiftTypes||DEF_SHIFT_TYPES;
+
+  const syncSettingsToSheets=(key,value,label)=>{
+    const url=getSheetsUrl();if(!url)return;
+    sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:typeof value==="object"?JSON.stringify(value):String(value),label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}}).catch(()=>{});
+  };
+  const onSaveShiftTypesToSheets=st=>syncSettingsToSheets("shiftTypes",st,"סוגי משמרות");
+  const onSyncUser=u=>{
+    const url=getSheetsUrl();if(!url)return;
+    sheetsPost(url,{action:"upsert",sheet:"staff",id:u.id,row:u}).catch(()=>{});
+  };
   const proj=projects.find(p=>p.id===s.projId);
   return(<div className="modal-bg" onClick={onClose}>
     <div className="modal" style={{maxWidth:560}} onClick={e=>e.stopPropagation()}>
@@ -719,6 +754,16 @@ function ProjectDetail({project,user,users,shiftTypes,onChange,onBack}){
   const [tab,setTab]=useState("overview");
   const isAdmin=user.role==="admin",canEdit=user.role==="admin"||user.role==="producer";
   const sts=shiftTypes||DEF_SHIFT_TYPES;
+
+  const syncSettingsToSheets=(key,value,label)=>{
+    const url=getSheetsUrl();if(!url)return;
+    sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:typeof value==="object"?JSON.stringify(value):String(value),label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}}).catch(()=>{});
+  };
+  const onSaveShiftTypesToSheets=st=>syncSettingsToSheets("shiftTypes",st,"סוגי משמרות");
+  const onSyncUser=u=>{
+    const url=getSheetsUrl();if(!url)return;
+    sheetsPost(url,{action:"upsert",sheet:"staff",id:u.id,row:u}).catch(()=>{});
+  };
   const wName=id=>users.find(u=>u.id===id)?.name||id;
 
   const [nt,setNt]=useState({title:"",type:"editing"});
@@ -1373,11 +1418,17 @@ function ClientList({projects,clients,onUpdate}){
 // ══════════════════════════════════════════
 // USER MANAGEMENT
 // ══════════════════════════════════════════
-function UserMgmt({users,onUpdate,currentUser}){
+function UserMgmt({users,onUpdate,currentUser,onSyncUser}){
   const [form,setForm]=useState({name:"",email:"",role:"worker",password:"",phone:"",active:"true"});
   const [editId,setEditId]=useState(null);
   const f=k=>e=>setForm(p=>({...p,[k]:e.target.value}));
-  const save=()=>{if(!form.name||!form.email)return;if(editId)onUpdate(users.map(u=>u.id===editId?{...u,...form}:u));else onUpdate([...users,{id:uid(),...form}]);setEditId(null);setForm({name:"",email:"",role:"worker",password:"",phone:"",active:"true"});};
+  const save=()=>{
+    if(!form.name||!form.email)return;
+    const newUser=editId?{...users.find(u=>u.id===editId),...form}:{id:uid(),...form};
+    if(editId)onUpdate(users.map(u=>u.id===editId?newUser:u));else onUpdate([...users,newUser]);
+    if(onSyncUser)onSyncUser(newUser);
+    setEditId(null);setForm({name:"",email:"",role:"worker",password:"",phone:"",active:"true"});
+  };
   return(<div className="fade">
     <div className="section-title">👥 ניהול משתמשים</div>
     <div className="card" style={{marginBottom:20}}>
@@ -1409,13 +1460,27 @@ function UserMgmt({users,onUpdate,currentUser}){
 // ══════════════════════════════════════════
 // SHEETS SETTINGS
 // ══════════════════════════════════════════
-function SheetsSettings({projects,passwords,users,onProjectsLoaded,onPasswordsLoaded,onStaffLoaded}){
+function SheetsSettings({projects,users,onProjectsLoaded,onStaffLoaded,onSettingsLoaded}){
   const [url,setUrl]=useState(getSheetsUrl);const [msg,setMsg]=useState("");const [syncing,setSyncing]=useState(false);
   const [lastSync,setLastSync]=useState(()=>localStorage.getItem("pf_v8_last_sync")||"");
   const save=()=>{setSheetsUrl(url.trim());setMsg("✅ URL נשמר");};
   const test=async()=>{setMsg("בודק...");try{const r=await fetch(`${url.trim()}?action=ping`);const j=await r.json();setMsg(j.ok?"✅ מחובר!":"❌ "+j.error);}catch(e){setMsg("❌ "+e.message);}};
-  const pull=async()=>{setSyncing(true);setMsg("מושך...");try{const u=getSheetsUrl();const[projs,pws,staff]=await Promise.all([sheetsCall(u,{action:"getAll",sheet:"projects"}),sheetsCall(u,{action:"getAll",sheet:"passwords"}),sheetsCall(u,{action:"getAll",sheet:"staff"})]);if(projs)onProjectsLoaded(projs.map(r=>({tasks:[],shifts:[],hours:[],quotes:[],plan:{crew:[],milestones:[],notes:""},...mapProject(r)})));if(pws)onPasswordsLoaded(pws.map(mapPassword));if(staff)onStaffLoaded(staff.map(mapStaff));const now=new Date().toLocaleString("he-IL");setLastSync(now);localStorage.setItem("pf_v8_last_sync",now);setMsg("✅ עודכן!");}catch(e){setMsg("❌ "+e.message);}setSyncing(false);};
-  const push=async()=>{setSyncing(true);setMsg("שולח...");try{const u=getSheetsUrl();await Promise.all([sheetsPost(u,{action:"batchUpdate",sheet:"projects",rows:projects}),sheetsPost(u,{action:"batchUpdate",sheet:"passwords",rows:passwords}),sheetsPost(u,{action:"batchUpdate",sheet:"staff",rows:users})]);const now=new Date().toLocaleString("he-IL");setLastSync(now);localStorage.setItem("pf_v8_last_sync",now);setMsg("✅ עודכן!");}catch(e){setMsg("❌ "+e.message);}setSyncing(false);};
+  const pull=async()=>{setSyncing(true);setMsg("מושך...");try{const u=getSheetsUrl();
+    const[projs,staff,settingsRows]=await Promise.all([
+      sheetsCall(u,{action:"getAll",sheet:"projects"}),
+      sheetsCall(u,{action:"getAll",sheet:"staff"}),
+      sheetsCall(u,{action:"getAll",sheet:"settings"})
+    ]);
+    if(projs)onProjectsLoaded(projs.map(r=>({tasks:[],shifts:[],hours:[],quotes:[],plan:{crew:[],milestones:[],notes:""},...mapProject(r)})));
+    if(staff)onStaffLoaded(staff.map(mapStaff));
+    if(settingsRows&&settingsRows.length)onSettingsLoaded(settingsRows);
+    const now=new Date().toLocaleString("he-IL");setLastSync(now);localStorage.setItem("pf_v8_last_sync",now);setMsg("✅ עודכן!");}catch(e){setMsg("❌ "+e.message);}setSyncing(false);};
+  const push=async()=>{setSyncing(true);setMsg("שולח...");try{const u=getSheetsUrl();
+    await Promise.all([
+      sheetsPost(u,{action:"batchUpdate",sheet:"projects",rows:projects}),
+      sheetsPost(u,{action:"batchUpdate",sheet:"staff",rows:users}),
+    ]);
+    const now=new Date().toLocaleString("he-IL");setLastSync(now);localStorage.setItem("pf_v8_last_sync",now);setMsg("✅ עודכן!");}catch(e){setMsg("❌ "+e.message);}setSyncing(false);};
   return(<div className="fade">
     <div className="section-title">☁️ Google Sheets Sync</div>
     {lastSync&&<div style={{fontSize:12,color:"var(--muted)",marginBottom:14}}>סנכרון אחרון: {lastSync}</div>}
@@ -1431,7 +1496,14 @@ function SheetsSettings({projects,passwords,users,onProjectsLoaded,onPasswordsLo
     </div>
     <div className="card">
       <div style={{fontWeight:700,marginBottom:10}}>מבנה גיליונות</div>
-      {[{n:"staff",f:"name, role, email, phone, active, password"},{n:"projects",f:"projectNumber, name, producer, shootDate, offlineScreening, onlineScreening, deliveryDate, status, progress, client, description, statusNote"},{n:"passwords",f:"label, username, password, description, category, url, createdAt"},{n:"shifts",f:"id, projId, projName, person, personName, date, timeStart, timeEnd, tasks, note"},{n:"quotes",f:"id, projId, date, client, total, approved, template, note"}].map(s=><div key={s.n} style={{display:"flex",gap:12,padding:"8px 0",borderBottom:"1px solid var(--border)22"}}><div style={{fontWeight:700,color:"var(--gold)",minWidth:100}}>{s.n}</div><div style={{fontSize:11,color:"var(--muted)"}}>{s.f}</div></div>)}
+      {[
+  {n:"staff",f:"id, name, role, email, phone, active, password"},
+  {n:"projects",f:"id, projectNumber, name, producer, shootDate, offlineScreening, onlineScreening, deliveryDate, status, progress, client, description, statusNote"},
+  {n:"calendar",f:"id, date, timeStart, timeEnd, personName, projName, tasks, note, projId, person, deleted, deletedBy, deletedAt"},
+  {n:"hours_report",f:"id, workerName, date, timeIn, timeOut, totalHours, note"},
+  {n:"settings",f:"key, value, label, updatedAt"},
+  {n:"quotes",f:"id, projId, date, client, total, approved, template, note"}
+].map(s=><div key={s.n} style={{display:"flex",gap:12,padding:"8px 0",borderBottom:"1px solid var(--border)22",flexWrap:"wrap"}}><div style={{fontWeight:700,color:"var(--gold)",minWidth:110}}>{s.n}</div><div style={{fontSize:11,color:"var(--muted)",fontFamily:"monospace"}}>{s.f}</div></div>)}
     </div>
   </div>);
 }
@@ -1447,8 +1519,8 @@ function BackupPanel({users,projects,passwords,lastAutoSave,onRestore,driveFolde
     if(!url){setDriveMsg("❌ אין URL של Sheets — הגדר ב'Sheets'");return;}
     setDriveMsg("שומר...");
     try{
-      const filename=`postflow_backup_${todayStr()}.json`;
-      const allData={users,projects,passwords,exportDate:todayStr(),version:"v14"};
+      const filename=`postflow_backup_v16_${todayStr()}.json`;
+      const allData={users,projects,passwords,exportDate:todayStr(),version:"v16"};
       await fetch(url,{method:"POST",body:JSON.stringify({action:"saveBackup",data:JSON.stringify(allData),filename,folderId:driveFolder||""})});
       setDriveMsg(`✅ גיבוי נשמר${driveFolder?" בתיקיה המוגדרת":""} — ${filename}`);
     }catch(e){setDriveMsg("❌ "+e.message);}
@@ -1459,7 +1531,7 @@ function BackupPanel({users,projects,passwords,lastAutoSave,onRestore,driveFolde
     {driveFolder&&<div style={{fontSize:12,color:"var(--blue)",marginBottom:14,padding:"8px 12px",background:"var(--blue)15",borderRadius:8}}>📁 תיקיית Drive: <code style={{fontSize:11}}>{driveFolder}</code></div>}
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12,marginBottom:20}}>
       {[
-        {icon:"🗄️",label:"גיבוי מלא (JSON)",desc:"משתמשים + פרויקטים + סיסמאות",action:()=>dlJSON({users,projects,passwords,exportDate:todayStr(),version:"v14"},`postflow_backup_${todayStr()}.json`),color:"var(--blue)"},
+        {icon:"🗄️",label:"גיבוי מלא (JSON)",desc:"משתמשים + פרויקטים + סיסמאות",action:()=>dlJSON({users,projects,passwords,exportDate:todayStr(),version:"v16"},`postflow_backup_v16_${todayStr()}.json`),color:"var(--blue)"},
         {icon:"🎬",label:"פרויקטים בלבד",desc:"JSON של כל הפרויקטים",action:()=>dlJSON({projects},`postflow_projects_${todayStr()}.json`),color:"var(--gold)"},
         {icon:"📝",label:"הצעות מחיר",desc:"CSV לפי עמודות הגיליון",action:()=>{const rows=[["id","projId","date","client","total","approved","template","note"]];projects.forEach(p=>(p.quotes||[]).forEach(q=>rows.push([q.id||"",p.id,q.date||"",q.client||"",q.total||0,q.approved?"true":"false",q.template||"",q.note||""])));dlCSV(rows,`הצעות_מחיר_${todayStr()}.csv`);},color:"var(--purple)"},
         {icon:"⏱",label:"שעות עבודה",desc:"CSV של כל דיווחי השעות",action:()=>{const rows=[["עובד","פרויקט","תאריך","כניסה","יציאה","שעות","הערה"]];projects.forEach(p=>(p.hours||[]).forEach(h=>{const u=users.find(u=>u.id===h.worker);rows.push([u?.name||h.worker,p.name,h.date,h.timeIn||"",h.timeOut||"",h.hours.toFixed(1),h.note||""]);} ));dlCSV(rows,`שעות_${todayStr()}.csv`);},color:"var(--green)"},
@@ -1490,11 +1562,11 @@ function BackupPanel({users,projects,passwords,lastAutoSave,onRestore,driveFolde
 // ══════════════════════════════════════════
 // SETTINGS — logo + shift types + drive folder
 // ══════════════════════════════════════════
-function Settings({shiftTypes,onUpdateShiftTypes,logoUrl,onUpdateLogo,driveFolder,onUpdateDriveFolder}){
+function Settings({shiftTypes,onUpdateShiftTypes,logoUrl,onUpdateLogo,driveFolder,onUpdateDriveFolder,onSaveShiftTypesToSheets}){
   const [etSt,setEtSt]=useState(shiftTypes||DEF_SHIFT_TYPES);
   const [dFolder,setDFolder]=useState(driveFolder||"");
   const updSt=(id,k,v)=>setEtSt(ts=>ts.map(t=>t.id===id?{...t,[k]:v}:t));
-  const saveSt=()=>onUpdateShiftTypes(etSt);
+  const saveSt=()=>{onUpdateShiftTypes(etSt);if(onSaveShiftTypesToSheets)onSaveShiftTypesToSheets(etSt);};
   return(<div className="fade">
     <div className="section-title">⚙️ הגדרות מערכת</div>
     {/* Logo */}
@@ -1525,10 +1597,11 @@ function Settings({shiftTypes,onUpdateShiftTypes,logoUrl,onUpdateLogo,driveFolde
         <span className="tag" style={{background:t.color+"20",color:t.color,border:`1px solid ${t.color}40`,minWidth:80,justifyContent:"center"}}>{t.label}</span>
         <button className="btn-red" onClick={()=>setEtSt(ts=>ts.filter(x=>x.id!==t.id))}>✕</button>
       </div>)}
-      <div style={{display:"flex",gap:10,marginTop:8}}>
+      <div style={{display:"flex",gap:10,marginTop:8,flexWrap:"wrap"}}>
         <button className="btn-ghost btn-sm" onClick={()=>setEtSt(ts=>[...ts,{id:uid(),label:"חדש",color:"#94a3b8"}])}>+ הוסף סוג</button>
-        <button className="btn-gold btn-sm" onClick={saveSt}>💾 שמור</button>
+        <button className="btn-gold btn-sm" onClick={saveSt}>💾 שמור + סנכרן Sheets</button>
       </div>
+      <div style={{fontSize:11,color:"var(--muted)",marginTop:8}}>💡 השינויים יישמרו גם בגליון <code style={{color:"var(--gold)"}}>settings</code> — ניתן לערוך משם ולמשוך חזרה</div>
     </div>
   </div>);
 }
@@ -1604,10 +1677,11 @@ function App({initialData}){
     didSyncRef.current=true;
     (async()=>{
       try{
-        const[projs,pws,staff]=await Promise.all([
+        const[projs,pws,staff,settingsRows]=await Promise.all([
           sheetsCall(url,{action:"getAll",sheet:"projects"}),
           sheetsCall(url,{action:"getAll",sheet:"passwords"}),
-          sheetsCall(url,{action:"getAll",sheet:"staff"})
+          sheetsCall(url,{action:"getAll",sheet:"staff"}),
+          sheetsCall(url,{action:"getAll",sheet:"settings"})
         ]);
         const patch={};
         const localData=loadLocal();
@@ -1621,6 +1695,12 @@ function App({initialData}){
           patch.users=staff.map(mapStaff);
           const maxNum=Math.max(0,...(patch.projects||localProjects).map(p=>parseInt(p.projectNumber||0)||0));
           patch.nextProjNum=maxNum+1;
+        }
+        if(settingsRows&&settingsRows.length){
+          settingsRows.forEach(row=>{
+            if(row.key==="shiftTypes"&&row.value){try{const st=JSON.parse(row.value);if(Array.isArray(st)&&st.length)patch.shiftTypes=st;}catch{}}
+            if(row.key==="logoUrl"&&row.value)patch.logoUrl=row.value;
+          });
         }
         if(Object.keys(patch).length)upd(patch);
       }catch{}
@@ -1639,6 +1719,16 @@ function App({initialData}){
   const gotoProj=id=>{setSelProjId(id);setView("project");setSidebarOpen(false);};
 
   const sts=shiftTypes||DEF_SHIFT_TYPES;
+
+  const syncSettingsToSheets=(key,value,label)=>{
+    const url=getSheetsUrl();if(!url)return;
+    sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:typeof value==="object"?JSON.stringify(value):String(value),label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}}).catch(()=>{});
+  };
+  const onSaveShiftTypesToSheets=st=>syncSettingsToSheets("shiftTypes",st,"סוגי משמרות");
+  const onSyncUser=u=>{
+    const url=getSheetsUrl();if(!url)return;
+    sheetsPost(url,{action:"upsert",sheet:"staff",id:u.id,row:u}).catch(()=>{});
+  };
 
   // Handle shift save/delete from calendar
   const onSaveShift=shift=>{
@@ -1668,6 +1758,9 @@ function App({initialData}){
     }
   };
   const onDeleteShift=shift=>{
+    const url=getSheetsUrl();
+    const deletedRow={deleted:"TRUE",deletedBy:currentUser?.name||"",deletedAt:new Date().toISOString().slice(0,19).replace("T"," ")};
+    if(url)sheetsPost(url,{action:"softDelete",sheet:"calendar",id:shift.id,row:deletedRow}).catch(()=>{});
     if(!shift.projId){
       upd({globalShifts:(data.globalShifts||[]).filter(s=>s.id!==shift.id)});
       return;
@@ -1691,7 +1784,7 @@ function App({initialData}){
       <div style={{padding:"0 6px 16px",borderBottom:"1px solid var(--border)",marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div>
           {logoUrl?<img src={logoUrl} style={{height:36,objectFit:"contain",borderRadius:5}} alt="logo"/>:<div style={{fontWeight:900,fontSize:18,color:"var(--gold)"}}>🎞 PostFlow</div>}
-          <div style={{fontSize:9,color:"var(--muted)",marginTop:2}}>v14 <span style={{background:"var(--gold)",color:"#07090f",padding:"1px 5px",borderRadius:10,fontSize:8,fontWeight:900}}>BETA</span></div>
+          <div style={{fontSize:9,color:"var(--muted)",marginTop:2}}>v14 <span style={{background:"var(--gold)",color:"#07090f",padding:"1px 5px",borderRadius:10,fontSize:8,fontWeight:900}}>v16</span></div>
         </div>
         {mobile&&<button className="btn-ghost btn-sm" onClick={()=>setSidebarOpen(false)}>✕</button>}
       </div>
@@ -1747,10 +1840,10 @@ function App({initialData}){
           :view==="reports"?<Reports projects={projects} users={users}/>
           :view==="vault"?<PasswordVault/>
           :view==="clients"?<ClientList projects={projects} clients={clients} onUpdate={c=>upd({clients:c})}/>
-          :view==="users"?<UserMgmt users={users} onUpdate={u=>upd({users:u})} currentUser={currentUser}/>
-          :view==="sheets"?<SheetsSettings projects={projects} passwords={passwords} users={users} onProjectsLoaded={p=>upd({projects:p})} onPasswordsLoaded={p=>upd({passwords:p})} onStaffLoaded={u=>upd({users:u})}/>
+          :view==="users"?<UserMgmt users={users} onUpdate={u=>upd({users:u})} currentUser={currentUser} onSyncUser={onSyncUser}/>
+          :view==="sheets"?<SheetsSettings projects={projects} users={users} onProjectsLoaded={p=>upd({projects:p})} onStaffLoaded={u=>upd({users:u})} onSettingsLoaded={rows=>{const patch={};rows.forEach(r=>{if(r.key==="shiftTypes"&&r.value){try{const st=JSON.parse(r.value);if(Array.isArray(st)&&st.length)patch.shiftTypes=st;}catch{}}if(r.key==="logoUrl"&&r.value)patch.logoUrl=r.value;});if(Object.keys(patch).length)upd(patch);}}/>
           :view==="backup"?<BackupPanel users={users} projects={projects} passwords={passwords} lastAutoSave={lastAutoSave} driveFolder={driveFolder} onRestore={d=>upd({users:d.users||users,projects:d.projects||projects,passwords:d.passwords||passwords})}/>
-          :view==="settings"?<Settings shiftTypes={sts} onUpdateShiftTypes={st=>upd({shiftTypes:st})} logoUrl={logoUrl} onUpdateLogo={url=>upd({logoUrl:url})} driveFolder={driveFolder} onUpdateDriveFolder={handleUpdateDriveFolder}/>
+          :view==="settings"?<Settings shiftTypes={sts} onUpdateShiftTypes={st=>{upd({shiftTypes:st});syncSettingsToSheets("shiftTypes",st,"סוגי משמרות");}} logoUrl={logoUrl} onUpdateLogo={url=>{upd({logoUrl:url});syncSettingsToSheets("logoUrl",url,"לוגו");}} driveFolder={driveFolder} onUpdateDriveFolder={handleUpdateDriveFolder} onSaveShiftTypesToSheets={onSaveShiftTypesToSheets}/>
           :null}
       </main>
     </div>
