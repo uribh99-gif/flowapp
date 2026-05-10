@@ -169,7 +169,7 @@ const DEF_QUOTE_TMPLS=[
 // ══════════════════════════════════════════
 // STORAGE
 // ══════════════════════════════════════════
-function defData(){return{users:[{id:"u_admin",name:"אורי",email:ADMIN_EMAIL,role:"admin",password:ADMIN_PASS,phone:"",active:"admin"}],projects:[],passwords:[],shiftTypes:[...DEF_SHIFT_TYPES],quoteTemplates:[...DEF_QUOTE_TMPLS],nextProjNum:1,logoUrl:"",clients:[]};}
+function defData(){return{users:[{id:"u_admin",name:"אורי",email:ADMIN_EMAIL,role:"admin",password:ADMIN_PASS,phone:"",active:"admin"}],projects:[],passwords:[],shiftTypes:[...DEF_SHIFT_TYPES],quoteTemplates:[...DEF_QUOTE_TMPLS],nextProjNum:1,logoUrl:"",clients:[],globalShifts:[]};}
 function loadLocal(){
   try{
     const raw=localStorage.getItem(LS_KEY);
@@ -186,6 +186,7 @@ function loadLocal(){
       nextProjNum:    typeof d.nextProjNum==="number"                   ?d.nextProjNum    :def.nextProjNum,
       logoUrl:        typeof d.logoUrl==="string"                       ?d.logoUrl        :def.logoUrl,
       clients:        Array.isArray(d.clients)                          ?d.clients        :def.clients,
+      globalShifts:   Array.isArray(d.globalShifts)                     ?d.globalShifts   :def.globalShifts,
     };
   }catch(e){console.warn("loadLocal error",e);return defData();}
 }
@@ -431,9 +432,8 @@ function Dashboard({projects,user,logoUrl,onSelect,onGoto}){
 // ══════════════════════════════════════════
 // WEEKLY CALENDAR — day-based, task chips, edit-in-place, Fri/Sat allowed
 // ══════════════════════════════════════════
-function WeeklyCalendar({projects,user,users,shiftTypes,onSaveShift,onDeleteShift}){
+function WeeklyCalendar({projects,user,users,shiftTypes,globalShifts,onSaveShift,onDeleteShift,editModal,setEditModal}){
   const [weekStart,setWeekStart]=useState(()=>{const d=new Date();d.setDate(d.getDate()-d.getDay());return d;});
-  const [editModal,setEditModal]=useState(null);
   const [detailModal,setDetailModal]=useState(null);
   const canEdit=user.role==="admin"||user.role==="producer";
   const canSeeAll=user.role==="admin"||user.role==="producer";
@@ -444,13 +444,20 @@ function WeeklyCalendar({projects,user,users,shiftTypes,onSaveShift,onDeleteShif
   // Build event map: date → [{...shift, projName, client}]
   const evMap=useMemo(()=>{
     const m={};
+    // משמרות מפרויקטים
     projects.forEach(proj=>(proj.shifts||[]).forEach(s=>{
       if(!m[s.date])m[s.date]=[];
       const show=canSeeAll||s.person===user.id;
       if(show)m[s.date].push({...s,projName:proj.name,client:proj.client,projId:proj.id});
     }));
+    // משמרות ללא פרויקט
+    (globalShifts||[]).forEach(s=>{
+      if(!m[s.date])m[s.date]=[];
+      const show=canSeeAll||s.person===user.id;
+      if(show)m[s.date].push({...s,projName:"",client:"",projId:""});
+    });
     return m;
-  },[projects,canSeeAll,user.id]);
+  },[projects,globalShifts,canSeeAll,user.id]);
 
   const openNew=date=>{
     if(!canEdit)return;
@@ -528,7 +535,7 @@ function WeeklyCalendar({projects,user,users,shiftTypes,onSaveShift,onDeleteShif
     {renderWeek(week1,"שבוע ראשון")}
     {renderWeek(week2,"שבוע שני")}
 
-    {editModal&&<ShiftModal mode={editModal.mode} initialShift={editModal.shift} projects={projects} users={users} shiftTypes={sts}
+    {editModal&&<ShiftModal key={editModal.shift?.id||editModal.shift?.date||"new"} mode={editModal.mode} initialShift={editModal.shift} projects={projects} users={users} shiftTypes={sts}
       onSave={s=>{onSaveShift(s);setEditModal(null);}}
       onDelete={editModal.mode==="edit"?s=>{onDeleteShift(s);setEditModal(null);}:null}
       onClose={()=>setEditModal(null)}/>}
@@ -882,21 +889,141 @@ function ProjectPlanning({project,users,onChange,canEdit}){
 function Reports({projects,users}){
   const [tab,setTab]=useState("projects");
   const [month,setMonth]=useState(()=>new Date().toISOString().slice(0,7));
+
+  // דוח סטטוס — קסטומיזציה
+  const [reportMode,setReportMode]=useState("active"); // "active" | "custom"
+  const [selectedIds,setSelectedIds]=useState([]);
+  const toggleProj=id=>setSelectedIds(s=>s.includes(id)?s.filter(x=>x!==id):[...s,id]);
+  const reportProjects=useMemo(()=>{
+    if(reportMode==="active")return projects.filter(p=>p.status==="active");
+    return projects.filter(p=>selectedIds.includes(p.id));
+  },[projects,reportMode,selectedIds]);
+
+  const printStatusReport=()=>{
+    const logo=document.querySelector("#appLogo");
+    const dateStr=new Date().toLocaleDateString("he-IL",{year:"numeric",month:"long",day:"numeric"});
+    const rows=reportProjects.map(p=>`
+      <div class="proj-block">
+        <div class="proj-header">
+          <span class="proj-num">#${p.projectNumber||"—"}</span>
+          <span class="proj-name">${p.name}</span>
+          <span class="proj-status status-${p.status}">${STATUS_CFG[p.status]?.label||p.status}</span>
+        </div>
+        <div class="proj-meta">
+          ${p.client?`<span>🏢 ${p.client}</span>`:""}
+          ${p.producer?`<span>👤 ${p.producer}</span>`:""}
+          ${p.onlineScreening?`<span>📽 הקרנה: <b>${p.onlineScreening}</b></span>`:""}
+          ${p.deliveryDate?`<span>📦 מסירה: <b>${p.deliveryDate}</b></span>`:""}
+        </div>
+        <div class="prog-wrap">
+          <div class="prog-bar" style="width:${p.progress||0}%"></div>
+        </div>
+        <div class="prog-label">התקדמות: <b>${p.progress||0}%</b>
+          &nbsp;·&nbsp; משימות: <b>${(p.tasks||[]).filter(t=>t.done).length}/${(p.tasks||[]).length}</b>
+          &nbsp;·&nbsp; שעות: <b>${(p.hours||[]).reduce((s,h)=>s+h.hours,0).toFixed(1)}h</b>
+        </div>
+        ${p.statusNote?`<div class="status-note">📝 ${p.statusNote}</div>`:""}
+      </div>`).join("");
+    const w=window.open("","_blank");
+    w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8">
+      <title>דוח סטטוס פרויקטים — ${dateStr}</title>
+      <style>
+        body{font-family:Arial,sans-serif;padding:32px 40px;direction:rtl;color:#1a1a2e;background:#fff}
+        .report-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #e8c547;padding-bottom:16px;margin-bottom:24px}
+        .report-title{font-size:22px;font-weight:900;color:#1a1a2e}
+        .report-date{font-size:12px;color:#666;margin-top:4px}
+        .logo{height:48px;object-fit:contain}
+        .proj-block{border:1px solid #e0e0e0;border-radius:10px;padding:16px 18px;margin-bottom:14px;page-break-inside:avoid}
+        .proj-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+        .proj-num{background:#e8c54720;color:#b8950f;font-weight:900;font-size:11px;padding:2px 8px;border-radius:5px;border:1px solid #e8c54760}
+        .proj-name{font-weight:800;font-size:15px;flex:1}
+        .proj-status{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+        .status-active{background:#6ee7b720;color:#059669}
+        .status-review{background:#4fc3f720;color:#0284c7}
+        .status-paused{background:#e8c54720;color:#b8950f}
+        .status-completed{background:#a3e63520;color:#4d7c0f}
+        .status-cancelled{background:#f0707020;color:#dc2626}
+        .proj-meta{display:flex;gap:16px;font-size:12px;color:#555;margin-bottom:10px;flex-wrap:wrap}
+        .prog-wrap{background:#f0f0f0;border-radius:4px;height:8px;margin-bottom:5px}
+        .prog-bar{background:linear-gradient(90deg,#e8c547,#f5a623);height:8px;border-radius:4px;transition:width .3s}
+        .prog-label{font-size:11px;color:#666;margin-bottom:6px}
+        .status-note{font-size:12px;color:#444;background:#f9f9f9;border-right:3px solid #e8c547;padding:7px 10px;border-radius:4px;margin-top:6px}
+        .footer{margin-top:32px;border-top:1px solid #e0e0e0;padding-top:12px;font-size:10px;color:#aaa;text-align:center}
+        @media print{body{padding:16px 20px}.proj-block{border-color:#ccc}}
+      </style></head><body>
+      <div class="report-header">
+        <div>
+          <div class="report-title">📊 דוח סטטוס פרויקטים</div>
+          <div class="report-date">תאריך הפקה: ${dateStr} · סה"כ: ${reportProjects.length} פרויקטים</div>
+        </div>
+        ${logo?`<img src="${logo.src}" class="logo"/>`:""}
+      </div>
+      ${rows}
+      <div class="footer">PostFlow · הופק ב-${dateStr}</div>
+    </body></html>`);
+    w.document.close();
+    setTimeout(()=>w.print(),400);
+  };
+
   return(<div className="fade">
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:10}}>
       <div className="section-title" style={{marginBottom:0}}>📊 דוחות</div>
       <input type="month" value={month} onChange={e=>setMonth(e.target.value)} style={{width:"auto"}}/>
     </div>
     <div style={{display:"flex",gap:0,marginBottom:20,borderBottom:"1px solid var(--border)",overflowX:"auto"}}>
-      {[{id:"projects",l:"🎬 פרויקטים"},{id:"hours",l:"⏱ שעות"},{id:"monthly",l:"📅 חודשי"}].map(t=><button key={t.id} className={`tab-btn${tab===t.id?" active":""}`} onClick={()=>setTab(t.id)}>{t.l}</button>)}
+      {[{id:"projects",l:"🎬 סטטוס פרויקטים"},{id:"hours",l:"⏱ שעות"},{id:"monthly",l:"📅 חודשי"}].map(t=><button key={t.id} className={`tab-btn${tab===t.id?" active":""}`} onClick={()=>setTab(t.id)}>{t.l}</button>)}
     </div>
     {tab==="projects"&&<div>
-      <button className="btn-green btn-sm" style={{marginBottom:14}} onClick={()=>{const rows=[["#","שם","לקוח","מפיקה","סטטוס","התקדמות","הקרנה","הערות"]];projects.filter(p=>p.status!=="cancelled").forEach(p=>rows.push([p.projectNumber||"",p.name,p.client,p.producer,STATUS_CFG[p.status]?.label||"",p.progress+"%",p.onlineScreening||"",p.statusNote||""]));dlCSV(rows,`סטטוס_${todayStr()}.csv`);}}>📤 יצוא CSV</button>
+      {/* בחירת מצב דוח */}
+      <div className="card" style={{marginBottom:16}}>
+        <div style={{fontWeight:700,marginBottom:12}}>⚙️ הגדרות דוח</div>
+        <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap"}}>
+          <button className={`btn-sm ${reportMode==="active"?"btn-gold":"btn-ghost"}`} onClick={()=>setReportMode("active")}>
+            ✅ פרויקטים פעילים ({projects.filter(p=>p.status==="active").length})
+          </button>
+          <button className={`btn-sm ${reportMode==="custom"?"btn-gold":"btn-ghost"}`} onClick={()=>setReportMode("custom")}>
+            🎯 בחירה ידנית ({selectedIds.length} נבחרו)
+          </button>
+        </div>
+        {reportMode==="custom"&&<div>
+          <div style={{fontSize:11,color:"var(--muted)",marginBottom:8}}>לחץ על פרויקט לבחירה / ביטול:</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6,maxHeight:200,overflowY:"auto"}}>
+            {projects.filter(p=>p.status!=="cancelled").map(p=>{
+              const sel=selectedIds.includes(p.id);
+              const sc=STATUS_CFG[p.status]?.color||"#aaa";
+              return(<div key={p.id} onClick={()=>toggleProj(p.id)}
+                style={{display:"flex",alignItems:"center",gap:6,padding:"5px 10px",borderRadius:8,cursor:"pointer",border:`1px solid ${sel?"var(--gold)":"var(--border)"}`,background:sel?"var(--gold)15":"transparent",transition:"all .15s"}}>
+                <div style={{width:14,height:14,borderRadius:3,background:sel?"var(--gold)":"transparent",border:`2px solid ${sel?"var(--gold)":"var(--border2)"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  {sel&&<span style={{color:"#07090f",fontSize:9,fontWeight:900}}>✓</span>}
+                </div>
+                <span style={{fontSize:10,color:"var(--gold)",fontWeight:800}}>#{p.projectNumber||"—"}</span>
+                <span style={{fontSize:12,fontWeight:600}}>{p.name}</span>
+                <span style={{width:6,height:6,borderRadius:"50%",background:sc,display:"inline-block",flexShrink:0}}/>
+              </div>);
+            })}
+          </div>
+          {projects.filter(p=>p.status!=="cancelled").length>3&&<div style={{display:"flex",gap:8,marginTop:10}}>
+            <button className="btn-ghost btn-sm" onClick={()=>setSelectedIds(projects.filter(p=>p.status!=="cancelled").map(p=>p.id))}>בחר הכל</button>
+            <button className="btn-ghost btn-sm" onClick={()=>setSelectedIds([])}>נקה</button>
+          </div>}
+        </div>}
+        <div style={{display:"flex",gap:10,marginTop:14,flexWrap:"wrap"}}>
+          <button className="btn-gold btn-sm" onClick={printStatusReport} disabled={reportProjects.length===0}>
+            🖨️ הדפס / PDF ({reportProjects.length} פרויקטים)
+          </button>
+          <button className="btn-green btn-sm" onClick={()=>{
+            const rows=[["#","שם","לקוח","מפיקה","סטטוס","התקדמות","הקרנה","מסירה","שעות","משימות","הערות"]];
+            reportProjects.forEach(p=>rows.push([p.projectNumber||"",p.name,p.client||"",p.producer||"",STATUS_CFG[p.status]?.label||"",p.progress+"%",p.onlineScreening||"",p.deliveryDate||"",(p.hours||[]).reduce((s,h)=>s+h.hours,0).toFixed(1),`${(p.tasks||[]).filter(t=>t.done).length}/${(p.tasks||[]).length}`,p.statusNote||""]));
+            dlCSV(rows,`סטטוס_${todayStr()}.csv`);
+          }}>📤 CSV</button>
+        </div>
+      </div>
+      {/* תצוגת טבלה */}
       <div style={{overflowX:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-          <thead><tr style={{borderBottom:"2px solid var(--border)"}}>{["#","שם","לקוח","מפיקה","סטטוס","התקדמות","הקרנה","הערות"].map(h=><th key={h} style={{textAlign:"right",padding:"8px 6px",color:"var(--muted)",fontWeight:700,whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
+          <thead><tr style={{borderBottom:"2px solid var(--border)"}}>{["#","שם","לקוח","מפיקה","סטטוס","התקדמות","הקרנה","שעות","הערות"].map(h=><th key={h} style={{textAlign:"right",padding:"8px 6px",color:"var(--muted)",fontWeight:700,whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
           <tbody>
-            {projects.filter(p=>p.status!=="cancelled").map(p=><tr key={p.id} style={{borderBottom:"1px solid var(--border)"}}>
+            {reportProjects.map(p=><tr key={p.id} style={{borderBottom:"1px solid var(--border)"}}>
               <td style={{padding:"8px 6px",fontWeight:800,color:"var(--gold)"}}>{p.projectNumber||"—"}</td>
               <td style={{padding:"8px 6px",fontWeight:700}}>{p.name}</td>
               <td style={{padding:"8px 6px",color:"var(--muted)"}}>{p.client}</td>
@@ -904,10 +1031,12 @@ function Reports({projects,users}){
               <td style={{padding:"8px 6px"}}><StatusBadge s={p.status}/></td>
               <td style={{padding:"8px 6px"}}><div style={{display:"flex",gap:6,alignItems:"center"}}><div style={{width:40}}><PBar v={p.progress}/></div><span style={{color:"var(--gold)"}}>{p.progress}%</span></div></td>
               <td style={{padding:"8px 6px",color:"var(--red)"}}>{p.onlineScreening||"—"}</td>
+              <td style={{padding:"8px 6px",color:"var(--blue)"}}>{(p.hours||[]).reduce((s,h)=>s+h.hours,0).toFixed(1)}h</td>
               <td style={{padding:"8px 6px",color:"var(--muted)",maxWidth:130,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.statusNote||"—"}</td>
             </tr>)}
           </tbody>
         </table>
+        {reportProjects.length===0&&<div style={{color:"var(--muted)",textAlign:"center",padding:32}}>אין פרויקטים לתצוגה</div>}
       </div>
     </div>}
     {tab==="hours"&&(()=>{
@@ -1267,6 +1396,7 @@ function App({initialData}){
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const [showNewProj,setShowNewProj]=useState(false);
   const [lastAutoSave,setLastAutoSave]=useState("");
+  const [calEditModal,setCalEditModal]=useState(null);
 
   // Persist to localStorage
   useEffect(()=>{saveLocal(data);},[data]);
@@ -1291,25 +1421,32 @@ function App({initialData}){
   // Update logo in splash
   useEffect(()=>{if(logoUrl)Splash.setLogo(logoUrl);},[logoUrl]);
 
-  // Auto-sync Sheets on login
+  // Auto-sync Sheets — רץ פעם אחת בלבד אחרי לוגין, לא יוצר לופ
+  const didSyncRef=useRef(false);
   useEffect(()=>{
+    if(!currentUser||didSyncRef.current)return;
     const url=getSheetsUrl();
-    if(!url||!currentUser)return;
+    if(!url)return;
+    didSyncRef.current=true;
     (async()=>{
       try{
-        const[projs,pws,staff]=await Promise.all([sheetsCall(url,{action:"getAll",sheet:"projects"}),sheetsCall(url,{action:"getAll",sheet:"passwords"}),sheetsCall(url,{action:"getAll",sheet:"staff"})]);
+        const[projs,pws,staff]=await Promise.all([
+          sheetsCall(url,{action:"getAll",sheet:"projects"}),
+          sheetsCall(url,{action:"getAll",sheet:"passwords"}),
+          sheetsCall(url,{action:"getAll",sheet:"staff"})
+        ]);
         const patch={};
-        if(projs&&projs.length)patch.projects=projs.map(r=>({tasks:[],shifts:[],hours:[],quotes:[],plan:{crew:[],milestones:[],notes:""},...mapProject(r)}));
+        const localData=loadLocal();
+        const localProjects=localData.projects||[];
+        if(projs&&projs.length)patch.projects=projs.map(r=>{
+          const local=localProjects.find(p=>p.id===r.id);
+          return{tasks:local?.tasks||[],shifts:local?.shifts||[],hours:local?.hours||[],quotes:local?.quotes||[],plan:local?.plan||{crew:[],milestones:[],notes:""},...mapProject(r)};
+        });
         if(pws&&pws.length)patch.passwords=pws.map(mapPassword);
         if(staff&&staff.length){
           patch.users=staff.map(mapStaff);
-          const maxNum=Math.max(0,...(patch.projects||projects).map(p=>parseInt(p.projectNumber||0)||0));
+          const maxNum=Math.max(0,...(patch.projects||localProjects).map(p=>parseInt(p.projectNumber||0)||0));
           patch.nextProjNum=maxNum+1;
-          // עדכן currentUser אם נמצא ב-staff החדש
-          if(currentUser){
-            const refreshed=patch.users.find(u=>u.email===currentUser.email||u.id===currentUser.id);
-            if(refreshed)setCurrentUser({...refreshed,role:refreshed.role||"worker"});
-          }
         }
         if(Object.keys(patch).length)upd(patch);
       }catch{}
@@ -1332,8 +1469,12 @@ function App({initialData}){
   // Handle shift save/delete from calendar
   const onSaveShift=shift=>{
     if(!shift.projId){
-      // No-project shift — store in a virtual global project or skip
-      // For now skip (ideally would have a "global_shifts" array in data)
+      // משמרת ללא פרויקט — נשמרת ב-globalShifts
+      const existing=(data.globalShifts||[]).find(s=>s.id===shift.id);
+      const newGlobal=existing
+        ?(data.globalShifts||[]).map(s=>s.id===shift.id?shift:s)
+        :[...(data.globalShifts||[]),{...shift,id:shift.id||uid()}];
+      upd({globalShifts:newGlobal});
       return;
     }
     const proj=projects.find(p=>p.id===shift.projId);if(!proj)return;
@@ -1343,6 +1484,10 @@ function App({initialData}){
     const url=getSheetsUrl();if(url)sheetsPost(url,{action:"update",sheet:"projects",id:proj.id,row:{...proj,shifts:newShifts}}).catch(()=>{});
   };
   const onDeleteShift=shift=>{
+    if(!shift.projId){
+      upd({globalShifts:(data.globalShifts||[]).filter(s=>s.id!==shift.id)});
+      return;
+    }
     const proj=projects.find(p=>p.id===shift.projId);if(!proj)return;
     updateProject({...proj,shifts:(proj.shifts||[]).filter(s=>s.id!==shift.id)});
   };
@@ -1411,7 +1556,7 @@ function App({initialData}){
         {/* Views */}
         {view==="project"&&selProj?<ProjectDetail project={selProj} user={currentUser} users={users} shiftTypes={sts} onChange={updateProjAndSync} onBack={()=>{setSelProjId(null);setView("projects");}}/>
           :view==="dashboard"?<Dashboard projects={projects} user={currentUser} logoUrl={logoUrl} onSelect={gotoProj} onGoto={goto}/>
-          :view==="calendar"?<WeeklyCalendar projects={projects} user={currentUser} users={users} shiftTypes={sts} onSaveShift={onSaveShift} onDeleteShift={onDeleteShift}/>
+          :view==="calendar"?<WeeklyCalendar projects={projects} user={currentUser} users={users} shiftTypes={sts} globalShifts={data.globalShifts||[]} onSaveShift={onSaveShift} onDeleteShift={onDeleteShift} editModal={calEditModal} setEditModal={setCalEditModal}/>
           :(view==="projects"&&(isAdmin||isProd))?<ProjectsList projects={projects} user={currentUser} onSelect={gotoProj} onNew={()=>setShowNewProj(true)}/>
           :view==="hours"?<HoursLog projects={projects} user={currentUser} users={users} onChange={updateProjAndSync} sheetsUrl={getSheetsUrl()}/>
           :view==="quotes"?<QuoteBuilder projects={projects} quoteTemplates={quoteTemplates} onSave={addQuote} onUpdateTemplates={t=>upd({quoteTemplates:t})} user={currentUser}/>
@@ -1448,7 +1593,7 @@ function AppLoader(){
       const[projs,pws,staff]=await Promise.all([sheetsCall(url,{action:"getAll",sheet:"projects"}),sheetsCall(url,{action:"getAll",sheet:"passwords"}),sheetsCall(url,{action:"getAll",sheet:"staff"})]);
       Splash.set(85,"מעבד נתונים...");
       const patch={};
-      if(projs&&projs.length)patch.projects=projs.map(r=>({tasks:[],shifts:[],hours:[],quotes:[],plan:{crew:[],milestones:[],notes:""},...mapProject(r)}));
+      if(projs&&projs.length)patch.projects=projs.map(r=>{const loc=(local.projects||[]).find(p=>p.id===r.id);return{tasks:loc?.tasks||[],shifts:loc?.shifts||[],hours:loc?.hours||[],quotes:loc?.quotes||[],plan:loc?.plan||{crew:[],milestones:[],notes:""},...mapProject(r)};});
       if(pws&&pws.length)patch.passwords=pws.map(mapPassword);
       if(staff&&staff.length){patch.users=staff.map(mapStaff);const maxNum=Math.max(0,...(patch.projects||local.projects||[]).map(p=>parseInt(p.projectNumber||0)||0));patch.nextProjNum=maxNum+1;}
       setInitData({...local,...patch});
