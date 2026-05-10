@@ -105,8 +105,8 @@ button{font-family:'Heebo',sans-serif;cursor:pointer;border:none;border-radius:8
 .cal-day{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 6px;min-height:110px;transition:border-color .15s;cursor:pointer}
 .cal-day:hover{border-color:var(--gold)40}
 .cal-day.today{border-color:var(--gold)70;border-top:2px solid var(--gold)}
-.cal-day.weekend{background:#0b0d13;border-color:#1a1f2b;opacity:.85;cursor:default}
-.cal-day.weekend:hover{border-color:#1a1f2b}
+.cal-day.weekend{background:#0b0d13;border-color:#1a1f2b;opacity:.9}
+.cal-day.weekend:hover{border-color:var(--gold)40}
 .cal-ev{border-radius:6px;padding:4px 7px;font-size:10px;font-weight:600;margin-bottom:3px;cursor:pointer;transition:opacity .15s;line-height:1.4}
 .cal-ev:hover{opacity:.75}
 /* Search */
@@ -276,7 +276,7 @@ function ProjSearchSelect({projects,value,onChange}){
   const [q,setQ]=useState(()=>projects.find(p=>p.id===value)?.name||"");
   const [open,setOpen]=useState(false);const ref=useRef();
   useEffect(()=>{const h=e=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h);},[]);
-  const res=useMemo(()=>{if(!q.trim())return projects.filter(p=>p.status==="active").slice(0,8);const lq=q.toLowerCase();return projects.filter(p=>p.status==="active"&&((p.name||"").toLowerCase().includes(lq)||(p.projectNumber||"").toString().includes(lq))).slice(0,8);},[q,projects]);
+  const res=useMemo(()=>{if(!q.trim())return projects.filter(p=>p.status==="active");const lq=q.toLowerCase();return projects.filter(p=>p.status==="active"&&((p.name||"").toLowerCase().includes(lq)||(p.projectNumber||"").toString().includes(lq)||(p.client||"").toLowerCase().includes(lq)));},[q,projects]);
   return(<div ref={ref} style={{position:"relative"}}>
     <div style={{display:"flex",gap:6}}>
       <input value={q} onChange={e=>{setQ(e.target.value);setOpen(true);if(!e.target.value)onChange("");}} onFocus={()=>setOpen(true)} placeholder="חפש פרויקט..."/>
@@ -490,12 +490,12 @@ function WeeklyCalendar({projects,user,users,shiftTypes,globalShifts,onSaveShift
           evs.forEach(ev=>{const wid=ev.person||"_";if(!byWorker[wid])byWorker[wid]=[];byWorker[wid].push(ev);});
           return(<div key={key}
             className={`cal-day${isToday?" today":""}${wknd?" weekend":""}`}
-            onClick={()=>!wknd&&openNew(key)}>
+            onClick={()=>openNew(key)}>
             {/* Header */}
             <div style={{textAlign:"center",marginBottom:6}}>
               <div style={{fontSize:10,fontWeight:700,color:isToday?"var(--gold)":wknd?"var(--red)":"var(--muted2)"}}>{HEB_DAYS[d.getDay()]}</div>
               <div style={{fontSize:13,fontWeight:800,color:isToday?"var(--gold)":wknd?"var(--muted)":"var(--text)"}}>{fmtDate(d)}</div>
-              {wknd&&<div style={{fontSize:8,color:"var(--red)",opacity:.6}}>שישי/שבת</div>}
+              {wknd&&<div style={{fontSize:8,color:"var(--orange)",opacity:.7}}>סוף שבוע</div>}
             </div>
             {/* Events grouped by worker */}
             {Object.entries(byWorker).map(([wid,wevs])=>{
@@ -520,7 +520,7 @@ function WeeklyCalendar({projects,user,users,shiftTypes,globalShifts,onSaveShift
                 })}
               </div>);
             })}
-            {canEdit&&!wknd&&evs.length===0&&<div style={{fontSize:9,color:"var(--muted)",opacity:.3,textAlign:"center",marginTop:10}}>+ לחץ</div>}
+            {canEdit&&evs.length===0&&<div style={{fontSize:9,color:"var(--muted)",opacity:.3,textAlign:"center",marginTop:10}}>+ לחץ</div>}
           </div>);
         })}
       </div>
@@ -1789,5 +1789,3 @@ ReactDOM.createRoot(document.getElementById("root")).render(<AppLoader/>);
 </script>
 </body>
 </html>
-
-  
