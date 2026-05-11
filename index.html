@@ -140,7 +140,7 @@ const fmtMoney=v=>"₪"+Number(v||0).toLocaleString("he-IL");
 const pct=(a,b)=>b?Math.round((a/b)*100):0;
 const LS_KEY="postflow_v8";
 const SHEETS_KEY="pf_v8_sheets_url";
-const SHEETS_URL_DEFAULT="https://script.google.com/macros/s/AKfycbyDxfWHyGKzNofBzJZPiNyaBqa6Cjq_CpGTxzO7DVAI4F3mAT0gQiwcONA9229OyTaZ/exec"; // ← הכנס כאן את ה-URL של ה-Apps Script שלך
+const SHEETS_URL_DEFAULT="https://script.google.com/macros/s/AKfycbyQraE89Zj3JOABppnsyoLfDHwV0p4bxKlfTyztGlQ/dev"; // ← הכנס כאן את ה-URL של ה-Apps Script שלך
 const REMEMBER_KEY="pf_v8_remember";
 const ADMIN_EMAIL="uri@fpp.co.il";
 const ADMIN_PASS="0711";
@@ -230,8 +230,17 @@ function setSheetsUrl(u){localStorage.setItem(SHEETS_KEY,u);}
 // ══════════════════════════════════════════
 async function sheetsCall(url,params){try{const r=await fetch(`${url}?${new URLSearchParams(params)}`);const j=await r.json();return j.ok?j.data:null;}catch{return null;}}
 async function sheetsPost(url,body){
-  return fetch(url,{method:"POST",body:JSON.stringify(body)})
-    .then(r=>r.ok?r.json():{ok:false,error:"HTTP "+r.status})
+  return fetch(url,{method:"POST",body:JSON.stringify(body),redirect:"follow"})
+    .then(async r=>{
+      const text=await r.text();
+      try{return JSON.parse(text);}
+      catch{
+        // Apps Script sometimes returns HTML on auth errors
+        if(text.includes("signin")||text.includes("login"))return{ok:false,error:"נדרשת התחברות ל-Google"};
+        if(r.ok)return{ok:true}; // no JSON body but request succeeded
+        return{ok:false,error:"HTTP "+r.status};
+      }
+    })
     .catch(e=>({ok:false,error:e.message}));
 }
 const mapStaff=r=>({id:r.id||uid(),name:r.name||"",email:(r.email||"").toLowerCase().trim(),role:r.role||"worker",phone:r.phone||"",active:r.active||"true",password:r.password||"1234"});
@@ -356,9 +365,13 @@ function TaskChips({shiftTypes,selected,onChange}){
   const sts=shiftTypes||DEF_SHIFT_TYPES;
 
   const syncSettingsToSheets=async(key,value,label)=>{
-    const url=getSheetsUrl();if(!url)return;
+    const url=getSheetsUrl();
+    if(!url)return{ok:true,local:true}; // שמור מקומי בלבד
     const v=typeof value==="object"?JSON.stringify(value):String(value);
-    return sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:v,label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}});
+    try{
+      const r=await sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:v,label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}});
+      return r||{ok:true};
+    }catch(e){return{ok:false,error:e.message};}
   };
   const pullSettingsFromSheets=async()=>{
     const url=getSheetsUrl();if(!url)return null;
@@ -627,9 +640,13 @@ function WeeklyCalendar({projects,user,users,shiftTypes,globalShifts,onSaveShift
   const sts=shiftTypes||DEF_SHIFT_TYPES;
 
   const syncSettingsToSheets=async(key,value,label)=>{
-    const url=getSheetsUrl();if(!url)return;
+    const url=getSheetsUrl();
+    if(!url)return{ok:true,local:true}; // שמור מקומי בלבד
     const v=typeof value==="object"?JSON.stringify(value):String(value);
-    return sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:v,label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}});
+    try{
+      const r=await sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:v,label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}});
+      return r||{ok:true};
+    }catch(e){return{ok:false,error:e.message};}
   };
   const pullSettingsFromSheets=async()=>{
     const url=getSheetsUrl();if(!url)return null;
@@ -921,14 +938,16 @@ function HoursLog({projects,user,users,onChange,sheetsUrl}){
           ?{...he,worker:form.worker,date:form.date,timeIn:form.timeIn,timeOut:form.timeOut,hours:h,note:form.note,correction:true}
           :he);
         onChange({...oldProj,hours:newHours});
-        if(sheetsUrl)sheetsPost(sheetsUrl,{action:"upsert",sheet:"hours_report",id:editEntry.entryId,row:{id:editEntry.entryId,workerName:wName,date:form.date,timeIn:form.timeIn,timeOut:form.timeOut,totalHours:h,note:form.note,correction:"TRUE"}}).catch(()=>{});
+        const editRow={id:editEntry.entryId,workerName:wName,projId:editEntry.projId,projName:projects.find(p=>p.id===editEntry.projId)?.name||"",date:form.date,timeIn:form.timeIn,timeOut:form.timeOut,totalHours:String(h),note:form.note||"",correction:"TRUE"};
+        if(sheetsUrl)sheetsPost(sheetsUrl,{action:"upsert",sheet:"hours_report",id:editEntry.entryId,row:editRow}).catch(()=>{});
       }
       resetForm();return;
     }
     const entry={id:uid(),worker:form.worker,date:form.date,timeIn:form.timeIn,timeOut:form.timeOut,hours:h,note:form.note,correction:false};
     onChange({...proj,hours:[...(proj.hours||[]),entry]});
     if(sheetsUrl){
-      sheetsPost(sheetsUrl,{action:"upsert",sheet:"hours_report",id:entry.id,row:{id:entry.id,workerName:wName,date:form.date,timeIn:form.timeIn,timeOut:form.timeOut,totalHours:h,note:form.note,projId:proj.id,projName:proj.name}}).catch(()=>{});
+      const row={id:entry.id,workerName:wName,projId:proj.id,projName:proj.name,date:form.date,timeIn:form.timeIn,timeOut:form.timeOut,totalHours:String(h),note:form.note||"",correction:"FALSE"};
+      sheetsPost(sheetsUrl,{action:"upsert",sheet:"hours_report",id:entry.id,row}).catch(()=>{});
     }
     setForm(p=>({...p,projId:"",note:""}));
   };
@@ -999,9 +1018,13 @@ function ProjectDetail({project,user,users,shiftTypes,onChange,onBack}){
   const sts=shiftTypes||DEF_SHIFT_TYPES;
 
   const syncSettingsToSheets=async(key,value,label)=>{
-    const url=getSheetsUrl();if(!url)return;
+    const url=getSheetsUrl();
+    if(!url)return{ok:true,local:true}; // שמור מקומי בלבד
     const v=typeof value==="object"?JSON.stringify(value):String(value);
-    return sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:v,label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}});
+    try{
+      const r=await sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:v,label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}});
+      return r||{ok:true};
+    }catch(e){return{ok:false,error:e.message};}
   };
   const pullSettingsFromSheets=async()=>{
     const url=getSheetsUrl();if(!url)return null;
@@ -1808,7 +1831,20 @@ function SheetsSettings({projects,users,onProjectsLoaded,onStaffLoaded,onSetting
   const [url,setUrl]=useState(getSheetsUrl);const [msg,setMsg]=useState("");const [syncing,setSyncing]=useState(false);
   const [lastSync,setLastSync]=useState(()=>localStorage.getItem("pf_v8_last_sync")||"");
   const save=()=>{setSheetsUrl(url.trim());setMsg("✅ URL נשמר");};
-  const test=async()=>{setMsg("בודק...");try{const r=await fetch(`${url.trim()}?action=ping`);const j=await r.json();setMsg(j.ok?"✅ מחובר!":"❌ "+j.error);}catch(e){setMsg("❌ "+e.message);}};
+  const test=async()=>{
+    setMsg("בודק...");
+    try{
+      const r=await fetch(`${url.trim()}?action=ping`,{redirect:"follow"});
+      const text=await r.text();
+      try{
+        const j=JSON.parse(text);
+        setMsg(j.ok?"✅ מחובר — "+( j.version||""):"❌ "+j.error);
+      }catch{
+        if(text.includes("signin"))setMsg("❌ נדרשת הרשאה — פרוס מחדש את ה-AppsScript כ-Anyone");
+        else setMsg("❌ תגובה לא תקינה מה-AppsScript");
+      }
+    }catch(e){setMsg("❌ "+e.message);}
+  };
   const pull=async()=>{setSyncing(true);setMsg("מושך...");try{const u=getSheetsUrl();
     const[projs,staff,settingsRows]=await Promise.all([
       sheetsCall(u,{action:"getAll",sheet:"projects"}),
@@ -1934,12 +1970,17 @@ function Settings({shiftTypes,onUpdateShiftTypes,logoUrl,onUpdateLogo,driveFolde
   const updSt=(id,k,v)=>setEtSt(ts=>ts.map(t=>t.id===id?{...t,[k]:v}:t));
   const saveSt=async()=>{
     onUpdateShiftTypes(etSt);
+    setStMsg("שומר...");
     if(onSaveShiftTypesToSheets){
-      setStMsg("שולח...");
-      const r=await onSaveShiftTypesToSheets(etSt);
-      setStMsg(r&&r.ok!==false?"✅ נשמר בגליון":"❌ שגיאה — בדוק URL");
-      setTimeout(()=>setStMsg(""),3000);
-    }
+      try{
+        const r=await onSaveShiftTypesToSheets(etSt);
+        if(!r){setStMsg("✅ נשמר מקומית (אין URL)");} 
+        else if(r.local){setStMsg("✅ נשמר מקומית (אין Sheets URL)");}
+        else if(r.ok===false){setStMsg("❌ "+( r.error||"שגיאת Sheets — בדוק את ה-AppsScript"));}
+        else{setStMsg("✅ נשמר בגליון settings");}
+      }catch(e){setStMsg("❌ "+e.message);}
+    }else{setStMsg("✅ נשמר");}
+    setTimeout(()=>setStMsg(""),4000);
   };
   const pullSt=async()=>{
     if(!onPullSettingsFromSheets){setStMsg("❌ הגדר URL של Sheets קודם");setTimeout(()=>setStMsg(""),3000);return;}
@@ -2112,9 +2153,13 @@ function App({initialData}){
   const sts=shiftTypes||DEF_SHIFT_TYPES;
 
   const syncSettingsToSheets=async(key,value,label)=>{
-    const url=getSheetsUrl();if(!url)return;
+    const url=getSheetsUrl();
+    if(!url)return{ok:true,local:true}; // שמור מקומי בלבד
     const v=typeof value==="object"?JSON.stringify(value):String(value);
-    return sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:v,label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}});
+    try{
+      const r=await sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:v,label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}});
+      return r||{ok:true};
+    }catch(e){return{ok:false,error:e.message};}
   };
   const pullSettingsFromSheets=async()=>{
     const url=getSheetsUrl();if(!url)return null;
