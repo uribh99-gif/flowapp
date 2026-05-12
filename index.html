@@ -2393,27 +2393,3 @@ function AppLoader(){
   if(!initData)return null;
   return <App initialData={initData}/>;
 }
-
-// ══════════════════════════════════════════
-// RENDER
-// ══════════════════════════════════════════
-const root=ReactDOM.createRoot(document.getElementById('root'));
-root.render(<AppLoader/>);
-
-// Hide splash once React is mounted
-const _origHide=Splash.hide.bind(Splash);
-let _splashHideAttempts=0;
-function tryHideSplash(){
-  const rootEl=document.getElementById('root');
-  if(rootEl&&rootEl.children.length>0){
-    Splash.set(100,"מוכן!");
-    setTimeout(()=>{ document.getElementById('splash').classList.add('hidden'); rootEl.classList.add('visible'); },300);
-  } else if(_splashHideAttempts++<60){
-    setTimeout(tryHideSplash,200);
-  }
-}
-setTimeout(tryHideSplash,400);
-
-</script>
-</body>
-</html>
