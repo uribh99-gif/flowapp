@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow v16</title>
+<title>PostFlow v17</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
@@ -25,7 +25,7 @@ body{background:#07090f;margin:0;padding:0;font-family:'Heebo',sans-serif}
   <div class="sp-logo" id="splashLogo"><img src="https://i.imgur.com/8QfKFqA.png" onerror="this.parentElement.innerHTML='🎞 PostFlow'" style="height:72px;object-fit:contain;border-radius:12px" id="appLogo"/></div>
   <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
     <div class="sp-sub">Post-Production Management</div>
-    <div style="background:#e8c547;color:#07090f;font-size:9px;font-weight:900;padding:2px 7px;border-radius:20px;letter-spacing:1px;text-transform:uppercase">v16</div>
+    <div style="background:#e8c547;color:#07090f;font-size:9px;font-weight:900;padding:2px 7px;border-radius:20px;letter-spacing:1px;text-transform:uppercase">v17</div>
   </div>
   <div class="sp-bar-wrap"><div class="sp-bar" id="spBar"></div></div>
   <div class="sp-msg" id="spMsg">מאתחל...</div>
@@ -138,12 +138,14 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 const todayStr=()=>new Date().toISOString().slice(0,10);
 const fmtMoney=v=>"₪"+Number(v||0).toLocaleString("he-IL");
 const pct=(a,b)=>b?Math.round((a/b)*100):0;
-const LS_KEY="postflow_v8";
-const SHEETS_KEY="pf_v8_sheets_url";
-const SHEETS_URL_DEFAULT="https://script.google.com/macros/s/AKfycbyDxfWHyGKzNofBzJZPiNyaBqa6Cjq_CpGTxzO7DVAI4F3mAT0gQiwcONA9229OyTaZ/exec"; // ← הכנס כאן את ה-URL של ה-Apps Script שלך
-const REMEMBER_KEY="pf_v8_remember";
+const LS_KEY="postflow_v17";
+const REMEMBER_KEY="pf_v17_remember";
 const ADMIN_EMAIL="uri@fpp.co.il";
 const ADMIN_PASS="0711";
+// ── Supabase ──────────────────────────────────────────────────
+const SB_URL="https://jmzigeficvoiuqxtmems.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptemlnZWZpY3ZvaXVxeHRtZW1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0OTkxNjMsImV4cCI6MjA5NDA3NTE2M30.o9-axopjQi3b9GW6NE6t5kE4zmLpCEeKbAcfstRVYN8";
+const SB_HEADERS={"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Prefer":"return=representation"};
 const HEB_DAYS=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
 const AVATAR_COLS=["#e8c547","#4fc3f7","#6ee7b7","#c084fc","#f07070","#fb923c","#a3e635","#60a5fa"];
 const isoDate=d=>d.toISOString().slice(0,10);
@@ -222,18 +224,36 @@ function loadLocal(){
   }catch(e){console.warn("loadLocal error",e);return defData();}
 }
 function saveLocal(d){try{localStorage.setItem(LS_KEY,JSON.stringify(d));}catch(e){console.warn("save failed",e);}}
-function getSheetsUrl(){return localStorage.getItem(SHEETS_KEY)||SHEETS_URL_DEFAULT;}
-function setSheetsUrl(u){localStorage.setItem(SHEETS_KEY,u);}
-
-// ══════════════════════════════════════════
-// SHEETS
-// ══════════════════════════════════════════
-async function sheetsCall(url,params){try{const r=await fetch(`${url}?${new URLSearchParams(params)}`);const j=await r.json();return j.ok?j.data:null;}catch{return null;}}
-async function sheetsPost(url,body){
-  return fetch(url,{method:"POST",body:JSON.stringify(body)})
-    .then(r=>r.ok?r.json():{ok:false,error:"HTTP "+r.status})
-    .catch(e=>({ok:false,error:e.message}));
+// ── Supabase REST helpers ───────────────────────────────────
+async function sbGet(table,params=""){try{const r=await fetch(`${SB_URL}/rest/v1/${table}${params}`,{headers:{...SB_HEADERS,"Accept":"application/json"}});if(!r.ok)throw new Error(await r.text());return await r.json();}catch(e){console.error("sbGet",table,e.message);return null;}}
+async function sbUpsert(table,rows){try{const r=await fetch(`${SB_URL}/rest/v1/${table}`,{method:"POST",headers:{...SB_HEADERS,"Prefer":"resolution=merge-duplicates,return=representation"},body:JSON.stringify(Array.isArray(rows)?rows:[rows])});if(!r.ok)throw new Error(await r.text());return await r.json();}catch(e){console.error("sbUpsert",table,e.message);return null;}}
+async function sbPatch(table,id,patch){try{const r=await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`,{method:"PATCH",headers:{...SB_HEADERS,"Prefer":"return=representation"},body:JSON.stringify(patch)});if(!r.ok)throw new Error(await r.text());return await r.json();}catch(e){console.error("sbPatch",table,e.message);return null;}}
+async function sbSoftDelete(table,id,by){return sbPatch(table,id,{deleted:true,deleted_by:by,deleted_at:new Date().toISOString()});}
+async function sbSetting(key,value,label){return sbUpsert("settings",{key,value:typeof value==="object"?JSON.stringify(value):String(value||""),label:label||key,updated_at:new Date().toISOString()});}
+// ── Serialisers ──────────────────────────────────────────────
+function projToRow(p){return{id:p.id,project_number:p.projectNumber||null,name:p.name||"",client:p.client||"",producer:p.producer||"",status:p.status||"active",progress:p.progress||0,shoot_date:p.shootDate||null,offline_screening:p.offlineScreening||null,online_screening:p.onlineScreening||null,delivery_date:p.deliveryDate||null,description:p.description||"",status_note:p.statusNote||"",tasks:p.tasks||[],shifts:p.shifts||[],hours:p.hours||[],quotes:p.quotes||[],plan:p.plan||{crew:[],milestones:[],notes:""},updated_at:new Date().toISOString()};}
+function rowToProj(r){return{id:r.id,projectNumber:r.project_number,name:r.name,client:r.client,producer:r.producer,status:r.status,progress:r.progress,shootDate:r.shoot_date,offlineScreening:r.offline_screening,onlineScreening:r.online_screening,deliveryDate:r.delivery_date,description:r.description,statusNote:r.status_note,tasks:r.tasks||[],shifts:r.shifts||[],hours:r.hours||[],quotes:r.quotes||[],plan:r.plan||{crew:[],milestones:[],notes:""}};}
+function shiftToRow(s,users,projects){const pn=(users||[]).find(u=>u.id===s.person)?.name||s.personName||"";const prn=(projects||[]).find(p=>p.id===s.projId)?.name||s.projName||"";return{id:s.id,proj_id:s.projId||null,proj_name:prn,person:s.person||"",person_name:pn,date:s.date||"",time_start:s.timeStart||"09:00",hours:s.hours||2,tasks:s.tasks||[],note:s.note||"",deleted:false,updated_at:new Date().toISOString()};}
+function rowToShift(r){return{id:r.id,projId:r.proj_id,projName:r.proj_name,person:r.person,personName:r.person_name,date:r.date,timeStart:r.time_start,hours:r.hours||2,tasks:r.tasks||[],note:r.note||""};}
+function hourToRow(h,users,projects){const wn=(users||[]).find(u=>u.id===h.worker)?.name||h.workerName||"";const prn=(projects||[]).find(p=>p.id===h.projId)?.name||h.projName||"";return{id:h.id,proj_id:h.projId||null,proj_name:prn,worker:h.worker||"",worker_name:wn,date:h.date||"",time_in:h.timeIn||"",time_out:h.timeOut||"",total_hours:h.hours||0,note:h.note||"",correction:h.correction||false,deleted:false,updated_at:new Date().toISOString()};}
+function rowToHour(r){return{id:r.id,projId:r.proj_id,projName:r.proj_name,worker:r.worker,workerName:r.worker_name,date:r.date,timeIn:r.time_in,timeOut:r.time_out,hours:r.total_hours,note:r.note,correction:r.correction};}
+// ── Real-time subscriptions ───────────────────────────────────
+const _rtSubs={};
+function sbSubscribe(table,onEvent){
+  if(_rtSubs[table])return;
+  const ws=new WebSocket(`wss://jmzigeficvoiuqxtmems.supabase.co/realtime/v1/websocket?apikey=${SB_KEY}&vsn=1.0.0`);
+  ws.onopen=()=>ws.send(JSON.stringify({topic:"realtime:public:"+table,event:"phx_join",payload:{config:{broadcast:{self:false},postgres_changes:[{event:"*",schema:"public",table}]}},ref:"1"}));
+  ws.onmessage=e=>{try{const m=JSON.parse(e.data);const pl=m.payload;if(pl?.data?.type)onEvent(pl.data.type,pl.data.record,pl.data.old_record);}catch{}};
+  ws.onerror=err=>console.warn("realtime err",table);
+  _rtSubs[table]=ws;
+  return()=>{ws.close();delete _rtSubs[table];};
 }
+// legacy stubs so old call sites compile
+function getSheetsUrl(){return"";}
+function setSheetsUrl(){}
+async function sheetsPost(){return{ok:true};}
+async function sheetsCall(){return null;}
+
 const mapStaff=r=>({id:r.id||uid(),name:r.name||"",email:(r.email||"").toLowerCase().trim(),role:r.role||"worker",phone:r.phone||"",active:r.active||"true",password:r.password||"1234"});
 const mapProject=r=>({id:r.id||uid(),projectNumber:r.projectNumber||"",name:r.name||"",producer:r.producer||"",shootDate:r.shootDate||"",offlineScreening:r.offlineScreening||"",onlineScreening:r.onlineScreening||"",deliveryDate:r.deliveryDate||"",status:r.status||"active",progress:Number(r.progress||0),client:r.client||"",description:r.description||"",statusNote:r.statusNote||"",tasks:[],shifts:[],hours:[],quotes:[],plan:{crew:[],milestones:[],notes:""}});
 const mapPassword=r=>({id:r.id||uid(),service:r.label||r.service||"",username:r.username||"",password:r.password||"",description:r.description||r.note||"",category:r.category||"כללי",url:r.url||"",createdAt:r.createdAt||""});
@@ -356,26 +376,13 @@ function TaskChips({shiftTypes,selected,onChange}){
   const sts=shiftTypes||DEF_SHIFT_TYPES;
 
   const syncSettingsToSheets=async(key,value,label)=>{
-    const url=getSheetsUrl();if(!url)return;
-    const v=typeof value==="object"?JSON.stringify(value):String(value);
-    return sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:v,label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}});
-  };
-  const pullSettingsFromSheets=async()=>{
-    const url=getSheetsUrl();if(!url)return null;
-    const r=await sheetsPost(url,{action:"getAll",sheet:"settings"}).catch(()=>null);
-    if(!r||!r.data)return null;
-    const patch={};
-    r.data.forEach(row=>{
-      if(row.key==="shiftTypes"&&row.value){try{const st=JSON.parse(row.value);if(Array.isArray(st)&&st.length)patch.shiftTypes=st;}catch{}}
-      if(row.key==="logoUrl"&&row.value)patch.logoUrl=row.value;
-    });
-    if(Object.keys(patch).length)upd(patch);
-    return patch;
+    try{await sbSetting(key,value,label);return{ok:true};}
+    catch(e){return{ok:false,error:e.message};}
   };
   const onSaveShiftTypesToSheets=st=>syncSettingsToSheets("shiftTypes",st,"סוגי משמרות");
   const onSyncUser=u=>{
-    const url=getSheetsUrl();if(!url)return;
-    sheetsPost(url,{action:"upsert",sheet:"staff",id:u.id,row:u}).catch(()=>{});
+    const row={id:u.id,name:u.name||"",role:u.role||"worker",email:u.email||"",phone:u.phone||"",active:u.active||"true",password:u.password||"",permissions:u.permissions||null,updated_at:new Date().toISOString()};
+    sbUpsert("users",row).catch(()=>{});
   };
   const toggle=id=>{if(selected.includes(id))onChange(selected.filter(x=>x!==id));else onChange([...selected,id]);};
   return(<div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>
@@ -627,26 +634,30 @@ function WeeklyCalendar({projects,user,users,shiftTypes,globalShifts,onSaveShift
   const sts=shiftTypes||DEF_SHIFT_TYPES;
 
   const syncSettingsToSheets=async(key,value,label)=>{
-    const url=getSheetsUrl();if(!url)return;
+    const url=getSheetsUrl();
+    if(!url)return{ok:true,local:true}; // שמור מקומי בלבד
     const v=typeof value==="object"?JSON.stringify(value):String(value);
-    return sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:v,label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}});
+    try{
+      const r=await sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:v,label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}});
+      return r||{ok:true};
+    }catch(e){return{ok:false,error:e.message};}
   };
   const pullSettingsFromSheets=async()=>{
-    const url=getSheetsUrl();if(!url)return null;
-    const r=await sheetsPost(url,{action:"getAll",sheet:"settings"}).catch(()=>null);
-    if(!r||!r.data)return null;
+    const rows=await sbGet("settings","");
+    if(!rows)return null;
     const patch={};
-    r.data.forEach(row=>{
+    rows.forEach(row=>{
       if(row.key==="shiftTypes"&&row.value){try{const st=JSON.parse(row.value);if(Array.isArray(st)&&st.length)patch.shiftTypes=st;}catch{}}
       if(row.key==="logoUrl"&&row.value)patch.logoUrl=row.value;
+      if(row.key==="quoteTemplates"&&row.value){try{const qt=JSON.parse(row.value);if(Array.isArray(qt))patch.quoteTemplates=qt;}catch{}}
     });
     if(Object.keys(patch).length)upd(patch);
     return patch;
   };
   const onSaveShiftTypesToSheets=st=>syncSettingsToSheets("shiftTypes",st,"סוגי משמרות");
   const onSyncUser=u=>{
-    const url=getSheetsUrl();if(!url)return;
-    sheetsPost(url,{action:"upsert",sheet:"staff",id:u.id,row:u}).catch(()=>{});
+    const row={id:u.id,name:u.name||"",role:u.role||"worker",email:u.email||"",phone:u.phone||"",active:u.active||"true",password:u.password||"",permissions:u.permissions||null,updated_at:new Date().toISOString()};
+    sbUpsert("users",row).catch(()=>{});
   };
   const allDays=Array.from({length:14},(_,i)=>{const d=new Date(weekStart);d.setDate(d.getDate()+i);return d;});
   const week1=allDays.slice(0,7),week2=allDays.slice(7,14);
@@ -883,7 +894,7 @@ function ProjectsList({projects,user,onSelect,onNew}){
 // ══════════════════════════════════════════
 // HOURS LOG — monthly view by worker or project
 // ══════════════════════════════════════════
-function HoursLog({projects,user,users,onChange,sheetsUrl}){
+function HoursLog({projects,user,users,onChange}){
   const isAdmin=user.role==="admin",isProd=user.role==="producer";
   const canManage=isAdmin||isProd;
   const [form,setForm]=useState({projId:"",worker:user.id,date:todayStr(),timeIn:"09:00",timeOut:"18:00",note:""});
@@ -902,7 +913,7 @@ function HoursLog({projects,user,users,onChange,sheetsUrl}){
   const deleteEntry=(projId,entryId)=>{
     const proj=projects.find(p=>p.id===projId);if(!proj)return;
     onChange({...proj,hours:(proj.hours||[]).filter(h=>h.id!==entryId)});
-    if(sheetsUrl)sheetsPost(sheetsUrl,{action:"softDelete",sheet:"hours_report",id:entryId,row:{deleted:"TRUE",deletedBy:user.name,deletedAt:new Date().toISOString().slice(0,19)}}).catch(()=>{});
+    sbSoftDelete("hours",entryId,user.name).catch(()=>{});
   };
   const submit=()=>{
     setFormErr("");
@@ -921,14 +932,14 @@ function HoursLog({projects,user,users,onChange,sheetsUrl}){
           ?{...he,worker:form.worker,date:form.date,timeIn:form.timeIn,timeOut:form.timeOut,hours:h,note:form.note,correction:true}
           :he);
         onChange({...oldProj,hours:newHours});
-        if(sheetsUrl)sheetsPost(sheetsUrl,{action:"upsert",sheet:"hours_report",id:editEntry.entryId,row:{id:editEntry.entryId,workerName:wName,date:form.date,timeIn:form.timeIn,timeOut:form.timeOut,totalHours:h,note:form.note,correction:"TRUE"}}).catch(()=>{});
+        sbUpsert("hours",hourToRow({id:editEntry.entryId,projId:editEntry.projId,worker:form.worker,date:form.date,timeIn:form.timeIn,timeOut:form.timeOut,hours:h,note:form.note,correction:true},users,projects)).catch(()=>{});
       }
       resetForm();return;
     }
     const entry={id:uid(),worker:form.worker,date:form.date,timeIn:form.timeIn,timeOut:form.timeOut,hours:h,note:form.note,correction:false};
     onChange({...proj,hours:[...(proj.hours||[]),entry]});
     if(sheetsUrl){
-      sheetsPost(sheetsUrl,{action:"upsert",sheet:"hours_report",id:entry.id,row:{id:entry.id,workerName:wName,date:form.date,timeIn:form.timeIn,timeOut:form.timeOut,totalHours:h,note:form.note,projId:proj.id,projName:proj.name}}).catch(()=>{});
+      sbUpsert("hours",hourToRow({...entry,projId:proj.id,projName:proj.name},users,projects)).catch(()=>{});
     }
     setForm(p=>({...p,projId:"",note:""}));
   };
@@ -999,26 +1010,30 @@ function ProjectDetail({project,user,users,shiftTypes,onChange,onBack}){
   const sts=shiftTypes||DEF_SHIFT_TYPES;
 
   const syncSettingsToSheets=async(key,value,label)=>{
-    const url=getSheetsUrl();if(!url)return;
+    const url=getSheetsUrl();
+    if(!url)return{ok:true,local:true}; // שמור מקומי בלבד
     const v=typeof value==="object"?JSON.stringify(value):String(value);
-    return sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:v,label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}});
+    try{
+      const r=await sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:v,label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}});
+      return r||{ok:true};
+    }catch(e){return{ok:false,error:e.message};}
   };
   const pullSettingsFromSheets=async()=>{
-    const url=getSheetsUrl();if(!url)return null;
-    const r=await sheetsPost(url,{action:"getAll",sheet:"settings"}).catch(()=>null);
-    if(!r||!r.data)return null;
+    const rows=await sbGet("settings","");
+    if(!rows)return null;
     const patch={};
-    r.data.forEach(row=>{
+    rows.forEach(row=>{
       if(row.key==="shiftTypes"&&row.value){try{const st=JSON.parse(row.value);if(Array.isArray(st)&&st.length)patch.shiftTypes=st;}catch{}}
       if(row.key==="logoUrl"&&row.value)patch.logoUrl=row.value;
+      if(row.key==="quoteTemplates"&&row.value){try{const qt=JSON.parse(row.value);if(Array.isArray(qt))patch.quoteTemplates=qt;}catch{}}
     });
     if(Object.keys(patch).length)upd(patch);
     return patch;
   };
   const onSaveShiftTypesToSheets=st=>syncSettingsToSheets("shiftTypes",st,"סוגי משמרות");
   const onSyncUser=u=>{
-    const url=getSheetsUrl();if(!url)return;
-    sheetsPost(url,{action:"upsert",sheet:"staff",id:u.id,row:u}).catch(()=>{});
+    const row={id:u.id,name:u.name||"",role:u.role||"worker",email:u.email||"",phone:u.phone||"",active:u.active||"true",password:u.password||"",permissions:u.permissions||null,updated_at:new Date().toISOString()};
+    sbUpsert("users",row).catch(()=>{});
   };
   const wName=id=>users.find(u=>u.id===id)?.name||id;
 
@@ -1805,56 +1820,73 @@ function UserMgmt({users,onUpdate,currentUser,onSyncUser}){
 // SHEETS SETTINGS
 // ══════════════════════════════════════════
 function SheetsSettings({projects,users,onProjectsLoaded,onStaffLoaded,onSettingsLoaded}){
-  const [url,setUrl]=useState(getSheetsUrl);const [msg,setMsg]=useState("");const [syncing,setSyncing]=useState(false);
-  const [lastSync,setLastSync]=useState(()=>localStorage.getItem("pf_v8_last_sync")||"");
-  const save=()=>{setSheetsUrl(url.trim());setMsg("✅ URL נשמר");};
-  const test=async()=>{setMsg("בודק...");try{const r=await fetch(`${url.trim()}?action=ping`);const j=await r.json();setMsg(j.ok?"✅ מחובר!":"❌ "+j.error);}catch(e){setMsg("❌ "+e.message);}};
-  const pull=async()=>{setSyncing(true);setMsg("מושך...");try{const u=getSheetsUrl();
-    const[projs,staff,settingsRows]=await Promise.all([
-      sheetsCall(u,{action:"getAll",sheet:"projects"}),
-      sheetsCall(u,{action:"getAll",sheet:"staff"}),
-      sheetsCall(u,{action:"getAll",sheet:"settings"})
+  const [msg,setMsg]=useState("");
+  const [busy,setBusy]=useState(false);
+  const [stats,setStats]=useState(null);
+
+  useEffect(()=>{(async()=>{
+    const [p,u,s,h]=await Promise.all([
+      sbGet("projects","?select=id"),
+      sbGet("users","?select=id"),
+      sbGet("shifts","?deleted=eq.false&select=id"),
+      sbGet("hours","?deleted=eq.false&select=id"),
     ]);
-    if(projs)onProjectsLoaded(projs.map(r=>({tasks:[],shifts:[],hours:[],quotes:[],plan:{crew:[],milestones:[],notes:""},...mapProject(r)})));
-    if(staff)onStaffLoaded(staff.map(mapStaff));
-    if(settingsRows&&settingsRows.length)onSettingsLoaded(settingsRows);
-    const now=new Date().toLocaleString("he-IL");setLastSync(now);localStorage.setItem("pf_v8_last_sync",now);setMsg("✅ עודכן!");}catch(e){setMsg("❌ "+e.message);}setSyncing(false);};
-  const push=async()=>{setSyncing(true);setMsg("שולח...");try{const u=getSheetsUrl();
-    await Promise.all([
-      sheetsPost(u,{action:"batchUpdate",sheet:"projects",rows:projects}),
-      sheetsPost(u,{action:"batchUpdate",sheet:"staff",rows:users}),
-    ]);
-    const now=new Date().toLocaleString("he-IL");setLastSync(now);localStorage.setItem("pf_v8_last_sync",now);setMsg("✅ עודכן!");}catch(e){setMsg("❌ "+e.message);}setSyncing(false);};
+    setStats({projects:p?.length||0,users:u?.length||0,shifts:s?.length||0,hours:h?.length||0});
+  })();},[]);
+
+  const pushAll=async()=>{
+    setBusy(true);setMsg("שולח הכל...");
+    try{
+      await Promise.all([
+        ...projects.map(p=>sbUpsert("projects",projToRow(p))),
+        ...users.map(u=>sbUpsert("users",{id:u.id,name:u.name||"",role:u.role||"worker",email:u.email||"",phone:u.phone||"",active:u.active||"true",password:u.password||"",permissions:u.permissions||null})),
+      ]);
+      setMsg("✅ כל הנתונים נדחפו ל-Supabase");
+    }catch(e){setMsg("❌ "+e.message);}
+    setBusy(false);
+  };
+
+  const testConn=async()=>{
+    setBusy(true);setMsg("בודק...");
+    const r=await sbGet("users","?limit=1");
+    setMsg(r!==null?"✅ מחובר ל-Supabase!":"❌ בעיית חיבור — בדוק את ה-RLS ואת ה-API key");
+    setBusy(false);
+  };
+
   return(<div className="fade">
-    <div className="section-title">☁️ Google Sheets Sync</div>
-    {lastSync&&<div style={{fontSize:12,color:"var(--muted)",marginBottom:14}}>סנכרון אחרון: {lastSync}</div>}
-    <div className="card" style={{marginBottom:14}}>
-      <div style={{fontWeight:700,marginBottom:12}}>Web App URL</div>
-      <input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://script.google.com/macros/s/.../exec" style={{fontFamily:"monospace",fontSize:12,marginBottom:12}}/>
-      <div style={{display:"flex",gap:10}}><button className="btn-gold btn-sm" onClick={save}>💾 שמור</button><button className="btn-blue btn-sm" onClick={test} disabled={!url.trim()}>🔌 בדוק</button></div>
-      {msg&&<div style={{marginTop:10,fontSize:13,color:msg.startsWith("✅")?"var(--green)":"var(--red)"}}>{msg}</div>}
+    <div className="section-title">☁️ Supabase — מסד נתונים</div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:12,marginBottom:20}}>
+      {[["פרויקטים",stats?.projects,"🎬"],["משתמשים",stats?.users,"👥"],["שיבוצים",stats?.shifts,"📅"],["שעות",stats?.hours,"⏱"]].map(([l,n,ic])=>(
+        <div key={l} className="card" style={{textAlign:"center",padding:"14px 8px"}}>
+          <div style={{fontSize:28}}>{ic}</div>
+          <div style={{fontSize:22,fontWeight:900,color:"var(--gold)"}}>{n??"-"}</div>
+          <div style={{fontSize:11,color:"var(--muted)"}}>{l}</div>
+        </div>
+      ))}
     </div>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
-      <div className="card" style={{textAlign:"center"}}><div style={{fontSize:32,marginBottom:8}}>⬇️</div><div style={{fontWeight:700,marginBottom:10}}>משוך מ-Sheets</div><button className="btn-blue" onClick={pull} disabled={syncing||!getSheetsUrl()}>{syncing?"⏳":"⬇️ משוך הכל"}</button></div>
-      <div className="card" style={{textAlign:"center"}}><div style={{fontSize:32,marginBottom:8}}>⬆️</div><div style={{fontWeight:700,marginBottom:10}}>דחוף ל-Sheets</div><button className="btn-green" onClick={push} disabled={syncing||!getSheetsUrl()}>{syncing?"⏳":"⬆️ דחוף הכל"}</button></div>
+    <div style={{background:"var(--card2)",borderRadius:12,padding:16,marginBottom:16,fontSize:13}}>
+      <div style={{fontWeight:700,marginBottom:6}}>🔗 פרויקט Supabase</div>
+      <div style={{color:"var(--muted)",fontSize:12}}>URL: <code style={{color:"var(--gold)"}}>jmzigeficvoiuqxtmems.supabase.co</code></div>
+      <div style={{color:"var(--muted)",fontSize:12,marginTop:4}}>Real-time: <span style={{color:"var(--green)"}}>פעיל על כל הטבלאות</span></div>
     </div>
-    <div className="card">
-      <div style={{fontWeight:700,marginBottom:10}}>מבנה גיליונות</div>
-      {[
-  {n:"staff",f:"id, name, role, email, phone, active, password"},
-  {n:"projects",f:"id, projectNumber, name, producer, shootDate, offlineScreening, onlineScreening, deliveryDate, status, progress, client, description, statusNote"},
-  {n:"calendar",f:"id, date, timeStart, timeEnd, personName, projName, tasks, note, projId, person, deleted, deletedBy, deletedAt"},
-  {n:"hours_report",f:"id, workerName, date, timeIn, timeOut, totalHours, note"},
-  {n:"settings",f:"key, value, label, updatedAt"},
-  {n:"quotes",f:"id, projId, date, client, total, approved, template, note"}
-].map(s=><div key={s.n} style={{display:"flex",gap:12,padding:"8px 0",borderBottom:"1px solid var(--border)22",flexWrap:"wrap"}}><div style={{fontWeight:700,color:"var(--gold)",minWidth:110}}>{s.n}</div><div style={{fontSize:11,color:"var(--muted)",fontFamily:"monospace"}}>{s.f}</div></div>)}
+    <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:12}}>
+      <button className="btn-gold btn-sm" onClick={testConn} disabled={busy}>🔌 בדוק חיבור</button>
+      <button className="btn-blue btn-sm" onClick={pushAll} disabled={busy}>⬆️ דחוף הכל ל-Supabase</button>
+      <a href="https://supabase.com/dashboard/project/jmzigeficvoiuqxtmems" target="_blank" rel="noreferrer"><button className="btn-ghost btn-sm">🌐 פתח Supabase Dashboard</button></a>
+    </div>
+    {msg&&<div style={{padding:"10px 14px",borderRadius:8,background:msg.startsWith("✅")?"var(--green)15":"var(--red)15",color:msg.startsWith("✅")?"var(--green)":"var(--red)",fontSize:13}}>{msg}</div>}
+    <div style={{marginTop:20}}>
+      <div style={{fontWeight:700,marginBottom:10}}>📋 טבלאות</div>
+      {[["users","id, name, role, email, phone, active, password, permissions"],["projects","id, project_number, name, client, producer, status, ..."],["shifts","id, proj_id, person, date, time_start, hours, tasks, note"],["hours","id, proj_id, worker, date, time_in, time_out, total_hours"],["settings","key, value, label, updated_at"]].map(([n,f])=>(
+        <div key={n} style={{display:"flex",gap:12,padding:"7px 0",borderBottom:"1px solid var(--border)22",flexWrap:"wrap"}}>
+          <div style={{fontWeight:700,color:"var(--gold)",minWidth:90}}>{n}</div>
+          <div style={{fontSize:11,color:"var(--muted)",fontFamily:"monospace"}}>{f}</div>
+        </div>
+      ))}
     </div>
   </div>);
 }
 
-// ══════════════════════════════════════════
-// BACKUP — auto-save + manual + drive folder
-// ══════════════════════════════════════════
 function BackupPanel({users,projects,passwords,lastAutoSave,onRestore,driveFolder,onCloudRestore}){
   const [confirm,setConfirm]=useState(false);const [rd,setRd]=useState(null);const [err,setErr]=useState("");const [driveMsg,setDriveMsg]=useState("");const [cloudMsg,setCloudMsg]=useState("");
   const handleFile=e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.projects||d.users){setRd(d);setConfirm(true);}else setErr("קובץ לא תקין");}catch{setErr("שגיאת קריאה");}};r.readAsText(file);};
@@ -1934,12 +1966,17 @@ function Settings({shiftTypes,onUpdateShiftTypes,logoUrl,onUpdateLogo,driveFolde
   const updSt=(id,k,v)=>setEtSt(ts=>ts.map(t=>t.id===id?{...t,[k]:v}:t));
   const saveSt=async()=>{
     onUpdateShiftTypes(etSt);
+    setStMsg("שומר...");
     if(onSaveShiftTypesToSheets){
-      setStMsg("שולח...");
-      const r=await onSaveShiftTypesToSheets(etSt);
-      setStMsg(r&&r.ok!==false?"✅ נשמר בגליון":"❌ שגיאה — בדוק URL");
-      setTimeout(()=>setStMsg(""),3000);
-    }
+      try{
+        const r=await onSaveShiftTypesToSheets(etSt);
+        if(!r){setStMsg("✅ נשמר מקומית (אין URL)");} 
+        else if(r.local){setStMsg("✅ נשמר מקומית (אין Sheets URL)");}
+        else if(r.ok===false){setStMsg("❌ "+( r.error||"שגיאת Sheets — בדוק את ה-AppsScript"));}
+        else{setStMsg("✅ נשמר בגליון settings");}
+      }catch(e){setStMsg("❌ "+e.message);}
+    }else{setStMsg("✅ נשמר");}
+    setTimeout(()=>setStMsg(""),4000);
   };
   const pullSt=async()=>{
     if(!onPullSettingsFromSheets){setStMsg("❌ הגדר URL של Sheets קודם");setTimeout(()=>setStMsg(""),3000);return;}
@@ -2015,8 +2052,14 @@ function App({initialData}){
   const [data,setData]=useState(initialData);
   const {users,projects,passwords,shiftTypes,quoteTemplates,nextProjNum,logoUrl,clients}=data;
   const upd=patch=>setData(d=>({...d,...patch}));
-  const updateProject=p=>upd({projects:data.projects.map(x=>x.id===p.id?p:x)});
-  const addProject=p=>upd({projects:[...data.projects,p],nextProjNum:(data.nextProjNum||1)+1});
+  const updateProject=p=>{
+    upd({projects:data.projects.map(x=>x.id===p.id?p:x)});
+    sbUpsert("projects",projToRow(p)).catch(()=>{});
+  };
+  const addProject=p=>{
+    upd({projects:[...data.projects,p],nextProjNum:(data.nextProjNum||1)+1});
+    sbUpsert("projects",projToRow(p)).catch(()=>{});
+  };
   const addQuote=(pid,q,update)=>upd({projects:data.projects.map(p=>{if(p.id!==pid)return p;if(update)return{...p,quotes:(p.quotes||[]).map(x=>x.id===q.id?q:x)};return{...p,quotes:[...(p.quotes||[]),q]};})});
   const [driveFolder,setDriveFolderState]=useState(getDriveFolder);
   const handleUpdateDriveFolder=v=>{setDriveFolderState(v);setDriveFolder(v);};
@@ -2029,25 +2072,61 @@ function App({initialData}){
   const [lastAutoSave,setLastAutoSave]=useState("");
   const [calEditModal,setCalEditModal]=useState(null);
 
-  // Persist to localStorage
+  // Persist to localStorage (fallback)
   useEffect(()=>{saveLocal(data);},[data]);
 
-  // Auto-save every 2 minutes
+  // Update logo in splash
+  useEffect(()=>{if(logoUrl)Splash.setLogo(logoUrl);},[logoUrl]);
+
+  // ── Real-time Supabase subscriptions ───────────────────────
+  useEffect(()=>{
+    if(!currentUser)return;
+    const now=new Date().toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"});
+    setLastAutoSave(now);
+
+    // Projects real-time
+    const unsubProjects=sbSubscribe("projects",(evt,rec)=>{
+      if(!rec)return;
+      if(evt==="DELETE")upd(d=>({...d,projects:d.projects.filter(p=>p.id!==rec.id)}));
+      else{const proj=rowToProj(rec);upd(d=>({...d,projects:evt==="INSERT"?[...d.projects,proj]:d.projects.map(p=>p.id===proj.id?{...p,...proj,shifts:p.shifts,hours:p.hours,quotes:p.quotes}:p)}));}
+    });
+    // Shifts real-time
+    const unsubShifts=sbSubscribe("shifts",(evt,rec)=>{
+      if(!rec||rec.deleted)return;
+      const s=rowToShift(rec);
+      if(!s.projId){
+        upd(d=>({...d,globalShifts:evt==="INSERT"?[...d.globalShifts,s]:evt==="UPDATE"?d.globalShifts.map(x=>x.id===s.id?s:x):d.globalShifts.filter(x=>x.id!==s.id)}));
+      }else{
+        upd(d=>({...d,projects:d.projects.map(p=>{if(p.id!==s.projId)return p;const sh=p.shifts||[];return{...p,shifts:evt==="INSERT"?[...sh,s]:evt==="UPDATE"?sh.map(x=>x.id===s.id?s:x):sh.filter(x=>x.id!==s.id)};})})
+        );
+      }
+    });
+    // Users real-time
+    const unsubUsers=sbSubscribe("users",(evt,rec)=>{
+      if(!rec)return;
+      upd(d=>({...d,users:evt==="INSERT"?[...d.users,rec]:evt==="UPDATE"?d.users.map(u=>u.id===rec.id?rec:u):d.users.filter(u=>u.id!==rec.id)}));
+    });
+    // Settings real-time
+    const unsubSettings=sbSubscribe("settings",(evt,rec)=>{
+      if(!rec)return;
+      try{
+        if(rec.key==="shiftTypes"){const st=JSON.parse(rec.value);if(Array.isArray(st))upd({shiftTypes:st});}
+        if(rec.key==="logoUrl")upd({logoUrl:rec.value});
+        if(rec.key==="quoteTemplates"){const qt=JSON.parse(rec.value);if(Array.isArray(qt))upd({quoteTemplates:qt});}
+      }catch{}
+    });
+
+    return()=>{[unsubProjects,unsubShifts,unsubUsers,unsubSettings].forEach(fn=>fn&&fn());};
+  },[currentUser]);
+
+  // Status bar refresh
   useEffect(()=>{
     const t=setInterval(()=>{
-      saveLocal(data);
       const now=new Date().toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"});
       setLastAutoSave(now);
-    },120000);
-    // auto cloud backup every 10 minutes
-    const t2=setInterval(()=>{
-      const url=getSheetsUrl();if(!url)return;
-      const fname=`postflow_autobkp_${todayStr()}.json`;
-      const payload={users:data.users,projects:data.projects,exportDate:todayStr(),version:"v16"};
-      sheetsPost(url,{action:"saveBackup",filename:fname,data:JSON.stringify(payload),folderId:getDriveFolder()}).catch(()=>{});
-    },600000);
-    return()=>{clearInterval(t);clearInterval(t2);};
-  },[data]);
+    },60000);
+    return()=>clearInterval(t);
+  },[]);
 
   // Save before tab close
   useEffect(()=>{
@@ -2056,11 +2135,8 @@ function App({initialData}){
     return()=>window.removeEventListener("beforeunload",h);
   },[data]);
 
-  // Update logo in splash
-  useEffect(()=>{if(logoUrl)Splash.setLogo(logoUrl);},[logoUrl]);
-
-  // Auto-sync Sheets — רץ פעם אחת בלבד אחרי לוגין, לא יוצר לופ
-  const didSyncRef=useRef(false);
+  // DUMMY: was Sheets-sync
+  const didSyncRef=useRef(true); // disable old sheets sync
   useEffect(()=>{
     if(!currentUser||didSyncRef.current)return;
     const url=getSheetsUrl();
@@ -2112,67 +2188,57 @@ function App({initialData}){
   const sts=shiftTypes||DEF_SHIFT_TYPES;
 
   const syncSettingsToSheets=async(key,value,label)=>{
-    const url=getSheetsUrl();if(!url)return;
+    const url=getSheetsUrl();
+    if(!url)return{ok:true,local:true}; // שמור מקומי בלבד
     const v=typeof value==="object"?JSON.stringify(value):String(value);
-    return sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:v,label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}});
+    try{
+      const r=await sheetsPost(url,{action:"upsertSetting",sheet:"settings",row:{key,value:v,label,updatedAt:new Date().toISOString().slice(0,19).replace("T"," ")}});
+      return r||{ok:true};
+    }catch(e){return{ok:false,error:e.message};}
   };
   const pullSettingsFromSheets=async()=>{
-    const url=getSheetsUrl();if(!url)return null;
-    const r=await sheetsPost(url,{action:"getAll",sheet:"settings"}).catch(()=>null);
-    if(!r||!r.data)return null;
+    const rows=await sbGet("settings","");
+    if(!rows)return null;
     const patch={};
-    r.data.forEach(row=>{
+    rows.forEach(row=>{
       if(row.key==="shiftTypes"&&row.value){try{const st=JSON.parse(row.value);if(Array.isArray(st)&&st.length)patch.shiftTypes=st;}catch{}}
       if(row.key==="logoUrl"&&row.value)patch.logoUrl=row.value;
+      if(row.key==="quoteTemplates"&&row.value){try{const qt=JSON.parse(row.value);if(Array.isArray(qt))patch.quoteTemplates=qt;}catch{}}
     });
     if(Object.keys(patch).length)upd(patch);
     return patch;
   };
   const onSaveShiftTypesToSheets=st=>syncSettingsToSheets("shiftTypes",st,"סוגי משמרות");
   const onSyncUser=u=>{
-    const url=getSheetsUrl();if(!url)return;
-    sheetsPost(url,{action:"upsert",sheet:"staff",id:u.id,row:u}).catch(()=>{});
+    const row={id:u.id,name:u.name||"",role:u.role||"worker",email:u.email||"",phone:u.phone||"",active:u.active||"true",password:u.password||"",permissions:u.permissions||null,updated_at:new Date().toISOString()};
+    sbUpsert("users",row).catch(()=>{});
   };
 
   // Handle shift save/delete from calendar
   const onSaveShift=shift=>{
-    const url=getSheetsUrl();
     const finalId=shift.id||uid();
-    const shiftRow={id:finalId,date:shift.date||"",timeStart:shift.timeStart||"",timeEnd:shift.timeEnd||"",hours:shift.hours||"",personName:users.find(u=>u.id===shift.person)?.name||"",projName:projects.find(p=>p.id===shift.projId)?.name||"",tasks:(shift.tasks||[]).map(t=>stLabel(t,sts)).join(", "),note:shift.note||"",projId:shift.projId||"",person:shift.person||"",deleted:"",deletedBy:"",deletedAt:""};
-    if(!shift.projId){
-      const existing=(data.globalShifts||[]).find(s=>s.id===shift.id);
-      const newGlobal=existing
-        ?(data.globalShifts||[]).map(s=>s.id===shift.id?{...shift,id:finalId}:s)
-        :[...(data.globalShifts||[]),{...shift,id:finalId}];
-      upd({globalShifts:newGlobal});
-      if(url){
-        if(existing)sheetsPost(url,{action:"update",sheet:"calendar",id:finalId,row:shiftRow}).catch(()=>{});
-        else sheetsPost(url,{action:"appendRow",sheet:"calendar",row:shiftRow}).catch(()=>{});
-      }
-      return;
+    const s={...shift,id:finalId};
+    // Write to Supabase shifts table
+    sbUpsert("shifts",shiftToRow(s,users,projects)).catch(()=>{});
+    // Update local state
+    if(!s.projId){
+      const existing=(data.globalShifts||[]).find(x=>x.id===shift.id);
+      const newGlobal=existing?(data.globalShifts||[]).map(x=>x.id===shift.id?s:x):[...(data.globalShifts||[]),s];
+      upd({globalShifts:newGlobal});return;
     }
-    const proj=projects.find(p=>p.id===shift.projId);if(!proj)return;
-    const existing=(proj.shifts||[]).find(s=>s.id===shift.id);
-    const newShifts=existing?(proj.shifts||[]).map(s=>s.id===shift.id?{...shift,id:finalId}:s):[...(proj.shifts||[]),{...shift,id:finalId}];
-    updateProject({...proj,shifts:newShifts});
-    if(url){
-      sheetsPost(url,{action:"update",sheet:"projects",id:proj.id,row:{...proj,shifts:newShifts}}).catch(()=>{});
-      if(existing)sheetsPost(url,{action:"update",sheet:"calendar",id:finalId,row:shiftRow}).catch(()=>{});
-      else sheetsPost(url,{action:"appendRow",sheet:"calendar",row:shiftRow}).catch(()=>{});
-    }
+    const proj=projects.find(p=>p.id===s.projId);if(!proj)return;
+    const existing=(proj.shifts||[]).find(x=>x.id===shift.id);
+    const newShifts=existing?(proj.shifts||[]).map(x=>x.id===shift.id?s:x):[...(proj.shifts||[]),s];
+    upd({projects:data.projects.map(p=>p.id===proj.id?{...proj,shifts:newShifts}:p)});
   };
   const onDeleteShift=shift=>{
-    const url=getSheetsUrl();
-    const deletedRow={deleted:"TRUE",deletedBy:currentUser?.name||"",deletedAt:new Date().toISOString().slice(0,19).replace("T"," ")};
-    if(url)sheetsPost(url,{action:"softDelete",sheet:"calendar",id:shift.id,row:deletedRow}).catch(()=>{});
+    sbSoftDelete("shifts",shift.id,currentUser?.name||"").catch(()=>{});
     if(!shift.projId){
-      upd({globalShifts:(data.globalShifts||[]).filter(s=>s.id!==shift.id)});
-      return;
+      upd({globalShifts:(data.globalShifts||[]).filter(s=>s.id!==shift.id)});return;
     }
     const proj=projects.find(p=>p.id===shift.projId);if(!proj)return;
-    updateProject({...proj,shifts:(proj.shifts||[]).filter(s=>s.id!==shift.id)});
+    upd({projects:data.projects.map(p=>p.id===proj.id?{...proj,shifts:(proj.shifts||[]).filter(s=>s.id!==shift.id)}:p)});
   };
-
   const NAV=[
     {id:"dashboard",icon:"⬛",label:"לוח בקרה"},
     {id:"calendar",icon:"📅",label:"לוח שבועי"},
@@ -2188,7 +2254,7 @@ function App({initialData}){
       <div style={{padding:"0 6px 16px",borderBottom:"1px solid var(--border)",marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div>
           {logoUrl?<img src={logoUrl} style={{height:36,objectFit:"contain",borderRadius:5}} alt="logo"/>:<div style={{fontWeight:900,fontSize:18,color:"var(--gold)"}}>🎞 PostFlow</div>}
-          <div style={{fontSize:9,color:"var(--muted)",marginTop:2}}>v14 <span style={{background:"var(--gold)",color:"#07090f",padding:"1px 5px",borderRadius:10,fontSize:8,fontWeight:900}}>v16</span></div>
+          <div style={{fontSize:9,color:"var(--muted)",marginTop:2}}>v14 <span style={{background:"var(--gold)",color:"#07090f",padding:"1px 5px",borderRadius:10,fontSize:8,fontWeight:900}}>v17</span></div>
         </div>
         {mobile&&<button className="btn-ghost btn-sm" onClick={()=>setSidebarOpen(false)}>✕</button>}
       </div>
@@ -2239,12 +2305,12 @@ function App({initialData}){
           :view==="dashboard"?<Dashboard projects={projects} user={currentUser} logoUrl={logoUrl} onSelect={gotoProj} onGoto={goto}/>
           :view==="calendar"?<WeeklyCalendar projects={projects} user={currentUser} users={users} shiftTypes={sts} globalShifts={data.globalShifts||[]} onSaveShift={onSaveShift} onDeleteShift={onDeleteShift} editModal={calEditModal} setEditModal={setCalEditModal}/>
           :(view==="projects"&&(isAdmin||isProd))?<ProjectsList projects={projects} user={currentUser} onSelect={gotoProj} onNew={()=>setShowNewProj(true)}/>
-          :view==="hours"?<HoursLog projects={projects} user={currentUser} users={users} onChange={updateProjAndSync} sheetsUrl={getSheetsUrl()}/>
+          :view==="hours"?<HoursLog projects={projects} user={currentUser} users={users} onChange={updateProjAndSync}/>
           :view==="quotes"?<QuoteBuilder projects={projects} quoteTemplates={quoteTemplates} onSave={addQuote} onUpdateTemplates={t=>upd({quoteTemplates:t})} user={currentUser}/>
           :view==="reports"?<Reports projects={projects} users={users}/>
           :view==="vault"?<PasswordVault/>
           :view==="clients"?<ClientList projects={projects} clients={clients} onUpdate={c=>upd({clients:c})}/>
-          :view==="users"?<UserMgmt users={users} onUpdate={u=>upd({users:u})} currentUser={currentUser} onSyncUser={onSyncUser}/>
+          :view==="users"?<UserMgmt users={users} onUpdate={u=>{upd({users:u});}} currentUser={currentUser} onSyncUser={onSyncUser}/>
           :view==="sheets"?<SheetsSettings projects={projects} users={users} onProjectsLoaded={p=>upd({projects:p})} onStaffLoaded={u=>upd({users:u})} onSettingsLoaded={rows=>{const patch={};rows.forEach(r=>{if(r.key==="shiftTypes"&&r.value){try{const st=JSON.parse(r.value);if(Array.isArray(st)&&st.length)patch.shiftTypes=st;}catch{}}if(r.key==="logoUrl"&&r.value)patch.logoUrl=r.value;});if(Object.keys(patch).length)upd(patch);}}/>
           :view==="backup"?<BackupPanel users={users} projects={projects} passwords={passwords} lastAutoSave={lastAutoSave} driveFolder={driveFolder} onRestore={d=>upd({users:d.users||users,projects:d.projects||projects,passwords:d.passwords||passwords})}/>
           :view==="settings"?<Settings shiftTypes={sts} onUpdateShiftTypes={st=>{upd({shiftTypes:st});}} logoUrl={logoUrl} onUpdateLogo={url=>{upd({logoUrl:url});syncSettingsToSheets("logoUrl",url,"לוגו");}} driveFolder={driveFolder} onUpdateDriveFolder={handleUpdateDriveFolder} onSaveShiftTypesToSheets={async(st)=>{upd({shiftTypes:st});return syncSettingsToSheets("shiftTypes",st,"סוגי משמרות");}} onPullSettingsFromSheets={pullSettingsFromSheets}/>
@@ -2266,29 +2332,87 @@ function App({initialData}){
 function AppLoader(){
   const [initData,setInitData]=useState(null);
   useEffect(()=>{(async()=>{
-    Splash.set(20,"טוען נתונים...");
-    const local=loadLocal();
-    Splash.set(50,"בודק Google Sheets...");
-    const url=getSheetsUrl();
-    if(url){try{
-      const[projs,pws,staff]=await Promise.all([sheetsCall(url,{action:"getAll",sheet:"projects"}),sheetsCall(url,{action:"getAll",sheet:"passwords"}),sheetsCall(url,{action:"getAll",sheet:"staff"})]);
-      Splash.set(85,"מעבד נתונים...");
-      const patch={};
-      if(projs&&projs.length)patch.projects=projs.map(r=>{const loc=(local.projects||[]).find(p=>p.id===r.id);return{tasks:loc?.tasks||[],shifts:loc?.shifts||[],hours:loc?.hours||[],quotes:loc?.quotes||[],plan:loc?.plan||{crew:[],milestones:[],notes:""},...mapProject(r)};});
-      if(pws&&pws.length)patch.passwords=pws.map(mapPassword);
-      if(staff&&staff.length){patch.users=staff.map(mapStaff);const maxNum=Math.max(0,...(patch.projects||local.projects||[]).map(p=>parseInt(p.projectNumber||0)||0));patch.nextProjNum=maxNum+1;}
-      setInitData({...local,...patch});
-    }catch{setInitData(local);}}
-    else setInitData(local);
-    Splash.set(100,"מוכן!");
-    if(local.logoUrl)Splash.setLogo(local.logoUrl);
-    setTimeout(()=>Splash.hide(),500);
+    Splash.set(10,"מתחבר ל-Supabase...");
+    try{
+      // Load all data in parallel from Supabase
+      const [sbUsers,sbProjects,sbShifts,sbHours,sbSettings]=await Promise.all([
+        sbGet("users","?order=name"),
+        sbGet("projects","?order=project_number"),
+        sbGet("shifts","?deleted=eq.false&order=date"),
+        sbGet("hours","?deleted=eq.false&order=date"),
+        sbGet("settings",""),
+      ]);
+      Splash.set(60,"מעבד נתונים...");
+
+      // Parse settings
+      const settingsMap={};
+      (sbSettings||[]).forEach(s=>{
+        try{settingsMap[s.key]=s.key==="shiftTypes"||s.key==="quoteTemplates"?JSON.parse(s.value):s.value;}
+        catch{settingsMap[s.key]=s.value;}
+      });
+
+      // Build globalShifts from shifts table (those without proj_id)
+      const globalShifts=(sbShifts||[]).filter(s=>!s.proj_id).map(rowToShift);
+
+      // Merge hours into projects
+      const projMap={};
+      (sbProjects||[]).map(rowToProj).forEach(p=>{projMap[p.id]=p;});
+      (sbHours||[]).forEach(r=>{
+        const h=rowToHour(r);
+        if(h.projId&&projMap[h.projId]){
+          projMap[h.projId].hours=[...(projMap[h.projId].hours||[]),h];
+        }
+      });
+      // Merge proj-linked shifts into projects
+      (sbShifts||[]).filter(s=>s.proj_id).forEach(r=>{
+        const s=rowToShift(r);
+        if(projMap[s.projId]){
+          projMap[s.projId].shifts=[...(projMap[s.projId].shifts||[]),s];
+        }
+      });
+
+      const local=loadLocal();
+      Splash.set(90,"מוכן!");
+      setInitData({
+        users: sbUsers&&sbUsers.length ? sbUsers : local.users,
+        projects: Object.values(projMap).length ? Object.values(projMap) : local.projects,
+        globalShifts,
+        shiftTypes: settingsMap.shiftTypes||local.shiftTypes||[...DEF_SHIFT_TYPES],
+        quoteTemplates: settingsMap.quoteTemplates||local.quoteTemplates||[...DEF_QUOTE_TMPLS],
+        logoUrl: settingsMap.logoUrl||local.logoUrl||"",
+        nextProjNum: local.nextProjNum||1,
+        passwords: local.passwords||[],
+        clients: local.clients||[],
+      });
+    }catch(err){
+      console.error("AppLoader error:",err);
+      Splash.set(90,"טוען מקומי...");
+      setInitData(loadLocal());
+    }
   })();},[]);
   if(!initData)return null;
   return <App initialData={initData}/>;
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<AppLoader/>);
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+const root=ReactDOM.createRoot(document.getElementById('root'));
+root.render(<AppLoader/>);
+
+// Hide splash once React is mounted
+const _origHide=Splash.hide.bind(Splash);
+let _splashHideAttempts=0;
+function tryHideSplash(){
+  const rootEl=document.getElementById('root');
+  if(rootEl&&rootEl.children.length>0){
+    Splash.set(100,"מוכן!");
+    setTimeout(()=>{ document.getElementById('splash').classList.add('hidden'); rootEl.classList.add('visible'); },300);
+  } else if(_splashHideAttempts++<60){
+    setTimeout(tryHideSplash,200);
+  }
+}
+setTimeout(tryHideSplash,400);
 
 </script>
 </body>
