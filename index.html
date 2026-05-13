@@ -1601,7 +1601,7 @@ function QuoteBuilder({projects,quoteTemplates,onSave,onUpdateTemplates,user}){
   const [qFormats,setQFormats]=useState("");
   const [qUsageRights,setQUsageRights]=useState("");
   const [qClientResp,setQClientResp]=useState("");
-  const [qPayment,setQPayment]=useState("50% בחתימה, 50% במסירה");
+  const [qPayment,setQPayment]=useState("שוטף + 40");
   const [paymentExtra,setPaymentExtra]=useState(false);
   const DEFAULT_NOTE=`רישיון שימוש בלתי מוגבל:\nבהתאם למסמך תנאים והגבלות המצורף, ועם סיום הפרויקט וקבלת תשלום מלא, פלואו-פוסט-וידאו בע"מ תעניק רישיון שימוש בלעדי ובלתי מוגבל ללקוח כמפורט בסעיף "פלטפורמות" לעיל.\nרישיון זה הוא רישיון "חד-יישומי" ולא רישיון "רב שימושי".\nאין להפיץ מחדש את הסרט כחומרי ספרייה, בכלי או תבנית, או עם קבצי מקור.\n\nמדיניות ביטולים:\nביטול עד 48 שעות מתחילת עבודה — 5% דמי ביטול.\nביטול לאחר תחילת עבודה — חלק יחסי + 10% עמלת הפקה.`;
   const [qNote,setQNote]=useState(DEFAULT_NOTE);
@@ -1627,7 +1627,7 @@ function QuoteBuilder({projects,quoteTemplates,onSave,onUpdateTemplates,user}){
     setQClient(p?.client||"");setQProjName(p?.name||"");setStep("build");
   };
 
-  const resetForm=()=>{setLines([]);setProjId("");setQClient("");setQClientCustom(false);setQProjName("");setQProjDesc("");setQScope("");setDeliverRows([{id:uid(),text:""}]);setSelRatios([]);setRatioCustom("");setSelRes([]);setResCustom("");setSelPlatforms([]);setPlatformCustom("");setQFormats("");setQUsageRights("");setQClientResp("");setQPayment("50% בחתימה, 50% במסירה");setPaymentExtra(false);setTplName("");};
+  const resetForm=()=>{setLines([]);setProjId("");setQClient("");setQClientCustom(false);setQProjName("");setQProjDesc("");setQScope("");setDeliverRows([{id:uid(),text:""}]);setSelRatios([]);setRatioCustom("");setSelRes([]);setResCustom("");setSelPlatforms([]);setPlatformCustom("");setQFormats("");setQUsageRights("");setQClientResp("");setQPayment("שוטף + 40");setPaymentExtra(false);setTplName("");};
 
   const save=()=>{
     if(!projId)return;
@@ -1680,7 +1680,7 @@ ${q.note?`<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(q.
                 setQClient(q.client||"");setQProjName(q.projName||"");
                 setQProjDesc(q.projDesc||"");setQScope(q.scope||"");
                 setQFormats(q.formats||"");setQUsageRights(q.usageRights||"");
-                setQClientResp(q.clientResp||"");setQPayment(q.payment||"50% בחתימה, 50% במסירה");
+                setQClientResp(q.clientResp||"");setQPayment(q.payment||"שוטף + 40");
                 setQNote(q.note||DEFAULT_NOTE);
                 if(q.deliverables)setDeliverRows(q.deliverables.split(\n").filter(Boolean).map(t=>({id:uid(),text:t})));
                 setStep("build");
