@@ -5027,7 +5027,6 @@ function SaveAsTemplateBtn({
 function QuoteBuilder({
   projects,
   quoteTemplates,
-  clients,
   onSave,
   onUpdateTemplates,
   user
@@ -5080,7 +5079,7 @@ function QuoteBuilder({
   const [qFormats, setQFormats] = useState("");
   const [qUsageRights, setQUsageRights] = useState("");
   const [qClientResp, setQClientResp] = useState("");
-  const [qPayment, setQPayment] = useState("שוטף + 40");
+  const [qPayment, setQPayment] = useState("50% בחתימה, 50% במסירה");
   const [paymentExtra, setPaymentExtra] = useState(false);
   const DEFAULT_NOTE = `רישיון שימוש בלתי מוגבל:\nבהתאם למסמך תנאים והגבלות המצורף, ועם סיום הפרויקט וקבלת תשלום מלא, פלואו-פוסט-וידאו בע"מ תעניק רישיון שימוש בלעדי ובלתי מוגבל ללקוח כמפורט בסעיף "פלטפורמות" לעיל.\nרישיון זה הוא רישיון "חד-יישומי" ולא רישיון "רב שימושי".\nאין להפיץ מחדש את הסרט כחומרי ספרייה, בכלי או תבנית, או עם קבצי מקור.\n\nמדיניות ביטולים:\nביטול עד 48 שעות מתחילת עבודה — 5% דמי ביטול.\nביטול לאחר תחילת עבודה — חלק יחסי + 10% עמלת הפקה.`;
   const [qNote, setQNote] = useState(DEFAULT_NOTE);
@@ -5091,7 +5090,7 @@ function QuoteBuilder({
     ...l,
     [k]: k === "qty" || k === "price" ? +v || 0 : v
   } : l));
-  const clientList = [...new Set([...projects.map(p => p.client).filter(Boolean), ...(clients || [])].filter(Boolean))].sort();
+  const clientList = [...new Set(projects.map(p => p.client).filter(Boolean))].sort();
   const ChipSelect = ({
     opts,
     selected,
@@ -5162,7 +5161,7 @@ function QuoteBuilder({
     setQFormats("");
     setQUsageRights("");
     setQClientResp("");
-    setQPayment("שוטף + 40");
+    setQPayment("50% בחתימה, 50% במסירה");
     setPaymentExtra(false);
     setTplName("");
   };
@@ -5196,195 +5195,126 @@ function QuoteBuilder({
   };
   const printQuote = (q, lns, tot) => {
     const w = window.open("", "_blank");
-    const dateStr = new Date().toLocaleDateString("he-IL", { year: "numeric", month: "long", day: "numeric" });
+    const dateStr = new Date().toLocaleDateString("he-IL", {
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    });
     const sec = (label, val) => val ? `<div class="sec"><div class="sec-label">${label}</div><div class="sec-val">${String(val).replace(/\n/g, "<br/>")}</div></div>` : "";
-    w.document.write(`<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>הצעת מחיר — ${q.client || ""}</title><style>
-*{margin:0;padding:0;box-sizing:border-box}
-@page{size:A4;margin:18mm 16mm}
-body{font-family:'Arial',sans-serif;background:#fff;color:#0a0a1a;direction:rtl;font-size:12.5px;line-height:1.55}
-.page{max-width:210mm;margin:0 auto;padding:14mm 16mm}
-.header{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:14px;border-bottom:3px solid #1a3a6b;margin-bottom:20px}
-.co-block .co-name{font-size:20px;font-weight:900;color:#1a3a6b;letter-spacing:-0.5px}
-.co-block .co-sub{font-size:10px;color:#555;margin-top:3px;line-height:1.7}
-.doc-block{text-align:left}
-.doc-title{font-size:26px;font-weight:900;color:#1a3a6b}
-.doc-num{font-size:11px;color:#888;margin-top:3px}
-.client-box{background:#f0f4fb;border-right:4px solid #1a3a6b;padding:12px 16px;margin-bottom:18px;border-radius:0 8px 8px 0}
-.client-box .cl-name{font-size:16px;font-weight:800;color:#0a0a1a}
-.client-box .cl-proj{font-size:12px;color:#555;margin-top:2px}
-.sec{margin-bottom:12px}
-.sec-label{font-size:9.5px;font-weight:800;color:#1a3a6b;letter-spacing:.6px;margin-bottom:3px;text-transform:uppercase}
-.sec-val{font-size:12px;line-height:1.65;color:#222}
-table{width:100%;border-collapse:collapse;margin:14px 0;font-size:12px}
-thead tr{background:#1a3a6b;color:#fff}
-th{padding:9px 11px;text-align:right;font-size:11px;font-weight:700;letter-spacing:.3px}
-td{padding:8px 11px;border-bottom:1px solid #dde4f0;color:#1a1a2e}
-tbody tr:nth-child(even){background:#f7f9fd}
-.tot-row td{border-top:2.5px solid #1a3a6b;font-weight:800;font-size:13px;background:#eef3fc;color:#1a3a6b}
-.vat-note{font-size:10px;color:#666;padding:4px 11px;text-align:left}
-.note-box{background:#f7f9fd;border:1px solid #c5d3ea;border-radius:6px;padding:12px 14px;margin-top:14px;font-size:11px;line-height:1.8;color:#444}
-.payment-box{background:#fff;border:1px solid #1a3a6b30;border-radius:6px;padding:10px 14px;margin-top:12px;font-size:12px}
-.payment-label{font-size:9.5px;font-weight:800;color:#1a3a6b;letter-spacing:.6px;text-transform:uppercase;margin-bottom:4px}
-.footer{margin-top:24px;padding-top:12px;border-top:1px solid #c5d3ea;font-size:10px;color:#888;text-align:center;display:flex;justify-content:space-between}
-.sig-block{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:28px}
-.sig-line{border-top:1px solid #aaa;padding-top:6px;font-size:10px;color:#666;text-align:center}
-@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{padding:0}}
-</style></head><body><div class="page">
-<div class="header">
-  <div class="co-block"><div class="co-name">FLOW | Post Production</div><div class="co-sub">החשמונאים 99, תל אביב &nbsp;|&nbsp; fpp.co.il<br>ח.פ: 516791274 &nbsp;|&nbsp; טל׳: 077-5125110</div></div>
-  <div class="doc-block"><div class="doc-title">הצעת מחיר</div><div class="doc-num">תאריך: ${dateStr}</div></div>
-</div>
-<div class="client-box"><div class="cl-name">${q.client || ""}</div><div class="cl-proj">${q.projName || ""}</div></div>
-${sec("תיאור הפרויקט", q.projDesc)}${sec("תכולה מפורטת", q.scope)}${sec("תוצרים", q.deliverables)}${sec("פרופורציות", q.ratios)}${sec("רזולוציות", q.resolutions)}${sec("פורמטים", q.formats)}${sec("פלטפורמות שידור", q.platforms)}${sec("סמן שימוש", q.usageRights)}${sec("באחריות הלקוח", q.clientResp)}
-<table>
-  <thead><tr><th>תיאור</th><th>כמות</th><th>יחידה</th><th>מחיר יחידה</th><th>סה"כ</th></tr></thead>
-  <tbody>
-    ${lns.map(l => `<tr><td>${l.desc}</td><td>${l.qty}</td><td>${l.unit || ""}</td><td>${fmtMoney(l.price)}</td><td><b>${fmtMoney(l.qty * l.price)}</b></td></tr>`).join("")}
-    <tr class="tot-row"><td colspan="4" style="text-align:right">סה"כ לתשלום</td><td>${fmtMoney(tot)}</td></tr>
-  </tbody>
-</table>
-<div class="vat-note">* המחיר אינו כולל מע"מ. יש להוסיף מע"מ כחוק.</div>
-${q.payment ? `<div class="payment-box"><div class="payment-label">תנאי תשלום</div>${q.payment}</div>` : ""}
-${q.note ? `<div class="note-box"><b>הערות ותנאים:</b><br/><br/>${String(q.note).replace(/\n/g, "<br/>")}</div>` : ""}
-<div class="sig-block"><div class="sig-line">חתימת הלקוח ותאריך</div><div class="sig-line">חותמת וחתימת FLOW</div></div>
-<div class="footer"><span>FLOW | Post Production · fpp.co.il · 077-5125110 · ח.פ 516791274</span><span>תאריך הפקה: ${dateStr}</span></div>
-</div></body></html>`);
+    w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>הצעת מחיר</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;background:#fff;color:#1a1a2e;direction:rtl;font-size:13px;}.page{max-width:800px;margin:0 auto;padding:32px 40px;}.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:3px solid #E8C547;margin-bottom:22px;}.co-name{font-size:17px;font-weight:800;margin-bottom:3px;}.co-info{font-size:11px;color:#666;line-height:1.8;text-align:left;}.doc-title{font-size:28px;font-weight:800;color:#E8C547;}.doc-date{font-size:12px;color:#999;margin-top:4px;}.client-box{background:#f8f8fc;border-right:4px solid #E8C547;padding:14px 18px;margin-bottom:18px;border-radius:0 8px 8px 0;}.cl-name{font-size:18px;font-weight:800;}.cl-proj{font-size:13px;color:#666;margin-top:2px;}.sec{margin-bottom:13px;}.sec-label{font-size:10px;font-weight:800;color:#E8C547;letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase;}.sec-val{font-size:13px;line-height:1.7;}table{width:100%;border-collapse:collapse;margin:12px 0;}th{background:#1a1a2e;color:#E8C547;padding:9px 12px;text-align:right;font-size:12px;}td{padding:8px 12px;border-bottom:1px solid #eee;}.tot td{border-top:2px solid #E8C547;font-weight:800;font-size:15px;background:#f8f8fc;}.note{background:#fffdf0;border:1px solid #E8C54740;border-radius:8px;padding:14px;margin-top:14px;font-size:11px;line-height:1.8;color:#555;}.footer{margin-top:28px;padding-top:14px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style></head><body><div class="page"><div class="header"><div><div class="doc-title">הצעת מחיר</div><div class="doc-date">תאריך: ${dateStr}</div></div><div class="co-info"><div class="co-name">FLOW | Post Production</div><div>החשמונאים 99, תל אביב</div><div>fpp.co.il</div><div>ח.פ: 516791274 &nbsp;|&nbsp; טל׳: 077-5125110</div></div></div><div class="client-box"><div class="cl-name">${q.client || ""}</div><div class="cl-proj">${q.projName || ""}</div></div>${sec("תיאור הפרויקט", q.projDesc)}${sec("תכולה מפורטת", q.scope)}${sec("תוצרים", q.deliverables)}${sec("פרופורציות", q.ratios)}${sec("רזולוציות", q.resolutions)}${sec("פורמטים", q.formats)}${sec("פלטפורמות שידור", q.platforms)}${sec("סמן שימוש", q.usageRights)}${sec("באחריות הלקוח", q.clientResp)}<table><thead><tr><th>תיאור</th><th>כמות</th><th>יחידה</th><th>מחיר יחידה</th><th>סה"כ</th></tr></thead><tbody>${lns.map(l => `<tr><td>${l.desc}</td><td>${l.qty}</td><td>${l.unit || ""}</td><td>${fmtMoney(l.price)}</td><td><b>${fmtMoney(l.qty * l.price)}</b></td></tr>`).join("")}<tr class="tot"><td colspan="4">סה"כ לתשלום</td><td>${fmtMoney(tot)}</td></tr></tbody></table>${sec("תנאי תשלום", q.payment)}${q.note ? `<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(q.note).replace(/\n/g, "<br/>")}</div>` : ""}<div class="footer">FLOW | Post Production &nbsp;·&nbsp; fpp.co.il &nbsp;·&nbsp; 077-5125110 &nbsp;·&nbsp; ח.פ 516791274</div></div></body></html>`);
     w.document.close();
     setTimeout(() => w.print(), 600);
   };
-  const [clientFilter, setClientFilter] = useState("");
-  const [editTplId, setEditTplId] = useState(null); // template being edited
-  const [editTplData, setEditTplData] = useState(null);
-
-  // status update helper
-  const updateQuoteStatus = (projId, qId, patch) => {
-    const proj = projects.find(p => p.id === projId);
-    if (!proj) return;
-    const newQuotes = (proj.quotes || []).map(q => q.id === qId ? { ...q, ...patch } : q);
-    onSave.__statusUpdate ? onSave.__statusUpdate({ ...proj, quotes: newQuotes }) : (() => {
-      // fallback: re-save via onSave with same projId but we need the project update
-      // We'll use the projects array directly via onSave with a special flag
-      const fakeQ = { __statusUpdate: true, projId, qId, patch };
-      onSave(projId, fakeQ);
-    })();
-  };
+  const [clientFilter, setClientFilter] = useState(""); // filter for quotes list
 
   if (step === "list") {
     const allQuotes = projects.flatMap(p =>
       (p.quotes || []).map(q => ({ ...q, projName: p.name, projNum: p.projectNumber, projId2: p.id }))
-    ).sort((a, b) => (a.client || "").localeCompare(b.client || "", "he"));
+    ).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
     const filteredQuotes = clientFilter
       ? allQuotes.filter(q => (q.client || "").toLowerCase().includes(clientFilter.toLowerCase()))
       : allQuotes;
 
-    // template editor modal
-    if (editTplId && editTplData) {
-      return /*#__PURE__*/React.createElement("div", { className: "fade" },
-        /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", style: { marginBottom: 14 }, onClick: () => { setEditTplId(null); setEditTplData(null); } }, "← חזרה"),
-        /*#__PURE__*/React.createElement("div", { className: "section-title" }, "✏️ עריכת תבנית — ", editTplData.name),
-        /*#__PURE__*/React.createElement("div", { className: "card", style: { marginBottom: 14 } },
-          /*#__PURE__*/React.createElement(Lbl, null, "שם תבנית"),
-          /*#__PURE__*/React.createElement("input", { value: editTplData.name, onChange: e => setEditTplData(d => ({ ...d, name: e.target.value })) })
-        ),
-        /*#__PURE__*/React.createElement("div", { className: "card", style: { marginBottom: 14 } },
-          /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 12 } }, "💰 שורות מחיר"),
-          /*#__PURE__*/React.createElement("div", { style: { overflowX: "auto" } },
-            /*#__PURE__*/React.createElement("table", { style: { width: "100%", borderCollapse: "collapse" } },
-              /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", { style: { borderBottom: "1px solid var(--border)" } },
-                ["תיאור", "כמות", "יחידה", "מחיר יחידה", ""].map(h => /*#__PURE__*/React.createElement("th", { key: h, style: { textAlign: "right", padding: "6px 4px", fontSize: 11, color: "var(--muted)", fontWeight: 700 } }, h))
-              )),
-              /*#__PURE__*/React.createElement("tbody", null, editTplData.lines.map(l =>
-                /*#__PURE__*/React.createElement("tr", { key: l.id, style: { borderBottom: "1px solid var(--border)" } },
-                  /*#__PURE__*/React.createElement("td", { style: { padding: "4px 3px", minWidth: 160 } }, /*#__PURE__*/React.createElement("input", { value: l.desc, onChange: e => setEditTplData(d => ({ ...d, lines: d.lines.map(x => x.id === l.id ? { ...x, desc: e.target.value } : x) })), style: { padding: "4px 7px" } })),
-                  /*#__PURE__*/React.createElement("td", { style: { padding: "4px 3px", width: 65 } }, /*#__PURE__*/React.createElement("input", { type: "number", value: l.qty, onChange: e => setEditTplData(d => ({ ...d, lines: d.lines.map(x => x.id === l.id ? { ...x, qty: +e.target.value || 0 } : x) })), style: { padding: "4px 7px" } })),
-                  /*#__PURE__*/React.createElement("td", { style: { padding: "4px 3px", width: 110 } }, /*#__PURE__*/React.createElement("select", { value: l.unit || "", onChange: e => setEditTplData(d => ({ ...d, lines: d.lines.map(x => x.id === l.id ? { ...x, unit: e.target.value } : x) })), style: { padding: "4px 7px", width: "100%" } }, ["פרויקט","משמרת","יום","סרט","שעה",""].map(u => /*#__PURE__*/React.createElement("option", { key: u, value: u }, u || "— יחידה —")))),
-                  /*#__PURE__*/React.createElement("td", { style: { padding: "4px 3px", width: 110 } }, /*#__PURE__*/React.createElement("input", { type: "number", value: l.price, onChange: e => setEditTplData(d => ({ ...d, lines: d.lines.map(x => x.id === l.id ? { ...x, price: +e.target.value || 0 } : x) })), style: { padding: "4px 7px" } })),
-                  /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("button", { className: "btn-red", style: { padding: "3px 8px", fontSize: 11 }, onClick: () => setEditTplData(d => ({ ...d, lines: d.lines.filter(x => x.id !== l.id) })) }, "✕"))
-                )
-              ))
-            )
-          ),
-          /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", style: { marginTop: 8 }, onClick: () => setEditTplData(d => ({ ...d, lines: [...d.lines, { id: uid(), desc: "", qty: 1, unit: "פרויקט", price: 0 }] })) }, "+ שורה")
-        ),
-        /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } },
-          /*#__PURE__*/React.createElement("button", { className: "btn-gold", onClick: () => {
-            const updated = tmpls.map(t => t.id === editTplId ? editTplData : t);
-            onUpdateTemplates(updated);
-            setEditTplId(null); setEditTplData(null);
-          }}, "💾 שמור תבנית"),
-          /*#__PURE__*/React.createElement("button", { className: "btn-red btn-sm", onClick: () => {
-            if (!window.confirm("למחוק את התבנית?")) return;
-            onUpdateTemplates(tmpls.filter(t => t.id !== editTplId));
-            setEditTplId(null); setEditTplData(null);
-          }}, "🗑 מחק תבנית"),
-          /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", onClick: () => { setEditTplId(null); setEditTplData(null); } }, "ביטול")
-        )
-      );
-    }
+    const recentQuotes = filteredQuotes.slice(0, 20);
 
     return /*#__PURE__*/React.createElement("div", { className: "fade" },
-      /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 8 } },
+      // ── Header ─────────────────────────────────────────────
+      /*#__PURE__*/React.createElement("div", {
+        style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 8 }
+      },
         /*#__PURE__*/React.createElement("div", { className: "section-title", style: { marginBottom: 0 } }, "📝 הצעות מחיר"),
         isAdmin && /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", onClick: () => setStep("pick") }, "+ הצעה חדשה")
       ),
 
-      // ── Templates ─────────────────────────────────────────
+      // ── Templates section ────────────────────────────────
       /*#__PURE__*/React.createElement("div", { style: { marginBottom: 24 } },
         /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 13, color: "var(--muted2)", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 } },
           "📋 תבניות",
           /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, background: "var(--card2)", padding: "2px 8px", borderRadius: 10 } }, tmpls.length)
         ),
-        /*#__PURE__*/React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(155px,1fr))", gap: 8 } },
-          tmpls.map(t => /*#__PURE__*/React.createElement("div", { key: t.id, className: "card2", style: { padding: "12px 14px" } },
-            /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 } },
-              /*#__PURE__*/React.createElement("div", { style: { fontSize: 16 } }, "📋"),
-              isAdmin && /*#__PURE__*/React.createElement("button", { className: "btn-ghost", style: { padding: "2px 7px", fontSize: 10 }, onClick: e => { e.stopPropagation(); setEditTplId(t.id); setEditTplData(JSON.parse(JSON.stringify(t))); } }, "✏️")
-            ),
-            /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 12, marginBottom: 3 } }, t.name),
-            /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", marginBottom: 8 } }, (t.lines?.length || 0), " שורות · ", fmtMoney(t.lines?.reduce((s, l) => s + l.qty * l.price, 0) || 0)),
-            isAdmin && /*#__PURE__*/React.createElement("button", { className: "btn-blue btn-sm", style: { width: "100%", fontSize: 11 }, onClick: () => {
-              setTplName(t.name);
-              setLines(t.lines.map(l => ({ ...l, id: uid() })));
-              setQClient(""); setQProjName(""); setQProjDesc(""); setQScope("");
-              setDeliverRows([{ id: uid(), text: "" }]);
-              setSelRatios([]); setRatioCustom(""); setSelRes([]); setResCustom("");
-              setSelPlatforms([]); setPlatformCustom(""); setQFormats("");
-              setQUsageRights(""); setQClientResp(""); setQPayment("שוטף + 40");
-              setProjId(""); setStep("build");
-            }}, "פתח הצעה")
+        /*#__PURE__*/React.createElement("div", {
+          style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 8 }
+        },
+          tmpls.map(t => /*#__PURE__*/React.createElement("div", {
+            key: t.id,
+            className: "card2",
+            style: { cursor: "pointer", padding: "12px 14px", transition: "border-color .15s" },
+            onClick: () => { isAdmin && setStep("pick"); }
+          },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, marginBottom: 4 } }, "📋"),
+            /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 12 } }, t.name),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", marginTop: 2 } }, (t.lines?.length || 0), " שורות · ", fmtMoney(t.lines?.reduce((s, l) => s + l.qty * l.price, 0) || 0))
           )),
-          isAdmin && /*#__PURE__*/React.createElement("div", { className: "card2", style: { cursor: "pointer", padding: "12px 14px", borderStyle: "dashed", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4 }, onClick: () => setStep("pick") },
-            /*#__PURE__*/React.createElement("div", { style: { fontSize: 18 } }, "✏️"),
-            /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 12 } }, "תבנית חדשה")
+          isAdmin && /*#__PURE__*/React.createElement("div", {
+            className: "card2",
+            style: { cursor: "pointer", padding: "12px 14px", borderStyle: "dashed", textAlign: "center" },
+            onClick: () => setStep("pick")
+          },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, marginBottom: 4 } }, "✏️"),
+            /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 12 } }, "ריק")
           )
         )
       ),
 
-      // ── Recent quotes ──────────────────────────────────────
-      /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 } },
+      // ── Recent quotes header + client filter ─────────────
+      /*#__PURE__*/React.createElement("div", {
+        style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }
+      },
         /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 13, color: "var(--muted2)", display: "flex", alignItems: "center", gap: 8 } },
-          "🗂 הצעות מחיר",
-          /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, background: "var(--card2)", padding: "2px 8px", borderRadius: 10 } }, filteredQuotes.length),
-          /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, color: "var(--muted)", fontWeight: 400 } }, "ממוין לפי לקוח")
+          "🕐 הצעות אחרונות",
+          /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, background: "var(--card2)", padding: "2px 8px", borderRadius: 10 } }, filteredQuotes.length)
         ),
         /*#__PURE__*/React.createElement("div", { style: { position: "relative", minWidth: 200 } },
-          /*#__PURE__*/React.createElement("span", { className: "srch-icon" }, "🔍"),
-          /*#__PURE__*/React.createElement("input", { value: clientFilter, onChange: e => setClientFilter(e.target.value), placeholder: "סינון לפי לקוח...", style: { paddingRight: 32, fontSize: 12 } }),
-          clientFilter && /*#__PURE__*/React.createElement("span", { onClick: () => setClientFilter(""), style: { position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "var(--muted)", fontSize: 14 } }, "✕")
+          /*#__PURE__*/React.createElement("span", { className: "srch-icon" }, "🏢"),
+          /*#__PURE__*/React.createElement("input", {
+            value: clientFilter,
+            onChange: e => setClientFilter(e.target.value),
+            placeholder: "סינון לפי לקוח...",
+            className: "srch-wrap",
+            style: { paddingRight: 32, fontSize: 12 }
+          }),
+          clientFilter && /*#__PURE__*/React.createElement("button", {
+            onClick: () => setClientFilter(""),
+            style: { position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 14, padding: 0 }
+          }, "×")
         )
       ),
 
-      filteredQuotes.length === 0 && /*#__PURE__*/React.createElement("div", { style: { color: "var(--muted)", textAlign: "center", padding: 40 } }, clientFilter ? `אין הצעות ללקוח "${clientFilter}"` : "אין הצעות מחיר עדיין"),
+      // ── Client filter chips (top clients) ────────────────
+      clientList.length > 0 && /*#__PURE__*/React.createElement("div", {
+        style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }
+      },
+        [""].concat(clientList.slice(0, 8)).map(cl => /*#__PURE__*/React.createElement("div", {
+          key: cl || "__all__",
+          onClick: () => setClientFilter(cl),
+          style: {
+            padding: "3px 10px", borderRadius: 20, fontSize: 11, cursor: "pointer",
+            border: "1px solid",
+            borderColor: clientFilter === cl ? "var(--gold)" : "var(--border)",
+            background: clientFilter === cl ? "var(--gold)20" : "transparent",
+            color: clientFilter === cl ? "var(--gold)" : "var(--muted2)",
+            fontWeight: clientFilter === cl ? 700 : 400
+          }
+        }, cl || "הכל"))
+      ),
+
+      // ── Quotes list ──────────────────────────────────────
+      recentQuotes.length === 0 && /*#__PURE__*/React.createElement("div", {
+        style: { color: "var(--muted)", textAlign: "center", padding: 40 }
+      }, clientFilter ? `אין הצעות ללקוח "${clientFilter}"` : "אין הצעות מחיר עדיין"),
 
       /*#__PURE__*/React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 6 } },
-        filteredQuotes.map(q => {
-          const statusCfg = q.quoteStatus === "approved" ? { label: "✓ אושרה", bg: "var(--green)20", col: "var(--green)" }
-            : q.quoteStatus === "sent_update" ? { label: "↻ עדכון נשלח", bg: "var(--blue)20", col: "var(--blue)" }
-            : q.quoteStatus === "sent" ? { label: "📤 נשלחה", bg: "var(--orange)20", col: "var(--orange)" }
-            : { label: "⏳ טיוטה", bg: "var(--border)", col: "var(--muted2)" };
-          return /*#__PURE__*/React.createElement("div", { key: q.id, className: "card", style: { padding: "12px 16px" } },
-            /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 } },
+        recentQuotes.map(q => {
+          const proj = projects.find(p => p.id === q.projId2);
+          return /*#__PURE__*/React.createElement("div", {
+            key: q.id,
+            className: "card",
+            style: { padding: "12px 16px" }
+          },
+            /*#__PURE__*/React.createElement("div", {
+              style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }
+            },
               /*#__PURE__*/React.createElement("div", null,
                 /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 14 } }, q.client || "—"),
                 /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", marginTop: 2 } },
@@ -5393,38 +5323,17 @@ ${q.note ? `<div class="note-box"><b>הערות ותנאים:</b><br/><br/>${Str
                   q.projName && [" · ", /*#__PURE__*/React.createElement("span", { key: "pn", style: { color: "var(--blue)" } }, "#", q.projNum, " ", q.projName)]
                 )
               ),
-              /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap" } },
-                /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, padding: "3px 10px", borderRadius: 12, background: statusCfg.bg, color: statusCfg.col, fontWeight: 700 } }, statusCfg.label),
-                isAdmin && /*#__PURE__*/React.createElement(React.Fragment, null,
-                  /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", title: "סמן: נשלחה", style: { fontSize: 11 }, onClick: () => { const proj = projects.find(p => p.id === q.projId2); if (!proj) return; onSave(q.projId2, { ...q, quoteStatus: "sent", id: q.id, __update: true }); } }, "📤"),
-                  /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", title: "סמן: אושרה", style: { fontSize: 11, color: "var(--green)" }, onClick: () => { const proj = projects.find(p => p.id === q.projId2); if (!proj) return; onSave(q.projId2, { ...q, quoteStatus: "approved", approved: true, id: q.id, __update: true }); } }, "✓"),
-                  /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", title: "נשלחה הצעה מעודכנת", style: { fontSize: 11, color: "var(--blue)" }, onClick: () => { const proj = projects.find(p => p.id === q.projId2); if (!proj) return; onSave(q.projId2, { ...q, quoteStatus: "sent_update", id: q.id, __update: true }); } }, "↻")
-                ),
+              /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" } },
+                /*#__PURE__*/React.createElement("span", {
+                  style: { fontSize: 11, padding: "3px 10px", borderRadius: 12,
+                    background: q.approved ? "var(--green)20" : "var(--orange)20",
+                    color: q.approved ? "var(--green)" : "var(--orange)" }
+                }, q.approved ? "✓ מאושר" : "ממתין"),
                 /*#__PURE__*/React.createElement("button", { className: "btn-blue btn-sm", onClick: () => printQuote(q, q.lines || [], q.total) }, "🖨️"),
-                /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", title: "שכפל", onClick: () => { onSave(q.projId2, { ...q, id: uid(), date: todayStr(), approved: false, quoteStatus: undefined }); } }, "📋"),
-                isAdmin && /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", onClick: () => {
-                  setProjId(q.projId2);
-                  setTplName(q.template || "");
-                  setLines((q.lines || []).map(l => ({ ...l, id: uid() })));
-                  setQClient(q.client || "");
-                  setQProjName(q.projName || "");
-                  setQProjDesc(q.projDesc || "");
-                  setQScope(q.scope || "");
-                  setQFormats(q.formats || "");
-                  setQUsageRights(q.usageRights || "");
-                  setQClientResp(q.clientResp || "");
-                  setQPayment(q.payment || "שוטף + 40");
-                  setQNote(q.note || DEFAULT_NOTE);
-                  if (q.deliverables) setDeliverRows(q.deliverables.split("\n").filter(Boolean).map(t => ({ id: uid(), text: t })));
-                  setStep("build");
-                } }, "✏️")
-              )
-            )
-          );
-        })
-      )
-    );
-  }
+                /*#__PURE__*/React.createElement("button", {
+                  className: "btn-ghost btn-sm", title: "שכפל",
+                  onClick: () => { onSave(q.projId2, { ...q, id: uid(), date: todayStr(), approved: false }); }
+                }, "📋"),
                 isAdmin && proj && /*#__PURE__*/React.createElement("button", {
                   className: "btn-ghost btn-sm", title: "ערוך",
                   onClick: () => {
@@ -5438,7 +5347,7 @@ ${q.note ? `<div class="note-box"><b>הערות ותנאים:</b><br/><br/>${Str
                     setQFormats(q.formats || "");
                     setQUsageRights(q.usageRights || "");
                     setQClientResp(q.clientResp || "");
-                    setQPayment(q.payment || "שוטף + 40");
+                    setQPayment(q.payment || "50% בחתימה, 50% במסירה");
                     setQNote(q.note || DEFAULT_NOTE);
                     if (q.deliverables) setDeliverRows(q.deliverables.split("\n").filter(Boolean).map(t => ({ id: uid(), text: t })));
                     setStep("build");
@@ -5570,11 +5479,38 @@ ${q.note ? `<div class="note-box"><b>הערות ותנאים:</b><br/><br/>${Str
     className: "frow"
   }, /*#__PURE__*/React.createElement("div", {
     className: "fcol"
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05E9\u05DD \u05DC\u05E7\u05D5\u05D7"),
-    /*#__PURE__*/React.createElement(React.Fragment, null,
-      /*#__PURE__*/React.createElement("input", { list: "qb-client-list", value: qClient, onChange: e => setQClient(e.target.value), placeholder: "בחר או הקלד לקוח..." }),
-      /*#__PURE__*/React.createElement("datalist", { id: "qb-client-list" }, clientList.map(cl => /*#__PURE__*/React.createElement("option", { key: cl, value: cl })))
-    )), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05E9\u05DD \u05DC\u05E7\u05D5\u05D7"), qClientCustom ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: qClient,
+    onChange: e => setQClient(e.target.value),
+    placeholder: "\u05D4\u05D6\u05DF \u05E9\u05DD \u05DC\u05E7\u05D5\u05D7..."
+  }), /*#__PURE__*/React.createElement("button", {
+    className: "btn-ghost btn-sm",
+    onClick: () => setQClientCustom(false)
+  }, "\u05E8\u05E9\u05D9\u05DE\u05D4")) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("select", {
+    value: qClient,
+    onChange: e => setQClient(e.target.value),
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "\u2014 \u05D1\u05D7\u05E8 \u05DC\u05E7\u05D5\u05D7 \u2014"), clientList.map(cl => /*#__PURE__*/React.createElement("option", {
+    key: cl,
+    value: cl
+  }, cl))), /*#__PURE__*/React.createElement("button", {
+    className: "btn-ghost btn-sm",
+    onClick: () => setQClientCustom(true)
+  }, "+ \u05D7\u05D3\u05E9"))), /*#__PURE__*/React.createElement("div", {
     className: "fcol"
   }, /*#__PURE__*/React.createElement(Lbl, null, "\u05E9\u05DD \u05D4\u05E4\u05E8\u05D5\u05D9\u05E7\u05D8"), /*#__PURE__*/React.createElement("input", {
     value: qProjName,
@@ -8173,7 +8109,6 @@ function App({
   }) : view === "quotes" ? /*#__PURE__*/React.createElement(QuoteBuilder, {
     projects: projects,
     quoteTemplates: quoteTemplates,
-    clients: clients,
     onSave: addQuote,
     onUpdateTemplates: t => upd({
       quoteTemplates: t
