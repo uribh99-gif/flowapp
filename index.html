@@ -5490,7 +5490,7 @@ function QuoteBuilder({
   const [qFormats, setQFormats] = useState("");
   const [qUsageRights, setQUsageRights] = useState("");
   const [qClientResp, setQClientResp] = useState("");
-  const [qPayment, setQPayment] = useState("50% בחתימה, 50% במסירה");
+  const [qPayment, setQPayment] = useState("המחיר לא כולל מע"מ. תנאי תשלום שוטף + 40");
   const [paymentExtra, setPaymentExtra] = useState(false);
   const DEFAULT_NOTE = `רישיון שימוש בלתי מוגבל:\nבהתאם למסמך תנאים והגבלות המצורף, ועם סיום הפרויקט וקבלת תשלום מלא, פלואו-פוסט-וידאו בע"מ תעניק רישיון שימוש בלעדי ובלתי מוגבל ללקוח כמפורט בסעיף "פלטפורמות" לעיל.\nרישיון זה הוא רישיון "חד-יישומי" ולא רישיון "רב שימושי".\nאין להפיץ מחדש את הסרט כחומרי ספרייה, בכלי או תבנית, או עם קבצי מקור.\n\nמדיניות ביטולים:\nביטול עד 48 שעות מתחילת עבודה — 5% דמי ביטול.\nביטול לאחר תחילת עבודה — חלק יחסי + 10% עמלת הפקה.`;
   const [qNote, setQNote] = useState(DEFAULT_NOTE);
@@ -5597,7 +5597,7 @@ function QuoteBuilder({
       usageRights: qUsageRights,
       clientResp: qClientResp,
       scope: qScope,
-      payment: qPayment + (paymentExtra ? " + 40%" : ""),
+      payment: qPayment + (paymentExtra ? " + מע"מ" : ""),
       lines
     };
     onSave(projId, q);
@@ -6221,13 +6221,13 @@ function QuoteBuilder({
     type: "checkbox",
     checked: paymentExtra,
     onChange: e => setPaymentExtra(e.target.checked)
-  }), "+ 40% \u05DE\u05E2\"\u05DE")), paymentExtra && /*#__PURE__*/React.createElement("div", {
+  }), "+ מע"מ \u05DE\u05E2\"\u05DE")), paymentExtra && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 6,
       fontSize: 12,
       color: "var(--muted)"
     }
-  }, "\u05D9\u05D5\u05D3\u05E4\u05E1: ", qPayment, " + 40%")), /*#__PURE__*/React.createElement("div", {
+  }, "\u05D9\u05D5\u05D3\u05E4\u05E1: ", qPayment, " + מע"מ")), /*#__PURE__*/React.createElement("div", {
     className: "card",
     style: {
       marginBottom: 16
@@ -6282,7 +6282,7 @@ function QuoteBuilder({
       usageRights: qUsageRights,
       clientResp: qClientResp,
       scope: qScope,
-      payment: qPayment + (paymentExtra ? " + 40%" : ""),
+      payment: qPayment + (paymentExtra ? " + מע"מ" : ""),
       note: qNote
     }, lines, total)
   }, "\uD83D\uDDA8\uFE0F \u05D4\u05D3\u05E4\u05E1\u05D4 / PDF"), /*#__PURE__*/React.createElement(SaveAsTemplateBtn, {
