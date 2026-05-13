@@ -5490,7 +5490,7 @@ function QuoteBuilder({
   const [qFormats, setQFormats] = useState("");
   const [qUsageRights, setQUsageRights] = useState("");
   const [qClientResp, setQClientResp] = useState("");
-  const [qPayment, setQPayment] = useState("המחיר לא כולל מע"מ. תנאי תשלום: שוטף+40");
+  const [qPayment, setQPayment] = useState("שוטף + 40");
   const [paymentExtra, setPaymentExtra] = useState(false);
   const DEFAULT_NOTE = `רישיון שימוש בלתי מוגבל:\nבהתאם למסמך תנאים והגבלות המצורף, ועם סיום הפרויקט וקבלת תשלום מלא, פלואו-פוסט-וידאו בע"מ תעניק רישיון שימוש בלעדי ובלתי מוגבל ללקוח כמפורט בסעיף "פלטפורמות" לעיל.\nרישיון זה הוא רישיון "חד-יישומי" ולא רישיון "רב שימושי".\nאין להפיץ מחדש את הסרט כחומרי ספרייה, בכלי או תבנית, או עם קבצי מקור.\n\nמדיניות ביטולים:\nביטול עד 48 שעות מתחילת עבודה — 5% דמי ביטול.\nביטול לאחר תחילת עבודה — חלק יחסי + 10% עמלת הפקה.`;
   const [qNote, setQNote] = useState(DEFAULT_NOTE);
@@ -5572,7 +5572,7 @@ function QuoteBuilder({
     setQFormats("");
     setQUsageRights("");
     setQClientResp("");
-    setQPayment("המחיר לא כולל מע"מ. תנאי תשלום: שוטף+40");
+    setQPayment("שוטף + 40");
     setPaymentExtra(false);
     setTplName("");
   };
@@ -5758,7 +5758,7 @@ function QuoteBuilder({
                     setQFormats(q.formats || "");
                     setQUsageRights(q.usageRights || "");
                     setQClientResp(q.clientResp || "");
-                    setQPayment(q.payment || "המחיר לא כולל מע"מ. תנאי תשלום: שוטף+40");
+                    setQPayment(q.payment || "שוטף + 40");
                     setQNote(q.note || DEFAULT_NOTE);
                     if (q.deliverables) setDeliverRows(q.deliverables.split("\n").filter(Boolean).map(t => ({ id: uid(), text: t })));
                     setStep("build");
