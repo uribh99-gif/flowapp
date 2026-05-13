@@ -886,7 +886,7 @@ function ProjectsList({projects,user,users,onSelect,onNew,onUpdate}){
     const cols=["projectNumber","name","client","producer","status","shootDate","offlineScreening","onlineScreening","deliveryDate","description"];
     const headers=["מספר","שם פרויקט","לקוח","מפיקה","סטטוס","צילום","אופליין","אונליין","מסירה","תיאור"];
     const rows=toExport.map(p=>cols.map(k=>`"${(p[k]||"").toString().replace(/"/g,'""')}"`).join(","));
-    const csv="\uFEFF"+headers.join(",")+"\n"+rows.join("\n");
+    const csv="﻿"+headers.join(",")+\n"+rows.join(\n");
     const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
     a.download=`postflow_projects_${todayStr()}.csv`;a.click();
     setShowExportMenu(false);
@@ -1682,8 +1682,7 @@ ${q.note?`<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(q.
                 setQFormats(q.formats||"");setQUsageRights(q.usageRights||"");
                 setQClientResp(q.clientResp||"");setQPayment(q.payment||"50% בחתימה, 50% במסירה");
                 setQNote(q.note||DEFAULT_NOTE);
-                if(q.deliverables)setDeliverRows(q.deliverables.split("
-").filter(Boolean).map(t=>({id:uid(),text:t})));
+                if(q.deliverables)setDeliverRows(q.deliverables.split(\n").filter(Boolean).map(t=>({id:uid(),text:t})));
                 setStep("build");
               }}>✏️</button>
             </div>
@@ -1793,7 +1792,7 @@ ${q.note?`<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(q.
       <button className="btn-ghost btn-sm" onClick={()=>{
         const cols=["תיאור","כמות","יחידה","מחיר יחידה","סה"כ"];
         const rows=lines.map(l=>[l.desc,l.qty,l.unit||"",l.price,l.qty*l.price].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","));
-        const csv="\uFEFF"+["לקוח,"+qClient,"פרויקט,"+qProjName,"תאריך,"+todayStr(),"",""].join("\n")+cols.join(",")+"\n"+rows.join("\n")+"\n,,,,\nסה\"כ,,,,"+total;
+        const csv="﻿"+["לקוח,"+qClient,"פרויקט,"+qProjName,"תאריך,"+todayStr(),"",""].join(\n")+cols.join(",")+"\n"+rows.join("\n")+"\n,,,,\nסה\"כ,,,,"+total;
         const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
         a.download=`quote_${qClient}_${todayStr()}.csv`;a.click();
       }}>⬇️ CSV לאקסל</button>
@@ -2573,10 +2572,7 @@ function AppLoader(){
       setInitData(loadLocal());
     }
   })();},[]);
-  if(!initData){
-    Splash.set(50,"טוען...");
-    return null;
-  }
+  if(!initData)return null;
   Splash.set(100,"מוכן!");
   setTimeout(()=>Splash.hide(),200);
   return <App initialData={initData}/>;
