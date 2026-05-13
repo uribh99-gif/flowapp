@@ -3884,6 +3884,7 @@ function ProjectDetail({
   project,
   user,
   users,
+  clients,
   shiftTypes,
   onChange,
   onBack
@@ -4145,13 +4146,21 @@ function ProjectDetail({
     /*#__PURE__*/React.createElement("div", { className: "fcol" },
       /*#__PURE__*/React.createElement(Lbl, null, "מפיקה"),
       canEdit
-        ? /*#__PURE__*/React.createElement("input", { value: project.producer || "", onChange: e => onChange({ ...project, producer: e.target.value }) })
+        ? /*#__PURE__*/React.createElement("select", { value: project.producer || "", onChange: e => onChange({ ...project, producer: e.target.value }) },
+            /*#__PURE__*/React.createElement("option", { value: "" }, "— בחר —"),
+            users.map(u => /*#__PURE__*/React.createElement("option", { key: u.id, value: u.name }, u.name))
+          )
         : /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700 } }, project.producer || "—")
     ),
     /*#__PURE__*/React.createElement("div", { className: "fcol" },
       /*#__PURE__*/React.createElement(Lbl, null, "לקוח"),
       canEdit
-        ? /*#__PURE__*/React.createElement("input", { value: project.client || "", onChange: e => onChange({ ...project, client: e.target.value }) })
+        ? /*#__PURE__*/React.createElement(React.Fragment, null,
+            /*#__PURE__*/React.createElement("input", { list: `cl-list-${project.id}`, value: project.client || "", onChange: e => onChange({ ...project, client: e.target.value }), placeholder: "בחר או הקלד..." }),
+            /*#__PURE__*/React.createElement("datalist", { id: `cl-list-${project.id}` },
+              (clients || []).map(c => /*#__PURE__*/React.createElement("option", { key: c, value: c }))
+            )
+          )
         : /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700 } }, project.client || "—")
     )
   ),
@@ -8012,6 +8021,7 @@ function App({
     project: selProj,
     user: currentUser,
     users: users,
+    clients: clients,
     shiftTypes: sts,
     onChange: updateProjAndSync,
     onBack: () => {
