@@ -3277,6 +3277,7 @@ function HoursLog({
   const allAttendance = useMemo(() => {
     const rows = [];
     (users || []).forEach(u => {
+      if (!canManage && u.id !== user.id) return;
       (u.attendance || []).filter(a => a.date && a.date.startsWith(month)).forEach(a => {
         rows.push({
           ...a,
@@ -4455,7 +4456,8 @@ function ProjectPlanning({
 // ══════════════════════════════════════════
 function Reports({
   projects,
-  users
+  users,
+  user
 }) {
   const [tab, setTab] = useState("projects");
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
@@ -4756,8 +4758,9 @@ function Reports({
       padding: 32
     }
   }, "\u05D0\u05D9\u05DF \u05E4\u05E8\u05D5\u05D9\u05E7\u05D8\u05D9\u05DD \u05DC\u05EA\u05E6\u05D5\u05D2\u05D4"))), tab === "hours" && (() => {
+    const isAdminView = user && user.role === "admin";
     const all = [];
-    projects.forEach(p => (p.hours || []).filter(h => h.date && h.date.startsWith(month)).forEach(h => {
+    projects.forEach(p => (p.hours || []).filter(h => h.date && h.date.startsWith(month) && (isAdminView || h.worker === user.id)).forEach(h => {
       const u = users.find(u => u.id === h.worker);
       all.push({
         ...h,
@@ -8113,7 +8116,8 @@ function App({
     user: currentUser
   }) : view === "reports" ? /*#__PURE__*/React.createElement(Reports, {
     projects: projects,
-    users: users
+    users: users,
+    user: currentUser
   }) : view === "finance" && isAdmin ? /*#__PURE__*/React.createElement(FinanceModule, {
     projects: projects,
     users: users,
