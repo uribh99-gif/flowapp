@@ -2858,13 +2858,31 @@ function ProjectsList({
   onUpdate
 }) {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("active");
-  const [editInline, setEditInline] = useState(null); // {id, name, projectNumber, producer}
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("status"); // "status" | "number"
+  const [editInline, setEditInline] = useState(null);
   const [checked, setChecked] = useState([]);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const searchRef = useRef();
+  const highlightRef = useRef();
   const isAdmin = user.role === "admin",
     canEdit = isAdmin || user.role === "producer";
-  const filtered = projects.filter(p => (statusFilter === "all" || p.status === statusFilter) && (!search || (p.name || "").toLowerCase().includes(search.toLowerCase()) || (p.projectNumber || "").toString().includes(search) || (p.client || "").toLowerCase().includes(search.toLowerCase()) || (p.producer || "").toLowerCase().includes(search.toLowerCase())));
+  const STATUS_ORDER = { active: 0, review: 1, paused: 2, completed: 3, cancelled: 4 };
+  const filtered = useMemo(() => {
+    const base = projects.filter(p =>
+      (statusFilter === "all" || p.status === statusFilter) &&
+      (!search || (p.name || "").toLowerCase().includes(search.toLowerCase()) ||
+        (p.projectNumber || "").toString().includes(search) ||
+        (p.client || "").toLowerCase().includes(search.toLowerCase()) ||
+        (p.producer || "").toLowerCase().includes(search.toLowerCase()))
+    );
+    if (sortBy === "number") return [...base].sort((a, b) => (+(a.projectNumber || 0)) - (+(b.projectNumber || 0)));
+    return [...base].sort((a, b) => (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9));
+  }, [projects, statusFilter, search, sortBy]);
+  // scroll to first match when searching
+  useEffect(() => {
+    if (search && highlightRef.current) highlightRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [search, filtered]);
   const toggleCheck = id => setChecked(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
   const allChecked = filtered.length > 0 && filtered.every(p => checked.includes(p.id));
   const toggleAll = () => setChecked(allChecked ? [] : filtered.map(p => p.id));
@@ -2965,29 +2983,37 @@ function ProjectsList({
       setShowExportMenu(false);
     }
   }, "\u05E0\u05E7\u05D4 \u05D1\u05D7\u05D9\u05E8\u05D4"))))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 10,
-      marginBottom: 14,
-      flexWrap: "wrap",
-      alignItems: "center"
-    }
-  }, /*#__PURE__*/React.createElement(SmartSearch, {
-    projects: projects,
-    onSelect: onSelect
-  }), /*#__PURE__*/React.createElement("select", {
+    style: { display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }
+  },
+  /*#__PURE__*/React.createElement("div", { className: "srch-wrap", style: { position: "relative", flex: 1, maxWidth: 340 } },
+    /*#__PURE__*/React.createElement("span", { className: "srch-icon" }, "🔍"),
+    /*#__PURE__*/React.createElement("input", {
+      value: search,
+      onChange: e => setSearch(e.target.value),
+      placeholder: "חיפוש בתוך הרשימה...",
+      style: { paddingRight: 34 }
+    }),
+    search ? /*#__PURE__*/React.createElement("span", {
+      onClick: () => setSearch(""),
+      style: { position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "var(--muted)", fontSize: 14 }
+    }, "✕") : null
+  ),
+  /*#__PURE__*/React.createElement("select", {
     value: statusFilter,
     onChange: e => setStatusFilter(e.target.value),
-    style: {
-      width: "auto",
-      fontSize: 12
-    }
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "all"
-  }, "\u05DB\u05DC \u05D4\u05E1\u05D8\u05D8\u05D5\u05E1\u05D9\u05DD"), Object.entries(STATUS_CFG).map(([k, v]) => /*#__PURE__*/React.createElement("option", {
-    key: k,
-    value: k
-  }, v.label)))), /*#__PURE__*/React.createElement("div", {
+    style: { width: "auto", fontSize: 12 }
+  },
+    /*#__PURE__*/React.createElement("option", { value: "all" }, "כל הסטטוסים"),
+    Object.entries(STATUS_CFG).map(([k, v]) => /*#__PURE__*/React.createElement("option", { key: k, value: k }, v.label))
+  ),
+  /*#__PURE__*/React.createElement("select", {
+    value: sortBy,
+    onChange: e => setSortBy(e.target.value),
+    style: { width: "auto", fontSize: 12 }
+  },
+    /*#__PURE__*/React.createElement("option", { value: "status" }, "מיון: לפי סטטוס"),
+    /*#__PURE__*/React.createElement("option", { value: "number" }, "מיון: לפי מספר")
+  )), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "32px 60px 1fr 130px 130px 110px 90px",
@@ -3014,11 +3040,13 @@ function ProjectsList({
       flexDirection: "column",
       gap: 2
     }
-  }, filtered.map(p => {
+  }, filtered.map((p, idx) => {
     var _STATUS_CFG$p$status;
     const isEditing = (editInline === null || editInline === void 0 ? void 0 : editInline.id) === p.id;
+    const isFirstMatch = search && idx === 0;
     return /*#__PURE__*/React.createElement("div", {
-      key: p.id
+      key: p.id,
+      ref: isFirstMatch ? highlightRef : null
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "grid",
@@ -3026,10 +3054,10 @@ function ProjectsList({
         gap: 6,
         padding: "8px 10px",
         alignItems: "center",
-        background: "var(--card)",
+        background: isFirstMatch ? "var(--gold)12" : "var(--card)",
         borderRadius: 8,
         marginBottom: 2,
-        borderLeft: `3px solid ${((_STATUS_CFG$p$status = STATUS_CFG[p.status]) === null || _STATUS_CFG$p$status === void 0 ? void 0 : _STATUS_CFG$p$status.color) || "var(--border)"}`,
+        borderLeft: `3px solid ${isFirstMatch ? "var(--gold)" : (((_STATUS_CFG$p$status = STATUS_CFG[p.status]) === null || _STATUS_CFG$p$status === void 0 ? void 0 : _STATUS_CFG$p$status.color) || "var(--border)")}`,
         cursor: "pointer"
       },
       onClick: () => !isEditing && onSelect(p.id)
