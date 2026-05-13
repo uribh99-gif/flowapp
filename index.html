@@ -2583,4 +2583,11 @@ function AppLoader(){
   if(!initData)return null;
   return <App initialData={initData}/>;
 }
+const domContainer = document.getElementById('root');
+const reactRoot = ReactDOM.createRoot(domContainer);
+reactRoot.render(<AppLoader />);
 
+setTimeout(() => Splash.hide(), 500);
+</script>
+</body>
+</html>
