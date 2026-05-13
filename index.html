@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow v18</title>
+<title>PostFlow v20</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 
@@ -22,10 +22,10 @@ body{background:#07090f;margin:0;padding:0;font-family:'Heebo',sans-serif}
 </head>
 <body>
 <div id="splash">
-  <div class="sp-logo" id="splashLogo"><img src="FPP_LOGO.png" onerror="this.parentElement.innerHTML='🎞 PostFlow'" style="height:72px;object-fit:contain;border-radius:12px" id="appLogo"/></div>
+  <div class="sp-logo" id="splashLogo"><img src="https://i.imgur.com/8QfKFqA.png" onerror="this.parentElement.innerHTML='🎞 PostFlow'" style="height:72px;object-fit:contain;border-radius:12px" id="appLogo"/></div>
   <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
     <div class="sp-sub">Post-Production Management</div>
-    <div style="background:#e8c547;color:#07090f;font-size:9px;font-weight:900;padding:2px 7px;border-radius:20px;letter-spacing:1px;text-transform:uppercase">v18</div>
+    <div style="background:#e8c547;color:#07090f;font-size:9px;font-weight:900;padding:2px 7px;border-radius:20px;letter-spacing:1px;text-transform:uppercase">v20</div>
   </div>
   <div class="sp-bar-wrap"><div class="sp-bar" id="spBar"></div></div>
   <div class="sp-msg" id="spMsg">מאתחל...</div>
@@ -143,8 +143,8 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const fmtMoney = v => "₪" + Number(v || 0).toLocaleString("he-IL");
 const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
-const LS_KEY = "postflow_v18_Beta";
-const REMEMBER_KEY = "pf_v17_remember";
+const LS_KEY = "postflow_v20";
+const REMEMBER_KEY = "pf_v20_remember";
 const ADMIN_EMAIL = "uri@fpp.co.il";
 const ADMIN_PASS = "0711";
 // ── Supabase ──────────────────────────────────────────────────
@@ -1590,7 +1590,7 @@ function Login({
       color: "var(--muted)",
       marginTop: 4
     }
-  }, "\u05E0\u05D9\u05D4\u05D5\u05DC \u05E4\u05D5\u05E1\u05D8-\u05E4\u05E8\u05D5\u05D3\u05E7\u05E9\u05DF \xB7 v16")), /*#__PURE__*/React.createElement("div", {
+  }, "\u05E0\u05D9\u05D4\u05D5\u05DC \u05E4\u05D5\u05E1\u05D8-\u05E4\u05E8\u05D5\u05D3\u05E7\u05E9\u05DF \xB7 v20")), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 12
     },
@@ -1758,6 +1758,10 @@ function Dashboard({
     ...s,
     projName: p.name
   })));
+  // Finance KPIs for admin
+  const finData = user.role === "admin" ? loadFinanceData() : null;
+  const finPaid = finData ? (finData.invoices || []).filter(i => i.status === "paid").reduce((s, i) => s + (i.amount || 0), 0) : 0;
+  const finOpen = finData ? (finData.invoices || []).filter(i => i.status === "open").reduce((s, i) => s + (i.amount || 0), 0) : 0;
   const NAV = [{
     id: "calendar",
     icon: "📅",
@@ -1788,6 +1792,12 @@ function Dashboard({
     label: "דוחות",
     color: "#fb923c",
     roles: ["admin", "producer"]
+  }, {
+    id: "finance",
+    icon: "💰",
+    label: "Finance",
+    color: "#6ee7b7",
+    roles: ["admin"]
   }, {
     id: "vault",
     icon: "🔐",
@@ -1890,7 +1900,20 @@ function Dashboard({
       color: "var(--muted)",
       marginTop: 3
     }
-  }, s.label)))), todayShifts.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, s.label)))), user.role === "admin" && finData && (finPaid > 0 || finOpen > 0) && /*#__PURE__*/React.createElement("div", {
+    style: { marginBottom: 20 }
+  }, /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 13, marginBottom: 10, color: "var(--muted2)" } }, "💰 Finance — סיכום מהיר"),
+    /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } },
+      /*#__PURE__*/React.createElement("div", { className: "card2", style: { flex: 1, minWidth: 130, cursor: "pointer" }, onClick: () => onGoto("finance") },
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", marginBottom: 2 } }, "שולם"),
+        /*#__PURE__*/React.createElement("div", { style: { fontWeight: 900, fontSize: 16, color: "var(--green)" } }, fmtMoney(finPaid))
+      ),
+      /*#__PURE__*/React.createElement("div", { className: "card2", style: { flex: 1, minWidth: 130, cursor: "pointer" }, onClick: () => onGoto("finance") },
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", marginBottom: 2 } }, "פתוח לגבייה"),
+        /*#__PURE__*/React.createElement("div", { style: { fontWeight: 900, fontSize: 16, color: "var(--orange)" } }, fmtMoney(finOpen))
+      )
+    )
+  ), todayShifts.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 20
     }
@@ -5490,7 +5513,7 @@ function QuoteBuilder({
   const [qFormats, setQFormats] = useState("");
   const [qUsageRights, setQUsageRights] = useState("");
   const [qClientResp, setQClientResp] = useState("");
-  const [qPayment, setQPayment] = useState("שוטף + 40");
+  const [qPayment, setQPayment] = useState("50% בחתימה, 50% במסירה");
   const [paymentExtra, setPaymentExtra] = useState(false);
   const DEFAULT_NOTE = `רישיון שימוש בלתי מוגבל:\nבהתאם למסמך תנאים והגבלות המצורף, ועם סיום הפרויקט וקבלת תשלום מלא, פלואו-פוסט-וידאו בע"מ תעניק רישיון שימוש בלעדי ובלתי מוגבל ללקוח כמפורט בסעיף "פלטפורמות" לעיל.\nרישיון זה הוא רישיון "חד-יישומי" ולא רישיון "רב שימושי".\nאין להפיץ מחדש את הסרט כחומרי ספרייה, בכלי או תבנית, או עם קבצי מקור.\n\nמדיניות ביטולים:\nביטול עד 48 שעות מתחילת עבודה — 5% דמי ביטול.\nביטול לאחר תחילת עבודה — חלק יחסי + 10% עמלת הפקה.`;
   const [qNote, setQNote] = useState(DEFAULT_NOTE);
@@ -5572,7 +5595,7 @@ function QuoteBuilder({
     setQFormats("");
     setQUsageRights("");
     setQClientResp("");
-    setQPayment("שוטף + 40");
+    setQPayment("50% בחתימה, 50% במסירה");
     setPaymentExtra(false);
     setTplName("");
   };
@@ -5758,7 +5781,7 @@ function QuoteBuilder({
                     setQFormats(q.formats || "");
                     setQUsageRights(q.usageRights || "");
                     setQClientResp(q.clientResp || "");
-                    setQPayment(q.payment || "שוטף + 40");
+                    setQPayment(q.payment || "50% בחתימה, 50% במסירה");
                     setQNote(q.note || DEFAULT_NOTE);
                     if (q.deliverables) setDeliverRows(q.deliverables.split("\n").filter(Boolean).map(t => ({ id: uid(), text: t })));
                     setStep("build");
@@ -8191,6 +8214,10 @@ function App({
     id: "reports",
     icon: "📊",
     label: "דוחות"
+  }] : []), ...(isAdmin ? [{
+    id: "finance",
+    icon: "💰",
+    label: "Finance"
   }] : []), {
     id: "vault",
     icon: "🔐",
@@ -8264,7 +8291,7 @@ function App({
       color: "var(--muted)",
       marginTop: 2
     }
-  }, "v14 ", /*#__PURE__*/React.createElement("span", {
+  }, "v20 ", /*#__PURE__*/React.createElement("span", {
     style: {
       background: "var(--gold)",
       color: "#07090f",
@@ -8273,7 +8300,7 @@ function App({
       fontSize: 8,
       fontWeight: 900
     }
-  }, "v18"))), mobile && /*#__PURE__*/React.createElement("button", {
+  }, "Studio+Finance"))), mobile && /*#__PURE__*/React.createElement("button", {
     className: "btn-ghost btn-sm",
     onClick: () => setSidebarOpen(false)
   }, "\u2715")), /*#__PURE__*/React.createElement("div", {
@@ -8303,7 +8330,7 @@ function App({
     key: n.id,
     className: `nav-item${view === n.id && !selProjId ? " active" : ""}`,
     onClick: () => goto(n.id)
-  }, /*#__PURE__*/React.createElement("span", null, n.icon), n.label)), (isAdmin || isProd) && projects.filter(p => p.status === "active").length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, n.icon), n.label, n.id === "finance" && /*#__PURE__*/React.createElement("span", { style: { marginRight: "auto", fontSize: 8, background: "#6ee7b720", color: "var(--green)", padding: "2px 5px", borderRadius: 8, border: "1px solid #6ee7b740", fontWeight: 800 } }, "ADMIN"))), (isAdmin || isProd) && projects.filter(p => p.status === "active").length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: "var(--muted)",
@@ -8523,6 +8550,10 @@ function App({
   }) : view === "reports" ? /*#__PURE__*/React.createElement(Reports, {
     projects: projects,
     users: users
+  }) : view === "finance" && isAdmin ? /*#__PURE__*/React.createElement(FinanceModule, {
+    projects: projects,
+    users: users,
+    currentUser: currentUser
   }) : view === "vault" ? /*#__PURE__*/React.createElement(PasswordVault, null) : view === "clients" ? /*#__PURE__*/React.createElement(ClientList, {
     projects: projects,
     clients: clients,
@@ -8611,6 +8642,307 @@ function App({
     },
     nextNum: nextProjNum || 1
   }));
+}
+
+// ══════════════════════════════════════════
+// FINANCE MODULE (Admin-only)
+// ══════════════════════════════════════════
+
+// Finance context keys
+const FIN_LS_KEY = "postflow_v20_finance";
+
+function loadFinanceData() {
+  try {
+    const raw = localStorage.getItem(FIN_LS_KEY);
+    if (!raw) return { invoices: [], expenses: [], budgets: [] };
+    return JSON.parse(raw);
+  } catch { return { invoices: [], expenses: [], budgets: [] }; }
+}
+function saveFinanceData(d) {
+  try { localStorage.setItem(FIN_LS_KEY, JSON.stringify(d)); } catch {}
+}
+
+function FinanceModule({ projects, users, currentUser }) {
+  const [data, setData] = useState(() => loadFinanceData());
+  const [tab, setTab] = useState("overview");
+  const [showModal, setShowModal] = useState(null); // "invoice"|"expense"
+
+  const upd = patch => {
+    const nd = { ...data, ...patch };
+    setData(nd);
+    saveFinanceData(nd);
+  };
+
+  const invoices = data.invoices || [];
+  const expenses = data.expenses || [];
+
+  // KPIs
+  const totalBilled = invoices.reduce((s, i) => s + (i.amount || 0), 0);
+  const totalPaid   = invoices.filter(i => i.status === "paid").reduce((s, i) => s + (i.amount || 0), 0);
+  const totalOpen   = invoices.filter(i => i.status === "open").reduce((s, i) => s + (i.amount || 0), 0);
+  const totalExp    = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+  const netProfit   = totalPaid - totalExp;
+
+  // Per-project financial summary
+  const projFinMap = {};
+  projects.forEach(p => { projFinMap[p.id] = { name: p.name, num: p.projectNumber, billed: 0, paid: 0, expenses: 0 }; });
+  invoices.forEach(i => {
+    if (i.projId && projFinMap[i.projId]) {
+      projFinMap[i.projId].billed += i.amount || 0;
+      if (i.status === "paid") projFinMap[i.projId].paid += i.amount || 0;
+    }
+  });
+  expenses.forEach(e => {
+    if (e.projId && projFinMap[e.projId]) projFinMap[e.projId].expenses += e.amount || 0;
+  });
+  const projFinList = Object.values(projFinMap).filter(p => p.billed > 0 || p.expenses > 0);
+
+  const KPI = ({ label, val, color, icon, sub }) =>
+    React.createElement("div", { className: "card", style: { flex: 1, minWidth: 140 } },
+      React.createElement("div", { style: { fontSize: 20, marginBottom: 4 } }, icon),
+      React.createElement("div", { style: { fontSize: 22, fontWeight: 900, color } }, val),
+      React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", marginTop: 2 } }, label),
+      sub && React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", marginTop: 2 } }, sub)
+    );
+
+  return React.createElement("div", { className: "fade" },
+    React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, flexWrap: "wrap", gap: 10 } },
+      React.createElement("div", { className: "section-title", style: { margin: 0 } }, "💰 מודול Finance"),
+      React.createElement("div", { style: { display: "flex", gap: 8 } },
+        React.createElement("button", { className: "btn-gold btn-sm", onClick: () => setShowModal("invoice") }, "+ חשבונית"),
+        React.createElement("button", { className: "btn-ghost btn-sm", onClick: () => setShowModal("expense") }, "+ הוצאה")
+      )
+    ),
+
+    // KPI row
+    React.createElement("div", { style: { display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 22 } },
+      React.createElement(KPI, { icon: "🧾", label: "סה\"כ חויב", val: fmtMoney(totalBilled), color: "var(--gold)" }),
+      React.createElement(KPI, { icon: "✅", label: "שולם", val: fmtMoney(totalPaid), color: "var(--green)" }),
+      React.createElement(KPI, { icon: "⏳", label: "פתוח לגבייה", val: fmtMoney(totalOpen), color: "var(--orange)" }),
+      React.createElement(KPI, { icon: "📤", label: "הוצאות", val: fmtMoney(totalExp), color: "var(--red)" }),
+      React.createElement(KPI, { icon: "📈", label: "רווח נקי", val: fmtMoney(netProfit), color: netProfit >= 0 ? "var(--green)" : "var(--red)" })
+    ),
+
+    // Tabs
+    React.createElement("div", { style: { display: "flex", borderBottom: "1px solid var(--border)", marginBottom: 20 } },
+      ["overview","invoices","expenses","projects"].map(t => {
+        const LABELS = { overview: "סקירה", invoices: "חשבוניות", expenses: "הוצאות", projects: "לפי פרויקט" };
+        return React.createElement("button", { key: t, className: `tab-btn${tab === t ? " active" : ""}`, onClick: () => setTab(t) }, LABELS[t]);
+      })
+    ),
+
+    // TAB: Overview
+    tab === "overview" && React.createElement("div", { className: "fade" },
+      React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 } },
+        React.createElement("div", { className: "card" },
+          React.createElement("div", { style: { fontWeight: 700, marginBottom: 14 } }, "📊 חלוקת גבייה"),
+          invoices.length === 0
+            ? React.createElement("div", { style: { color: "var(--muted)", fontSize: 13, textAlign: "center", padding: "20px 0" } }, "אין חשבוניות עדיין")
+            : [
+                { label: "שולם", val: totalPaid, color: "var(--green)" },
+                { label: "פתוח", val: totalOpen, color: "var(--orange)" },
+                { label: "ביטול", val: invoices.filter(i => i.status === "cancelled").reduce((s,i) => s+i.amount,0), color: "var(--red)" }
+              ].map(r =>
+                React.createElement("div", { key: r.label, style: { marginBottom: 10 } },
+                  React.createElement("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 } },
+                    React.createElement("span", null, r.label),
+                    React.createElement("span", { style: { color: r.color, fontWeight: 700 } }, fmtMoney(r.val))
+                  ),
+                  React.createElement("div", { className: "pbar" },
+                    React.createElement("div", { className: "pfill", style: { width: `${totalBilled ? pct(r.val, totalBilled) : 0}%`, background: r.color } })
+                  )
+                )
+              )
+        ),
+        React.createElement("div", { className: "card" },
+          React.createElement("div", { style: { fontWeight: 700, marginBottom: 14 } }, "🔥 פרויקטים עם פתיחת חשבוניות"),
+          projFinList.length === 0
+            ? React.createElement("div", { style: { color: "var(--muted)", fontSize: 13 } }, "אין נתונים עדיין")
+            : projFinList.slice(0, 5).map(p =>
+                React.createElement("div", { key: p.name, style: { display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid var(--border)", fontSize: 12 } },
+                  React.createElement("span", { style: { fontWeight: 600 } }, "#", p.num || "—", " ", p.name),
+                  React.createElement("span", { style: { color: "var(--gold)" } }, fmtMoney(p.billed))
+                )
+              )
+        )
+      )
+    ),
+
+    // TAB: Invoices
+    tab === "invoices" && React.createElement("div", { className: "fade" },
+      invoices.length === 0
+        ? React.createElement("div", { className: "card", style: { textAlign: "center", padding: 40 } },
+            React.createElement("div", { style: { fontSize: 36, marginBottom: 12 } }, "🧾"),
+            React.createElement("div", { style: { color: "var(--muted)" } }, "אין חשבוניות עדיין — לחץ '+ חשבונית' להוספה")
+          )
+        : React.createElement("div", { style: { display: "grid", gap: 8 } },
+            invoices.map(inv => {
+              const SC = { paid: { c: "var(--green)", l: "שולם" }, open: { c: "var(--orange)", l: "פתוח" }, cancelled: { c: "var(--red)", l: "בוטל" } };
+              const sc = SC[inv.status] || SC.open;
+              const proj = projects.find(p => p.id === inv.projId);
+              return React.createElement("div", { key: inv.id, className: "card2", style: { display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 } },
+                React.createElement("div", null,
+                  React.createElement("div", { style: { fontWeight: 700, fontSize: 13 } }, inv.number || "—", " · ", inv.client || "—"),
+                  React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", marginTop: 2 } },
+                    proj ? `#${proj.projectNumber} ${proj.name}` : "ללא פרויקט",
+                    " · ", inv.date || "—"
+                  ),
+                  inv.note && React.createElement("div", { style: { fontSize: 11, color: "var(--muted2)", marginTop: 2 } }, inv.note)
+                ),
+                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 12 } },
+                  React.createElement("div", { style: { fontWeight: 900, fontSize: 16, color: "var(--gold)" } }, fmtMoney(inv.amount)),
+                  React.createElement("span", { className: "tag", style: { color: sc.c, background: sc.c + "20" } }, sc.l),
+                  React.createElement("div", { style: { display: "flex", gap: 6 } },
+                    inv.status !== "paid" && React.createElement("button", { className: "btn-green btn-sm", onClick: () => upd({ invoices: invoices.map(x => x.id === inv.id ? { ...x, status: "paid" } : x) }) }, "✓ שולם"),
+                    React.createElement("button", { className: "btn-red", onClick: () => { if (window.confirm("למחוק?")) upd({ invoices: invoices.filter(x => x.id !== inv.id) }); } }, "✕")
+                  )
+                )
+              );
+            })
+          )
+    ),
+
+    // TAB: Expenses
+    tab === "expenses" && React.createElement("div", { className: "fade" },
+      expenses.length === 0
+        ? React.createElement("div", { className: "card", style: { textAlign: "center", padding: 40 } },
+            React.createElement("div", { style: { fontSize: 36, marginBottom: 12 } }, "📤"),
+            React.createElement("div", { style: { color: "var(--muted)" } }, "אין הוצאות עדיין — לחץ '+ הוצאה' להוספה")
+          )
+        : React.createElement("div", { style: { display: "grid", gap: 8 } },
+            expenses.map(exp => {
+              const proj = projects.find(p => p.id === exp.projId);
+              return React.createElement("div", { key: exp.id, className: "card2", style: { display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 } },
+                React.createElement("div", null,
+                  React.createElement("div", { style: { fontWeight: 700, fontSize: 13 } }, exp.desc || "הוצאה"),
+                  React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", marginTop: 2 } },
+                    React.createElement("span", { className: "tag", style: { color: "var(--purple)", background: "var(--purple)20", marginLeft: 6 } }, exp.category || "כללי"),
+                    proj ? `#${proj.projectNumber} ${proj.name}` : "כללי",
+                    " · ", exp.date || "—"
+                  )
+                ),
+                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 12 } },
+                  React.createElement("div", { style: { fontWeight: 900, fontSize: 16, color: "var(--red)" } }, fmtMoney(exp.amount)),
+                  React.createElement("button", { className: "btn-red", onClick: () => { if (window.confirm("למחוק?")) upd({ expenses: expenses.filter(x => x.id !== exp.id) }); } }, "✕")
+                )
+              );
+            })
+          )
+    ),
+
+    // TAB: Projects
+    tab === "projects" && React.createElement("div", { className: "fade" },
+      projFinList.length === 0
+        ? React.createElement("div", { className: "card", style: { textAlign: "center", padding: 40, color: "var(--muted)" } }, "אין נתונים פיננסיים לפרויקטים")
+        : React.createElement("div", { style: { display: "grid", gap: 10 } },
+            projFinList.map(p =>
+              React.createElement("div", { key: p.name, className: "card" },
+                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 12 } },
+                  React.createElement("div", { style: { fontWeight: 800 } }, "#", p.num || "—", " ", p.name),
+                  React.createElement("div", { style: { display: "flex", gap: 16, fontSize: 13 } },
+                    React.createElement("span", null, "חויב: ", React.createElement("b", { style: { color: "var(--gold)" } }, fmtMoney(p.billed))),
+                    React.createElement("span", null, "שולם: ", React.createElement("b", { style: { color: "var(--green)" } }, fmtMoney(p.paid))),
+                    React.createElement("span", null, "הוצאות: ", React.createElement("b", { style: { color: "var(--red)" } }, fmtMoney(p.expenses))),
+                    React.createElement("span", null, "רווח: ", React.createElement("b", { style: { color: (p.paid - p.expenses) >= 0 ? "var(--green)" : "var(--red)" } }, fmtMoney(p.paid - p.expenses)))
+                  )
+                ),
+                React.createElement("div", { className: "pbar" },
+                  React.createElement("div", { className: "pfill", style: { width: `${p.billed ? pct(p.paid, p.billed) : 0}%`, background: "var(--green)" } })
+                ),
+                React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", marginTop: 4 } }, "אחוז גבייה: ", pct(p.paid, p.billed), "%")
+              )
+            )
+          )
+    ),
+
+    // MODAL: Add Invoice
+    showModal === "invoice" && React.createElement(AddInvoiceModal, {
+      projects,
+      onSave: inv => { upd({ invoices: [...invoices, { ...inv, id: uid(), status: "open", createdAt: todayStr() }] }); setShowModal(null); },
+      onClose: () => setShowModal(null)
+    }),
+
+    // MODAL: Add Expense
+    showModal === "expense" && React.createElement(AddExpenseModal, {
+      projects,
+      onSave: exp => { upd({ expenses: [...expenses, { ...exp, id: uid(), createdAt: todayStr() }] }); setShowModal(null); },
+      onClose: () => setShowModal(null)
+    })
+  );
+}
+
+function AddInvoiceModal({ projects, onSave, onClose }) {
+  const [f, setF] = useState({ number: "", client: "", projId: "", amount: "", date: todayStr(), note: "" });
+  const upd = k => e => setF(p => ({ ...p, [k]: e.target.value }));
+  const clientList = [...new Set(projects.map(p => p.client).filter(Boolean))];
+  return React.createElement("div", { className: "modal-bg" },
+    React.createElement("div", { className: "modal fade", style: { maxWidth: 480 } },
+      React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 } },
+        React.createElement("div", { style: { fontWeight: 800, fontSize: 18 } }, "🧾 חשבונית חדשה"),
+        React.createElement("button", { className: "btn-ghost btn-sm", onClick: onClose }, "✕")
+      ),
+      React.createElement("div", { className: "frow" },
+        React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "מספר חשבונית"), React.createElement("input", { value: f.number, onChange: upd("number"), placeholder: "INV-001" })),
+        React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "תאריך"), React.createElement(DatePicker, { value: f.date, onChange: v => setF(p => ({ ...p, date: v })) }))
+      ),
+      React.createElement("div", { className: "frow" },
+        React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "לקוח"),
+          React.createElement("select", { value: f.client, onChange: upd("client") },
+            React.createElement("option", { value: "" }, "— בחר לקוח —"),
+            clientList.map(cl => React.createElement("option", { key: cl, value: cl }, cl))
+          )
+        ),
+        React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "פרויקט"),
+          React.createElement("select", { value: f.projId, onChange: upd("projId") },
+            React.createElement("option", { value: "" }, "— ללא פרויקט —"),
+            projects.filter(p => p.status !== "cancelled").map(p => React.createElement("option", { key: p.id, value: p.id }, `#${p.projectNumber} ${p.name}`))
+          )
+        )
+      ),
+      React.createElement("div", { style: { marginBottom: 12 } }, React.createElement(Lbl, null, "סכום (₪)"), React.createElement("input", { type: "number", value: f.amount, onChange: upd("amount"), placeholder: "0" })),
+      React.createElement("div", { style: { marginBottom: 18 } }, React.createElement(Lbl, null, "הערה"), React.createElement("input", { value: f.note, onChange: upd("note") })),
+      React.createElement("div", { style: { display: "flex", gap: 10 } },
+        React.createElement("button", { className: "btn-gold", onClick: () => { if (!f.amount) return; onSave({ ...f, amount: parseFloat(f.amount) || 0 }); } }, "💾 שמור חשבונית"),
+        React.createElement("button", { className: "btn-ghost", onClick: onClose }, "ביטול")
+      )
+    )
+  );
+}
+
+function AddExpenseModal({ projects, onSave, onClose }) {
+  const CATS = ["שכ\"ע", "ציוד", "שירותים", "נסיעות", "שיווק", "אחר"];
+  const [f, setF] = useState({ desc: "", amount: "", projId: "", category: "אחר", date: todayStr(), note: "" });
+  const upd = k => e => setF(p => ({ ...p, [k]: e.target.value }));
+  return React.createElement("div", { className: "modal-bg" },
+    React.createElement("div", { className: "modal fade", style: { maxWidth: 460 } },
+      React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 } },
+        React.createElement("div", { style: { fontWeight: 800, fontSize: 18 } }, "📤 הוצאה חדשה"),
+        React.createElement("button", { className: "btn-ghost btn-sm", onClick: onClose }, "✕")
+      ),
+      React.createElement("div", { style: { marginBottom: 12 } }, React.createElement(Lbl, null, "תיאור"), React.createElement("input", { value: f.desc, onChange: upd("desc") })),
+      React.createElement("div", { className: "frow" },
+        React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "סכום (₪)"), React.createElement("input", { type: "number", value: f.amount, onChange: upd("amount") })),
+        React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "תאריך"), React.createElement(DatePicker, { value: f.date, onChange: v => setF(p => ({ ...p, date: v })) }))
+      ),
+      React.createElement("div", { className: "frow" },
+        React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "קטגוריה"),
+          React.createElement("select", { value: f.category, onChange: upd("category") },
+            CATS.map(c => React.createElement("option", { key: c, value: c }, c))
+          )
+        ),
+        React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "פרויקט"),
+          React.createElement("select", { value: f.projId, onChange: upd("projId") },
+            React.createElement("option", { value: "" }, "— כללי —"),
+            projects.filter(p => p.status !== "cancelled").map(p => React.createElement("option", { key: p.id, value: p.id }, `#${p.projectNumber} ${p.name}`))
+          )
+        )
+      ),
+      React.createElement("div", { style: { display: "flex", gap: 10, marginTop: 6 } },
+        React.createElement("button", { className: "btn-gold", onClick: () => { if (!f.amount) return; onSave({ ...f, amount: parseFloat(f.amount) || 0 }); } }, "💾 שמור הוצאה"),
+        React.createElement("button", { className: "btn-ghost", onClick: onClose }, "ביטול")
+      )
+    )
+  );
 }
 
 // ══════════════════════════════════════════
