@@ -2523,15 +2523,16 @@ function AppLoader(){
   const [initData,setInitData]=useState(null);
   useEffect(()=>{(async()=>{
     Splash.set(10,"מתחבר ל-Supabase...");
+    const withTimeout=(p,ms=8000)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error("timeout")),ms))]);
     try{
-      // Load all data in parallel from Supabase
-      const [sbUsers,sbProjects,sbShifts,sbHours,sbSettings]=await Promise.all([
+      // Load all data in parallel from Supabase (8 second timeout)
+      const [sbUsers,sbProjects,sbShifts,sbHours,sbSettings]=await withTimeout(Promise.all([
         sbGet("users","?order=name"),
         sbGet("projects","?order=project_number"),
         sbGet("shifts","?deleted=eq.false&order=date"),
         sbGet("hours","?deleted=eq.false&order=date"),
         sbGet("settings",""),
-      ]);
+      ]));
       Splash.set(60,"מעבד נתונים...");
 
       // Parse settings
@@ -2580,14 +2581,32 @@ function AppLoader(){
       setInitData(loadLocal());
     }
   })();},[]);
-  if(!initData)return null;
+  useEffect(()=>{
+    if(initData){
+      Splash.set(100,"מוכן!");
+      setTimeout(()=>Splash.hide(), 300);
+    }
+  },[initData]);
+
+  if(!initData)return(
+    <div style={{position:"fixed",inset:0,background:"#07090f",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16,zIndex:9998}}>
+      <div style={{color:"#5a6478",fontSize:13}}>טוען נתונים...</div>
+      <button onClick={()=>{
+        const local=loadLocal();
+        Splash.set(100,"טוען מקומי...");
+        setTimeout(()=>Splash.hide(),300);
+        // force set via a hidden setter — use a workaround
+        document.dispatchEvent(new CustomEvent("pf-force-local",{detail:local}));
+      }} style={{background:"transparent",border:"1px solid #2f3748",color:"#7a8498",padding:"6px 16px",borderRadius:8,cursor:"pointer",fontFamily:"Heebo,sans-serif",fontSize:12,marginTop:8}}>
+        טען מקומי במקום
+      </button>
+    </div>
+  );
   return <App initialData={initData}/>;
 }
 const domContainer = document.getElementById('root');
 const reactRoot = ReactDOM.createRoot(domContainer);
 reactRoot.render(<AppLoader />);
-
-setTimeout(() => Splash.hide(), 500);
 </script>
 </body>
 </html>
