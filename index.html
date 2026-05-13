@@ -1373,65 +1373,9 @@ function Reports({projects,users}){
   const printStatusReport=()=>{
     const logo=document.querySelector("#appLogo");
     const dateStr=new Date().toLocaleDateString("he-IL",{year:"numeric",month:"long",day:"numeric"});
-    const rows=reportProjects.map(p=>`
-      <div class="proj-block">
-        <div class="proj-header">
-          <span class="proj-num">#${p.projectNumber||"—"}</span>
-          <span class="proj-name">${p.name}</span>
-          <span class="proj-status status-${p.status}">${STATUS_CFG[p.status]?.label||p.status}</span>
-        </div>
-        <div class="proj-meta">
-          ${p.client?`<span>🏢 ${p.client}</span>`:""}
-          ${p.producer?`<span>👤 ${p.producer}</span>`:""}
-          ${p.onlineScreening?`<span>📽 הקרנה: <b>${p.onlineScreening}</b></span>`:""}
-          ${p.deliveryDate?`<span>📦 מסירה: <b>${p.deliveryDate}</b></span>`:""}
-        </div>
-        <div class="prog-wrap">
-          <div class="prog-bar" style="width:${p.progress||0}%"></div>
-        </div>
-        <div class="prog-label">התקדמות: <b>${p.progress||0}%</b>
-          &nbsp;·&nbsp; משימות: <b>${(p.tasks||[]).filter(t=>t.done).length}/${(p.tasks||[]).length}</b>
-          &nbsp;·&nbsp; שעות: <b>${(p.hours||[]).reduce((s,h)=>s+h.hours,0).toFixed(1)}h</b>
-        </div>
-        ${p.statusNote?`<div class="status-note">📝 ${p.statusNote}</div>`:""}
-      </div>`).join("");
+    const rows=reportProjects.map(p=>`      <div class="proj-block">        <div class="proj-header">          <span class="proj-num">#${p.projectNumber||"—"}</span>          <span class="proj-name">${p.name}</span>          <span class="proj-status status-${p.status}">${STATUS_CFG[p.status]?.label||p.status}</span>        </div>        <div class="proj-meta">          ${p.client?`<span>🏢 ${p.client}</span>`:""}          ${p.producer?`<span>👤 ${p.producer}</span>`:""}          ${p.onlineScreening?`<span>📽 הקרנה: <b>${p.onlineScreening}</b></span>`:""}          ${p.deliveryDate?`<span>📦 מסירה: <b>${p.deliveryDate}</b></span>`:""}        </div>        <div class="prog-wrap">          <div class="prog-bar" style="width:${p.progress||0}%"></div>        </div>        <div class="prog-label">התקדמות: <b>${p.progress||0}%</b>          &nbsp;·&nbsp; משימות: <b>${(p.tasks||[]).filter(t=>t.done).length}/${(p.tasks||[]).length}</b>          &nbsp;·&nbsp; שעות: <b>${(p.hours||[]).reduce((s,h)=>s+h.hours,0).toFixed(1)}h</b>        </div>        ${p.statusNote?`<div class="status-note">📝 ${p.statusNote}</div>`:""}      </div>`).join("");
     const w=window.open("","_blank");
-    w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8">
-      <title>דוח סטטוס פרויקטים — ${dateStr}</title>
-      <style>
-        body{font-family:Arial,sans-serif;padding:32px 40px;direction:rtl;color:#1a1a2e;background:#fff}
-        .report-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #e8c547;padding-bottom:16px;margin-bottom:24px}
-        .report-title{font-size:22px;font-weight:900;color:#1a1a2e}
-        .report-date{font-size:12px;color:#666;margin-top:4px}
-        .logo{height:48px;object-fit:contain}
-        .proj-block{border:1px solid #e0e0e0;border-radius:10px;padding:16px 18px;margin-bottom:14px;page-break-inside:avoid}
-        .proj-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
-        .proj-num{background:#e8c54720;color:#b8950f;font-weight:900;font-size:11px;padding:2px 8px;border-radius:5px;border:1px solid #e8c54760}
-        .proj-name{font-weight:800;font-size:15px;flex:1}
-        .proj-status{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
-        .status-active{background:#6ee7b720;color:#059669}
-        .status-review{background:#4fc3f720;color:#0284c7}
-        .status-paused{background:#e8c54720;color:#b8950f}
-        .status-completed{background:#a3e63520;color:#4d7c0f}
-        .status-cancelled{background:#f0707020;color:#dc2626}
-        .proj-meta{display:flex;gap:16px;font-size:12px;color:#555;margin-bottom:10px;flex-wrap:wrap}
-        .prog-wrap{background:#f0f0f0;border-radius:4px;height:8px;margin-bottom:5px}
-        .prog-bar{background:linear-gradient(90deg,#e8c547,#f5a623);height:8px;border-radius:4px;transition:width .3s}
-        .prog-label{font-size:11px;color:#666;margin-bottom:6px}
-        .status-note{font-size:12px;color:#444;background:#f9f9f9;border-right:3px solid #e8c547;padding:7px 10px;border-radius:4px;margin-top:6px}
-        .footer{margin-top:32px;border-top:1px solid #e0e0e0;padding-top:12px;font-size:10px;color:#aaa;text-align:center}
-        @media print{body{padding:16px 20px}.proj-block{border-color:#ccc}}
-      </style></head><body>
-      <div class="report-header">
-        <div>
-          <div class="report-title">📊 דוח סטטוס פרויקטים</div>
-          <div class="report-date">תאריך הפקה: ${dateStr} · סה"כ: ${reportProjects.length} פרויקטים</div>
-        </div>
-        ${logo?`<img src="${logo.src}" class="logo"/>`:""}
-      </div>
-      ${rows}
-      <div class="footer">PostFlow · הופק ב-${dateStr}</div>
-    </body></html>`);
+    w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8">      <title>דוח סטטוס פרויקטים — ${dateStr}</title>      <style>        body{font-family:Arial,sans-serif;padding:32px 40px;direction:rtl;color:#1a1a2e;background:#fff}        .report-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #e8c547;padding-bottom:16px;margin-bottom:24px}        .report-title{font-size:22px;font-weight:900;color:#1a1a2e}        .report-date{font-size:12px;color:#666;margin-top:4px}        .logo{height:48px;object-fit:contain}        .proj-block{border:1px solid #e0e0e0;border-radius:10px;padding:16px 18px;margin-bottom:14px;page-break-inside:avoid}        .proj-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}        .proj-num{background:#e8c54720;color:#b8950f;font-weight:900;font-size:11px;padding:2px 8px;border-radius:5px;border:1px solid #e8c54760}        .proj-name{font-weight:800;font-size:15px;flex:1}        .proj-status{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}        .status-active{background:#6ee7b720;color:#059669}        .status-review{background:#4fc3f720;color:#0284c7}        .status-paused{background:#e8c54720;color:#b8950f}        .status-completed{background:#a3e63520;color:#4d7c0f}        .status-cancelled{background:#f0707020;color:#dc2626}        .proj-meta{display:flex;gap:16px;font-size:12px;color:#555;margin-bottom:10px;flex-wrap:wrap}        .prog-wrap{background:#f0f0f0;border-radius:4px;height:8px;margin-bottom:5px}        .prog-bar{background:linear-gradient(90deg,#e8c547,#f5a623);height:8px;border-radius:4px;transition:width .3s}        .prog-label{font-size:11px;color:#666;margin-bottom:6px}        .status-note{font-size:12px;color:#444;background:#f9f9f9;border-right:3px solid #e8c547;padding:7px 10px;border-radius:4px;margin-top:6px}        .footer{margin-top:32px;border-top:1px solid #e0e0e0;padding-top:12px;font-size:10px;color:#aaa;text-align:center}        @media print{body{padding:16px 20px}.proj-block{border-color:#ccc}}      </style></head><body>      <div class="report-header">        <div>          <div class="report-title">📊 דוח סטטוס פרויקטים</div>          <div class="report-date">תאריך הפקה: ${dateStr} · סה"כ: ${reportProjects.length} פרויקטים</div>        </div>        ${logo?`<img src="${logo.src}" class="logo"/>`:""}      </div>      ${rows}      <div class="footer">PostFlow · הופק ב-${dateStr}</div>    </body></html>`);
     w.document.close();
     setTimeout(()=>w.print(),400);
   };
@@ -1601,7 +1545,7 @@ function QuoteBuilder({projects,quoteTemplates,onSave,onUpdateTemplates,user}){
   const [qFormats,setQFormats]=useState("");
   const [qUsageRights,setQUsageRights]=useState("");
   const [qClientResp,setQClientResp]=useState("");
-  const [qPayment,setQPayment]=useState("שוטף + 40");
+  const [qPayment,setQPayment]=useState("50% בחתימה, 50% במסירה");
   const [paymentExtra,setPaymentExtra]=useState(false);
   const DEFAULT_NOTE=`רישיון שימוש בלתי מוגבל:\nבהתאם למסמך תנאים והגבלות המצורף, ועם סיום הפרויקט וקבלת תשלום מלא, פלואו-פוסט-וידאו בע"מ תעניק רישיון שימוש בלעדי ובלתי מוגבל ללקוח כמפורט בסעיף "פלטפורמות" לעיל.\nרישיון זה הוא רישיון "חד-יישומי" ולא רישיון "רב שימושי".\nאין להפיץ מחדש את הסרט כחומרי ספרייה, בכלי או תבנית, או עם קבצי מקור.\n\nמדיניות ביטולים:\nביטול עד 48 שעות מתחילת עבודה — 5% דמי ביטול.\nביטול לאחר תחילת עבודה — חלק יחסי + 10% עמלת הפקה.`;
   const [qNote,setQNote]=useState(DEFAULT_NOTE);
@@ -1627,7 +1571,7 @@ function QuoteBuilder({projects,quoteTemplates,onSave,onUpdateTemplates,user}){
     setQClient(p?.client||"");setQProjName(p?.name||"");setStep("build");
   };
 
-  const resetForm=()=>{setLines([]);setProjId("");setQClient("");setQClientCustom(false);setQProjName("");setQProjDesc("");setQScope("");setDeliverRows([{id:uid(),text:""}]);setSelRatios([]);setRatioCustom("");setSelRes([]);setResCustom("");setSelPlatforms([]);setPlatformCustom("");setQFormats("");setQUsageRights("");setQClientResp("");setQPayment("שוטף + 40");setPaymentExtra(false);setTplName("");};
+  const resetForm=()=>{setLines([]);setProjId("");setQClient("");setQClientCustom(false);setQProjName("");setQProjDesc("");setQScope("");setDeliverRows([{id:uid(),text:""}]);setSelRatios([]);setRatioCustom("");setSelRes([]);setResCustom("");setSelPlatforms([]);setPlatformCustom("");setQFormats("");setQUsageRights("");setQClientResp("");setQPayment("50% בחתימה, 50% במסירה");setPaymentExtra(false);setTplName("");};
 
   const save=()=>{
     if(!projId)return;
@@ -1639,20 +1583,7 @@ function QuoteBuilder({projects,quoteTemplates,onSave,onUpdateTemplates,user}){
     const w=window.open("","_blank");
     const dateStr=new Date().toLocaleDateString("he-IL",{year:"numeric",month:"long",day:"numeric"});
     const sec=(label,val)=>val?`<div class="sec"><div class="sec-label">${label}</div><div class="sec-val">${String(val).replace(/\n/g,"<br/>")}</div></div>`:"";
-    w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>הצעת מחיר</title>
-<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;background:#fff;color:#1a1a2e;direction:rtl;font-size:13px;}.page{max-width:800px;margin:0 auto;padding:32px 40px;}.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:3px solid #E8C547;margin-bottom:22px;}.co-name{font-size:17px;font-weight:800;margin-bottom:3px;}.co-info{font-size:11px;color:#666;line-height:1.8;text-align:left;}.doc-title{font-size:28px;font-weight:800;color:#E8C547;}.doc-date{font-size:12px;color:#999;margin-top:4px;}.client-box{background:#f8f8fc;border-right:4px solid #E8C547;padding:14px 18px;margin-bottom:18px;border-radius:0 8px 8px 0;}.cl-name{font-size:18px;font-weight:800;}.cl-proj{font-size:13px;color:#666;margin-top:2px;}.sec{margin-bottom:13px;}.sec-label{font-size:10px;font-weight:800;color:#E8C547;letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase;}.sec-val{font-size:13px;line-height:1.7;}table{width:100%;border-collapse:collapse;margin:12px 0;}th{background:#1a1a2e;color:#E8C547;padding:9px 12px;text-align:right;font-size:12px;}td{padding:8px 12px;border-bottom:1px solid #eee;}.tot td{border-top:2px solid #E8C547;font-weight:800;font-size:15px;background:#f8f8fc;}.note{background:#fffdf0;border:1px solid #E8C54740;border-radius:8px;padding:14px;margin-top:14px;font-size:11px;line-height:1.8;color:#555;}.footer{margin-top:28px;padding-top:14px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style></head>
-<body><div class="page">
-<div class="header"><div><div class="doc-title">הצעת מחיר</div><div class="doc-date">תאריך: ${dateStr}</div></div>
-<div class="co-info"><div class="co-name">FLOW | Post Production</div><div>החשמונאים 99, תל אביב</div><div>fpp.co.il</div><div>ח.פ: 516791274 &nbsp;|&nbsp; טל׳: 077-5125110</div></div></div>
-<div class="client-box"><div class="cl-name">${q.client||""}</div><div class="cl-proj">${q.projName||""}</div></div>
-${sec("תיאור הפרויקט",q.projDesc)}${sec("תכולה מפורטת",q.scope)}${sec("תוצרים",q.deliverables)}${sec("פרופורציות",q.ratios)}${sec("רזולוציות",q.resolutions)}${sec("פורמטים",q.formats)}${sec("פלטפורמות שידור",q.platforms)}${sec("סמן שימוש",q.usageRights)}${sec("באחריות הלקוח",q.clientResp)}
-<table><thead><tr><th>תיאור</th><th>כמות</th><th>יחידה</th><th>מחיר יחידה</th><th>סה"כ</th></tr></thead><tbody>
-${lns.map(l=>`<tr><td>${l.desc}</td><td>${l.qty}</td><td>${l.unit||""}</td><td>${fmtMoney(l.price)}</td><td><b>${fmtMoney(l.qty*l.price)}</b></td></tr>`).join("")}
-<tr class="tot"><td colspan="4">סה"כ לתשלום</td><td>${fmtMoney(tot)}</td></tr></tbody></table>
-${sec("תנאי תשלום",q.payment)}
-${q.note?`<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(q.note).replace(/\n/g,"<br/>")}</div>`:""}
-<div class="footer">FLOW | Post Production &nbsp;·&nbsp; fpp.co.il &nbsp;·&nbsp; 077-5125110 &nbsp;·&nbsp; ח.פ 516791274</div>
-</div></body></html>`);
+    w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>הצעת מחיר</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;background:#fff;color:#1a1a2e;direction:rtl;font-size:13px;}.page{max-width:800px;margin:0 auto;padding:32px 40px;}.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:3px solid #E8C547;margin-bottom:22px;}.co-name{font-size:17px;font-weight:800;margin-bottom:3px;}.co-info{font-size:11px;color:#666;line-height:1.8;text-align:left;}.doc-title{font-size:28px;font-weight:800;color:#E8C547;}.doc-date{font-size:12px;color:#999;margin-top:4px;}.client-box{background:#f8f8fc;border-right:4px solid #E8C547;padding:14px 18px;margin-bottom:18px;border-radius:0 8px 8px 0;}.cl-name{font-size:18px;font-weight:800;}.cl-proj{font-size:13px;color:#666;margin-top:2px;}.sec{margin-bottom:13px;}.sec-label{font-size:10px;font-weight:800;color:#E8C547;letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase;}.sec-val{font-size:13px;line-height:1.7;}table{width:100%;border-collapse:collapse;margin:12px 0;}th{background:#1a1a2e;color:#E8C547;padding:9px 12px;text-align:right;font-size:12px;}td{padding:8px 12px;border-bottom:1px solid #eee;}.tot td{border-top:2px solid #E8C547;font-weight:800;font-size:15px;background:#f8f8fc;}.note{background:#fffdf0;border:1px solid #E8C54740;border-radius:8px;padding:14px;margin-top:14px;font-size:11px;line-height:1.8;color:#555;}.footer{margin-top:28px;padding-top:14px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style></head><body><div class="page"><div class="header"><div><div class="doc-title">הצעת מחיר</div><div class="doc-date">תאריך: ${dateStr}</div></div><div class="co-info"><div class="co-name">FLOW | Post Production</div><div>החשמונאים 99, תל אביב</div><div>fpp.co.il</div><div>ח.פ: 516791274 &nbsp;|&nbsp; טל׳: 077-5125110</div></div></div><div class="client-box"><div class="cl-name">${q.client||""}</div><div class="cl-proj">${q.projName||""}</div></div>${sec("תיאור הפרויקט",q.projDesc)}${sec("תכולה מפורטת",q.scope)}${sec("תוצרים",q.deliverables)}${sec("פרופורציות",q.ratios)}${sec("רזולוציות",q.resolutions)}${sec("פורמטים",q.formats)}${sec("פלטפורמות שידור",q.platforms)}${sec("סמן שימוש",q.usageRights)}${sec("באחריות הלקוח",q.clientResp)}<table><thead><tr><th>תיאור</th><th>כמות</th><th>יחידה</th><th>מחיר יחידה</th><th>סה"כ</th></tr></thead><tbody>${lns.map(l=>`<tr><td>${l.desc}</td><td>${l.qty}</td><td>${l.unit||""}</td><td>${fmtMoney(l.price)}</td><td><b>${fmtMoney(l.qty*l.price)}</b></td></tr>`).join("")}<tr class="tot"><td colspan="4">סה"כ לתשלום</td><td>${fmtMoney(tot)}</td></tr></tbody></table>${sec("תנאי תשלום",q.payment)}${q.note?`<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(q.note).replace(/\n/g,"<br/>")}</div>`:""}<div class="footer">FLOW | Post Production &nbsp;·&nbsp; fpp.co.il &nbsp;·&nbsp; 077-5125110 &nbsp;·&nbsp; ח.פ 516791274</div></div></body></html>`);
     w.document.close();setTimeout(()=>w.print(),600);
   };
 
@@ -1680,7 +1611,7 @@ ${q.note?`<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(q.
                 setQClient(q.client||"");setQProjName(q.projName||"");
                 setQProjDesc(q.projDesc||"");setQScope(q.scope||"");
                 setQFormats(q.formats||"");setQUsageRights(q.usageRights||"");
-                setQClientResp(q.clientResp||"");setQPayment(q.payment||"שוטף + 40");
+                setQClientResp(q.clientResp||"");setQPayment(q.payment||"50% בחתימה, 50% במסירה");
                 setQNote(q.note||DEFAULT_NOTE);
                 if(q.deliverables)setDeliverRows(q.deliverables.split("\n").filter(Boolean).map(t=>({id:uid(),text:t})));
                 setStep("build");
@@ -1790,7 +1721,7 @@ ${q.note?`<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(q.
     <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:8}}>
       <button className="btn-gold" onClick={save}>💾 שמור הצעה</button>
       <button className="btn-ghost btn-sm" onClick={()=>{
-        const cols=["תיאור","כמות","יחידה","מחיר יחידה","סה"כ"];
+        const cols=["תיאור","כמות","יחידה","מחיר יחידה",'סה"כ'];
         const rows=lines.map(l=>[l.desc,l.qty,l.unit||"",l.price,l.qty*l.price].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","));
         const csv="﻿"+["לקוח,"+qClient,"פרויקט,"+qProjName,"תאריך,"+todayStr(),"",""].join("\n")+cols.join(",")+"\n"+rows.join("\n")+"\n,,,,\nסה\"כ,,,,"+total;
         const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
