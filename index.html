@@ -22,7 +22,7 @@ body{background:#07090f;margin:0;padding:0;font-family:'Heebo',sans-serif}
 </head>
 <body>
 <div id="splash">
-  <div class="sp-logo" id="splashLogo"><img src="https://i.imgur.com/8QfKFqA.png" onerror="this.parentElement.innerHTML='🎞 PostFlow'" style="height:72px;object-fit:contain;border-radius:12px" id="appLogo"/></div>
+  <div class="sp-logo" id="splashLogo"><img src="FPP_LOGO.png" onerror="this.parentElement.innerHTML='🎞 PostFlow'" style="height:72px;object-fit:contain;border-radius:12px" id="appLogo"/></div>
   <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
     <div class="sp-sub">Post-Production Management</div>
     <div style="background:#e8c547;color:#07090f;font-size:9px;font-weight:900;padding:2px 7px;border-radius:20px;letter-spacing:1px;text-transform:uppercase">v18</div>
@@ -2103,11 +2103,13 @@ function WeeklyCalendar({
   onGoToProject
 }) {
   var _editModal$shift, _editModal$shift2, _users$find;
+  const [viewMode, setViewMode] = useState("week"); // "day" | "week" | "month"
   const [weekStart, setWeekStart] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - d.getDay());
     return d;
   });
+  const [selectedDay, setSelectedDay] = useState(() => new Date());
   const [numWeeks, setNumWeeks] = useState(2);
   const [colW, setColW] = useState(160); // px per day column
   const [rowH, setRowH] = useState(90); // px per shift card area
@@ -2188,31 +2190,26 @@ function WeeklyCalendar({
     return d;
   });
 
-  // Build event map: date → [{...shift, projName, client}]
+  // Build event map: date → [{...shift, projName, client}] — deduped by shift id
   const evMap = useMemo(() => {
     const m = {};
+    const seen = new Set();
+    const addShift = (s, extra) => {
+      if (seen.has(s.id)) return;
+      seen.add(s.id);
+      const show = canSeeAll || s.person === user.id;
+      if (!show) return;
+      if (!m[s.date]) m[s.date] = [];
+      m[s.date].push({ ...s, ...extra });
+    };
     // משמרות מפרויקטים
-    projects.forEach(proj => (proj.shifts || []).forEach(s => {
-      if (!m[s.date]) m[s.date] = [];
-      const show = canSeeAll || s.person === user.id;
-      if (show) m[s.date].push({
-        ...s,
-        projName: proj.name,
-        client: proj.client,
-        projId: proj.id
-      });
-    }));
+    projects.forEach(proj => (proj.shifts || []).forEach(s =>
+      addShift(s, { projName: proj.name, client: proj.client, projId: proj.id })
+    ));
     // משמרות ללא פרויקט
-    (globalShifts || []).forEach(s => {
-      if (!m[s.date]) m[s.date] = [];
-      const show = canSeeAll || s.person === user.id;
-      if (show) m[s.date].push({
-        ...s,
-        projName: "",
-        client: "",
-        projId: ""
-      });
-    });
+    (globalShifts || []).forEach(s =>
+      addShift(s, { projName: "", client: "", projId: "" })
+    );
     return m;
   }, [projects, globalShifts, canSeeAll, user.id]);
   const openNew = date => {
@@ -2289,8 +2286,10 @@ function WeeklyCalendar({
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: "center",
-        marginBottom: 6
-      }
+        marginBottom: 6,
+        cursor: "pointer"
+      },
+      onClick: e => { e.stopPropagation(); setSelectedDay(new Date(key)); setViewMode("day"); }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
@@ -2301,7 +2300,9 @@ function WeeklyCalendar({
       style: {
         fontSize: 13,
         fontWeight: 800,
-        color: isToday ? "var(--gold)" : wknd ? "var(--muted)" : "var(--text)"
+        color: isToday ? "var(--gold)" : wknd ? "var(--muted)" : "var(--text)",
+        textDecoration: "underline",
+        textDecorationColor: isToday ? "var(--gold)" : "transparent"
       }
     }, fmtDate(d)), wknd && /*#__PURE__*/React.createElement("div", {
       style: {
@@ -2375,6 +2376,119 @@ function WeeklyCalendar({
       }
     }, "+ \u05DC\u05D7\u05E5"));
   })));
+  // ─── Day view renderer ───────────────────────────────────────
+  const renderDay = (date) => {
+    const key = isoDate(date);
+    const evs = evMap[key] || [];
+    const HEB_MONTHS_SHORT = ["ינו","פבר","מרץ","אפר","מאי","יוני","יול","אוג","ספט","אוק","נוב","דצמ"];
+    return /*#__PURE__*/React.createElement("div", { className: "fade" },
+      /*#__PURE__*/React.createElement("div", { style: { fontWeight: 800, fontSize: 18, marginBottom: 16, color: isoDate(date) === todayStr() ? "var(--gold)" : "var(--text)" } },
+        HEB_DAYS[date.getDay()], " ", date.getDate(), " ", HEB_MONTHS_SHORT[date.getMonth()], " ", date.getFullYear()
+      ),
+      canEdit && /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", style: { marginBottom: 14 }, onClick: () => openNew(key) }, "+ הוסף שיבוץ"),
+      evs.length === 0 && /*#__PURE__*/React.createElement("div", { style: { color: "var(--muted)", textAlign: "center", padding: 32 } }, "אין שיבוצים ליום זה"),
+      evs.map(ev => {
+        const workerObj = users.find(u => u.id === ev.person);
+        const wColor = aCol(users.indexOf(workerObj) || 0);
+        const tasks = ev.tasks || [];
+        const firstCol = stColor(tasks[0] || "other", sts);
+        return /*#__PURE__*/React.createElement("div", {
+          key: ev.id,
+          style: { background: "var(--card)", border: `1px solid ${firstCol}40`, borderRight: `4px solid ${firstCol}`, borderRadius: 10, padding: "12px 16px", marginBottom: 10, cursor: "pointer" },
+          onClick: () => openEdit(ev)
+        },
+          /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 } },
+            /*#__PURE__*/React.createElement("div", null,
+              workerObj && /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: wColor, fontWeight: 700, marginBottom: 4 } }, workerObj.name),
+              /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 14 } }, tasks.map(t => stLabel(t, sts)).join(", ") || "—"),
+              ev.projName && /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", marginTop: 2 } }, "📁 ", ev.projName)
+            ),
+            /*#__PURE__*/React.createElement("div", { style: { textAlign: "left", fontSize: 12, color: "var(--muted2)" } },
+              ev.timeStart && /*#__PURE__*/React.createElement("div", null, "🕐 ", ev.timeStart),
+              /*#__PURE__*/React.createElement("div", { style: { fontWeight: 800, color: firstCol } }, ev.hours || "?", "h")
+            )
+          ),
+          ev.note && /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", fontStyle: "italic" } }, ev.note)
+        );
+      })
+    );
+  };
+
+  // ─── Month view renderer ─────────────────────────────────────
+  const renderMonth = () => {
+    const refDate = weekStart;
+    const year = refDate.getFullYear();
+    const month = refDate.getMonth();
+    const HEB_MONTHS_FULL = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells = [];
+    for (let i = 0; i < firstDay; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+    return /*#__PURE__*/React.createElement("div", { className: "fade" },
+      /*#__PURE__*/React.createElement("div", { style: { fontWeight: 800, fontSize: 18, marginBottom: 16 } }, HEB_MONTHS_FULL[month], " ", year),
+      /*#__PURE__*/React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 4 } },
+        HEB_DAYS.map(d => /*#__PURE__*/React.createElement("div", { key: d, style: { textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--muted)", padding: "4px 0" } }, d))
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 3 } },
+        cells.map((d, i) => {
+          if (!d) return /*#__PURE__*/React.createElement("div", { key: "e" + i });
+          const key = `${year}-${String(month + 1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+          const isToday = key === todayStr();
+          const wknd = (new Date(key)).getDay() === 5 || (new Date(key)).getDay() === 6;
+          const evs = evMap[key] || [];
+          return /*#__PURE__*/React.createElement("div", {
+            key: key,
+            style: {
+              minHeight: 72, background: isToday ? "var(--gold)12" : wknd ? "#0b0d13" : "var(--card2)",
+              border: `1px solid ${isToday ? "var(--gold)" : "var(--border)"}`,
+              borderRadius: 8, padding: "4px 5px", cursor: "pointer",
+              opacity: wknd ? 0.85 : 1
+            },
+            onClick: () => { setSelectedDay(new Date(key)); setViewMode("day"); }
+          },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 800, color: isToday ? "var(--gold)" : wknd ? "var(--red)" : "var(--muted2)", marginBottom: 3 } }, d),
+            evs.slice(0, 3).map(ev => {
+              const tasks = ev.tasks || [];
+              const col = stColor(tasks[0] || "other", sts);
+              return /*#__PURE__*/React.createElement("div", {
+                key: ev.id,
+                style: { background: col + "25", color: col, borderRadius: 4, padding: "2px 4px", fontSize: 9, fontWeight: 600, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+                onClick: e => { e.stopPropagation(); openEdit(ev); }
+              }, tasks.map(t => stLabel(t, sts)).join(",") || "—");
+            }),
+            evs.length > 3 && /*#__PURE__*/React.createElement("div", { style: { fontSize: 8, color: "var(--muted)", marginTop: 1 } }, "+", evs.length - 3, " עוד")
+          );
+        })
+      )
+    );
+  };
+
+  // ─── Navigation helpers ───────────────────────────────────────
+  const goBack = () => {
+    if (viewMode === "day") {
+      const d = new Date(selectedDay); d.setDate(d.getDate() - 1); setSelectedDay(d);
+    } else if (viewMode === "week") {
+      const d = new Date(weekStart); d.setDate(d.getDate() - 7 * numWeeks); setWeekStart(d);
+    } else {
+      const d = new Date(weekStart); d.setMonth(d.getMonth() - 1); setWeekStart(d);
+    }
+  };
+  const goForward = () => {
+    if (viewMode === "day") {
+      const d = new Date(selectedDay); d.setDate(d.getDate() + 1); setSelectedDay(d);
+    } else if (viewMode === "week") {
+      const d = new Date(weekStart); d.setDate(d.getDate() + 7 * numWeeks); setWeekStart(d);
+    } else {
+      const d = new Date(weekStart); d.setMonth(d.getMonth() + 1); setWeekStart(d);
+    }
+  };
+  const goToday = () => {
+    const today = new Date();
+    setSelectedDay(today);
+    const ws = new Date(today); ws.setDate(ws.getDate() - ws.getDay()); setWeekStart(ws);
+  };
+
   return /*#__PURE__*/React.createElement("div", {
     className: "fade"
   }, /*#__PURE__*/React.createElement("div", {
@@ -2388,80 +2502,41 @@ function WeeklyCalendar({
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "section-title",
-    style: {
-      marginBottom: 0
-    }
-  }, "\u05DC\u05D5\u05D7 \u05E9\u05D1\u05D5\u05E2\u05D9"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "btn-ghost btn-sm",
-    onClick: () => {
-      const d = new Date();
-      d.setDate(d.getDate() - d.getDay());
-      setWeekStart(d);
-    }
-  }, "\u05D4\u05D9\u05D5\u05DD"), /*#__PURE__*/React.createElement("select", {
-    value: numWeeks,
-    onChange: e => setNumWeeks(+e.target.value),
-    style: {
-      fontSize: 11,
-      padding: "4px 8px",
-      width: "auto"
-    }
-  }, /*#__PURE__*/React.createElement("option", {
-    value: 1
-  }, "\u05E9\u05D1\u05D5\u05E2"), /*#__PURE__*/React.createElement("option", {
-    value: 2
-  }, "\u05E9\u05D1\u05D5\u05E2\u05D9\u05D9\u05DD"), /*#__PURE__*/React.createElement("option", {
-    value: 3
-  }, "3 \u05E9\u05D1\u05D5\u05E2\u05D5\u05EA")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 4,
-      fontSize: 11,
-      color: "var(--muted)"
-    }
-  }, /*#__PURE__*/React.createElement("span", null, "\u2194"), /*#__PURE__*/React.createElement("input", {
-    type: "range",
-    min: 100,
-    max: 280,
-    step: 10,
-    value: colW,
-    onChange: e => setColW(+e.target.value),
-    style: {
-      width: 60,
-      accentColor: "var(--gold)"
-    }
-  }), /*#__PURE__*/React.createElement("span", null, "\u2195"), /*#__PURE__*/React.createElement("input", {
-    type: "range",
-    min: 60,
-    max: 200,
-    step: 10,
-    value: rowH,
-    onChange: e => setRowH(+e.target.value),
-    style: {
-      width: 60,
-      accentColor: "var(--gold)"
-    }
-  })), /*#__PURE__*/React.createElement("button", {
-    className: "btn-ghost btn-sm",
-    onClick: () => {
-      const d = new Date(weekStart);
-      d.setDate(d.getDate() - 7 * numWeeks);
-      setWeekStart(d);
-    }
-  }, "\u2190 \u05E7\u05D5\u05D3\u05DD"), /*#__PURE__*/React.createElement("button", {
-    className: "btn-ghost btn-sm",
-    onClick: () => {
-      const d = new Date(weekStart);
-      d.setDate(d.getDate() + 7 * numWeeks);
-      setWeekStart(d);
-    }
-  }, "\u05D4\u05D1\u05D0 \u2192"))), /*#__PURE__*/React.createElement("div", {
+    style: { marginBottom: 0 }
+  }, "📅 לוח"),
+  /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" } },
+    /*#__PURE__*/React.createElement("div", { style: { display: "flex", background: "var(--card2)", borderRadius: 8, padding: 2, gap: 2 } },
+      [["day","יומי"],["week","שבועי"],["month","חודשי"]].map(([m,l]) =>
+        /*#__PURE__*/React.createElement("button", {
+          key: m,
+          onClick: () => setViewMode(m),
+          style: { padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700,
+            background: viewMode === m ? "var(--gold)" : "transparent",
+            color: viewMode === m ? "#07090f" : "var(--muted2)" }
+        }, l)
+      )
+    ),
+    /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", onClick: goToday }, "היום"),
+    viewMode === "week" && /*#__PURE__*/React.createElement("select", {
+      value: numWeeks,
+      onChange: e => setNumWeeks(+e.target.value),
+      style: { fontSize: 11, padding: "4px 8px", width: "auto" }
+    },
+      /*#__PURE__*/React.createElement("option", { value: 1 }, "שבוע"),
+      /*#__PURE__*/React.createElement("option", { value: 2 }, "שבועיים"),
+      /*#__PURE__*/React.createElement("option", { value: 3 }, "3 שבועות")
+    ),
+    viewMode === "week" && /*#__PURE__*/React.createElement("div", {
+      style: { display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--muted)" }
+    },
+      /*#__PURE__*/React.createElement("span", null, "↔"),
+      /*#__PURE__*/React.createElement("input", { type: "range", min: 100, max: 280, step: 10, value: colW, onChange: e => setColW(+e.target.value), style: { width: 60, accentColor: "var(--gold)" } }),
+      /*#__PURE__*/React.createElement("span", null, "↕"),
+      /*#__PURE__*/React.createElement("input", { type: "range", min: 60, max: 200, step: 10, value: rowH, onChange: e => setRowH(+e.target.value), style: { width: 60, accentColor: "var(--gold)" } })
+    ),
+    /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", onClick: goBack }, "← קודם"),
+    /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", onClick: goForward }, "הבא →")
+  )), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,
@@ -2483,7 +2558,10 @@ function WeeklyCalendar({
       color: "var(--red)",
       border: "1px solid var(--red)30"
     }
-  }, "\uD83D\uDFE5 \u05E9\u05D9\u05E9\u05D9/\u05E9\u05D1\u05EA")), Array.from({
+  }, "\uD83D\uDFE5 \u05E9\u05D9\u05E9\u05D9/\u05E9\u05D1\u05EA")),
+  viewMode === "day" ? renderDay(selectedDay) :
+  viewMode === "month" ? renderMonth() :
+  Array.from({
     length: numWeeks
   }, (_, wi) => {
     const weekDays = allDays.slice(wi * 7, (wi + 1) * 7);
@@ -2789,7 +2867,13 @@ function ProjectsList({
       ...proj,
       name: editInline.name,
       projectNumber: editInline.projectNumber,
-      producer: editInline.producer
+      producer: editInline.producer,
+      client: editInline.client,
+      description: editInline.description,
+      shootDate: editInline.shootDate,
+      offlineScreening: editInline.offlineScreening,
+      onlineScreening: editInline.onlineScreening,
+      deliveryDate: editInline.deliveryDate
     });
     setEditInline(null);
   };
@@ -2968,7 +3052,13 @@ function ProjectsList({
         textOverflow: "ellipsis",
         whiteSpace: "nowrap"
       }
-    }, p.name), /*#__PURE__*/React.createElement("div", {
+    }, p.name), isEditing ? /*#__PURE__*/React.createElement("input", {
+      value: editInline.client,
+      onChange: e => setEditInline(x => ({ ...x, client: e.target.value })),
+      placeholder: "לקוח...",
+      style: { padding: "3px 6px", fontSize: 12 },
+      onClick: e => e.stopPropagation()
+    }) : /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: "var(--muted2)",
@@ -3023,7 +3113,66 @@ function ProjectsList({
     }, "\uD83D\uDCBE \u05E9\u05DE\u05D5\u05E8"), /*#__PURE__*/React.createElement("button", {
       className: "btn-ghost btn-sm",
       onClick: () => setEditInline(null)
-    }, "\u05D1\u05D9\u05D8\u05D5\u05DC")), !isEditing && canEdit && /*#__PURE__*/React.createElement("div", {
+    }, "\u05D1\u05D9\u05D8\u05D5\u05DC")), isEditing && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "var(--bg)",
+        border: "1px solid var(--border)",
+        borderTop: "none",
+        borderRadius: "0 0 8px 8px",
+        padding: "12px 14px",
+        marginBottom: 4,
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+        gap: 10
+      },
+      onClick: e => e.stopPropagation()
+    },
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement(Lbl, null, "📝 הערות"),
+        /*#__PURE__*/React.createElement("textarea", {
+          value: editInline.description,
+          onChange: e => setEditInline(x => ({ ...x, description: e.target.value })),
+          placeholder: "תיאור / הערות...",
+          style: { minHeight: 60, fontSize: 12 }
+        })
+      ),
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement(Lbl, null, "🎬 תאריך צילום"),
+        /*#__PURE__*/React.createElement("input", {
+          type: "date",
+          value: editInline.shootDate,
+          onChange: e => setEditInline(x => ({ ...x, shootDate: e.target.value })),
+          style: { fontSize: 12 }
+        })
+      ),
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement(Lbl, null, "🖥 הקרנת אופליין"),
+        /*#__PURE__*/React.createElement("input", {
+          type: "date",
+          value: editInline.offlineScreening,
+          onChange: e => setEditInline(x => ({ ...x, offlineScreening: e.target.value })),
+          style: { fontSize: 12 }
+        })
+      ),
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement(Lbl, null, "📡 הקרנת אונליין"),
+        /*#__PURE__*/React.createElement("input", {
+          type: "date",
+          value: editInline.onlineScreening,
+          onChange: e => setEditInline(x => ({ ...x, onlineScreening: e.target.value })),
+          style: { fontSize: 12 }
+        })
+      ),
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement(Lbl, null, "📦 מסירה"),
+        /*#__PURE__*/React.createElement("input", {
+          type: "date",
+          value: editInline.deliveryDate,
+          onChange: e => setEditInline(x => ({ ...x, deliveryDate: e.target.value })),
+          style: { fontSize: 12 }
+        })
+      )
+    ), !isEditing && canEdit && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         justifyContent: "flex-end",
@@ -3041,7 +3190,13 @@ function ProjectsList({
           id: p.id,
           name: p.name,
           projectNumber: p.projectNumber || "",
-          producer: p.producer || ""
+          producer: p.producer || "",
+          client: p.client || "",
+          description: p.description || "",
+          shootDate: p.shootDate || "",
+          offlineScreening: p.offlineScreening || "",
+          onlineScreening: p.onlineScreening || "",
+          deliveryDate: p.deliveryDate || ""
         });
       }
     }, "\u270F\uFE0F \u05E2\u05E8\u05D9\u05DB\u05D4 \u05DE\u05D4\u05D9\u05E8\u05D4")));
@@ -3058,6 +3213,8 @@ function HoursLog({
     isProd = user.role === "producer";
   const canManage = isAdmin || isProd;
   const [hoursTab, setHoursTab] = useState("project"); // "project" | "attendance"
+  // ── month must be declared BEFORE allAttendance (which depends on it) ──
+  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   // attendance state
   const [attForm, setAttForm] = useState({
     worker: user.id,
@@ -3132,7 +3289,6 @@ function HoursLog({
     [k]: e.target.value
   }));
   const [viewBy, setViewBy] = useState("worker");
-  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const calcH = () => {
     if (form.timeIn && form.timeOut) {
       const [h1, m1] = form.timeIn.split(":").map(Number);
@@ -3249,30 +3405,31 @@ function HoursLog({
       ...proj,
       hours: [...(proj.hours || []), entry]
     });
-    if (sheetsUrl) {
-      sbUpsert("hours", hourToRow({
-        ...entry,
-        projId: proj.id,
-        projName: proj.name
-      }, users, projects)).catch(() => {});
-    }
+    // Always sync to Supabase (sheetsUrl was legacy and is removed)
+    sbUpsert("hours", hourToRow({
+      ...entry,
+      projId: proj.id,
+      projName: proj.name
+    }, users, projects)).catch(() => {});
     setForm(p => ({
       ...p,
       projId: "",
       note: ""
     }));
   };
-  const allHours = [];
-  projects.forEach(p => (p.hours || []).filter(h => h.date && h.date.startsWith(month) && (canManage || h.worker === user.id)).forEach(h => {
-    const u = users.find(u => u.id === h.worker);
-    allHours.push({
-      ...h,
-      projName: p.name,
-      projId: p.id,
-      workerName: (u === null || u === void 0 ? void 0 : u.name) || h.worker
-    });
-  }));
-  allHours.sort((a, b) => b.date.localeCompare(a.date));
+  const allHours = useMemo(() => {
+    const rows = [];
+    projects.forEach(p => (p.hours || []).filter(h => h.date && h.date.startsWith(month) && (canManage || h.worker === user.id)).forEach(h => {
+      const u = users.find(u => u.id === h.worker);
+      rows.push({
+        ...h,
+        projName: p.name,
+        projId: p.id,
+        workerName: (u?.name) || h.worker
+      });
+    }));
+    return rows.sort((a, b) => b.date.localeCompare(a.date));
+  }, [projects, month, canManage, user.id, users]);
   const grouped = useMemo(() => {
     if (viewBy === "worker") {
       const m = {};
@@ -5459,114 +5616,161 @@ function QuoteBuilder({
     w.document.close();
     setTimeout(() => w.print(), 600);
   };
-  if (step === "list") return /*#__PURE__*/React.createElement("div", {
-    className: "fade"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "section-title",
-    style: {
-      marginBottom: 0
-    }
-  }, "\uD83D\uDCDD \u05D4\u05E6\u05E2\u05D5\u05EA \u05DE\u05D7\u05D9\u05E8"), isAdmin && /*#__PURE__*/React.createElement("button", {
-    className: "btn-gold btn-sm",
-    onClick: () => setStep("pick")
-  }, "+ \u05D4\u05E6\u05E2\u05D4 \u05D7\u05D3\u05E9\u05D4")), projects.filter(p => {
-    var _p$quotes;
-    return (_p$quotes = p.quotes) === null || _p$quotes === void 0 ? void 0 : _p$quotes.length;
-  }).map(p => /*#__PURE__*/React.createElement("div", {
-    key: p.id,
-    className: "card",
-    style: {
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      marginBottom: 8,
-      color: "var(--gold)"
-    }
-  }, "#", p.projectNumber, " ", p.name), (p.quotes || []).map(q => /*#__PURE__*/React.createElement("div", {
-    key: q.id,
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      padding: "8px 0",
-      borderBottom: "1px solid var(--border)",
-      flexWrap: "wrap",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 600,
-      fontSize: 13
-    }
-  }, q.client), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "var(--muted)"
-    }
-  }, q.date, " \xB7 ", fmtMoney(q.total))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 8,
-      alignItems: "center"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      padding: "3px 10px",
-      borderRadius: 12,
-      background: q.approved ? "var(--green)20" : "var(--orange)20",
-      color: q.approved ? "var(--green)" : "var(--orange)"
-    }
-  }, q.approved ? "✓ מאושר" : "ממתין"), /*#__PURE__*/React.createElement("button", {
-    className: "btn-blue btn-sm",
-    onClick: () => printQuote(q, q.lines || [], q.total)
-  }, "\uD83D\uDDA8\uFE0F"), /*#__PURE__*/React.createElement("button", {
-    className: "btn-ghost btn-sm",
-    title: "\u05E9\u05DB\u05E4\u05DC",
-    onClick: () => {
-      const newQ = {
-        ...q,
-        id: uid(),
-        date: todayStr(),
-        approved: false
-      };
-      onSave(p.id, newQ);
-    }
-  }, "\uD83D\uDCCB"), isAdmin && /*#__PURE__*/React.createElement("button", {
-    className: "btn-ghost btn-sm",
-    title: "\u05E2\u05E8\u05D5\u05DA",
-    onClick: () => {
-      setProjId(p.id);
-      setTplName(q.template || "");
-      setLines((q.lines || []).map(l => ({
-        ...l,
-        id: uid()
-      })));
-      setQClient(q.client || "");
-      setQProjName(q.projName || "");
-      setQProjDesc(q.projDesc || "");
-      setQScope(q.scope || "");
-      setQFormats(q.formats || "");
-      setQUsageRights(q.usageRights || "");
-      setQClientResp(q.clientResp || "");
-      setQPayment(q.payment || "50% בחתימה, 50% במסירה");
-      setQNote(q.note || DEFAULT_NOTE);
-      if (q.deliverables) setDeliverRows(q.deliverables.split("\n").filter(Boolean).map(t => ({
-        id: uid(),
-        text: t
-      })));
-      setStep("build");
-    }
-  }, "\u270F\uFE0F")))))));
+  const [clientFilter, setClientFilter] = useState(""); // filter for quotes list
+
+  if (step === "list") {
+    const allQuotes = projects.flatMap(p =>
+      (p.quotes || []).map(q => ({ ...q, projName: p.name, projNum: p.projectNumber, projId2: p.id }))
+    ).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+    const filteredQuotes = clientFilter
+      ? allQuotes.filter(q => (q.client || "").toLowerCase().includes(clientFilter.toLowerCase()))
+      : allQuotes;
+
+    const recentQuotes = filteredQuotes.slice(0, 20);
+
+    return /*#__PURE__*/React.createElement("div", { className: "fade" },
+      // ── Header ─────────────────────────────────────────────
+      /*#__PURE__*/React.createElement("div", {
+        style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 8 }
+      },
+        /*#__PURE__*/React.createElement("div", { className: "section-title", style: { marginBottom: 0 } }, "📝 הצעות מחיר"),
+        isAdmin && /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", onClick: () => setStep("pick") }, "+ הצעה חדשה")
+      ),
+
+      // ── Templates section ────────────────────────────────
+      /*#__PURE__*/React.createElement("div", { style: { marginBottom: 24 } },
+        /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 13, color: "var(--muted2)", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 } },
+          "📋 תבניות",
+          /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, background: "var(--card2)", padding: "2px 8px", borderRadius: 10 } }, tmpls.length)
+        ),
+        /*#__PURE__*/React.createElement("div", {
+          style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 8 }
+        },
+          tmpls.map(t => /*#__PURE__*/React.createElement("div", {
+            key: t.id,
+            className: "card2",
+            style: { cursor: "pointer", padding: "12px 14px", transition: "border-color .15s" },
+            onClick: () => { isAdmin && setStep("pick"); }
+          },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, marginBottom: 4 } }, "📋"),
+            /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 12 } }, t.name),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", marginTop: 2 } }, (t.lines?.length || 0), " שורות · ", fmtMoney(t.lines?.reduce((s, l) => s + l.qty * l.price, 0) || 0))
+          )),
+          isAdmin && /*#__PURE__*/React.createElement("div", {
+            className: "card2",
+            style: { cursor: "pointer", padding: "12px 14px", borderStyle: "dashed", textAlign: "center" },
+            onClick: () => setStep("pick")
+          },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, marginBottom: 4 } }, "✏️"),
+            /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 12 } }, "ריק")
+          )
+        )
+      ),
+
+      // ── Recent quotes header + client filter ─────────────
+      /*#__PURE__*/React.createElement("div", {
+        style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }
+      },
+        /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 13, color: "var(--muted2)", display: "flex", alignItems: "center", gap: 8 } },
+          "🕐 הצעות אחרונות",
+          /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, background: "var(--card2)", padding: "2px 8px", borderRadius: 10 } }, filteredQuotes.length)
+        ),
+        /*#__PURE__*/React.createElement("div", { style: { position: "relative", minWidth: 200 } },
+          /*#__PURE__*/React.createElement("span", { className: "srch-icon" }, "🏢"),
+          /*#__PURE__*/React.createElement("input", {
+            value: clientFilter,
+            onChange: e => setClientFilter(e.target.value),
+            placeholder: "סינון לפי לקוח...",
+            className: "srch-wrap",
+            style: { paddingRight: 32, fontSize: 12 }
+          }),
+          clientFilter && /*#__PURE__*/React.createElement("button", {
+            onClick: () => setClientFilter(""),
+            style: { position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 14, padding: 0 }
+          }, "×")
+        )
+      ),
+
+      // ── Client filter chips (top clients) ────────────────
+      clientList.length > 0 && /*#__PURE__*/React.createElement("div", {
+        style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }
+      },
+        [""].concat(clientList.slice(0, 8)).map(cl => /*#__PURE__*/React.createElement("div", {
+          key: cl || "__all__",
+          onClick: () => setClientFilter(cl),
+          style: {
+            padding: "3px 10px", borderRadius: 20, fontSize: 11, cursor: "pointer",
+            border: "1px solid",
+            borderColor: clientFilter === cl ? "var(--gold)" : "var(--border)",
+            background: clientFilter === cl ? "var(--gold)20" : "transparent",
+            color: clientFilter === cl ? "var(--gold)" : "var(--muted2)",
+            fontWeight: clientFilter === cl ? 700 : 400
+          }
+        }, cl || "הכל"))
+      ),
+
+      // ── Quotes list ──────────────────────────────────────
+      recentQuotes.length === 0 && /*#__PURE__*/React.createElement("div", {
+        style: { color: "var(--muted)", textAlign: "center", padding: 40 }
+      }, clientFilter ? `אין הצעות ללקוח "${clientFilter}"` : "אין הצעות מחיר עדיין"),
+
+      /*#__PURE__*/React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 6 } },
+        recentQuotes.map(q => {
+          const proj = projects.find(p => p.id === q.projId2);
+          return /*#__PURE__*/React.createElement("div", {
+            key: q.id,
+            className: "card",
+            style: { padding: "12px 16px" }
+          },
+            /*#__PURE__*/React.createElement("div", {
+              style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }
+            },
+              /*#__PURE__*/React.createElement("div", null,
+                /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 14 } }, q.client || "—"),
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", marginTop: 2 } },
+                  q.date, " · ",
+                  /*#__PURE__*/React.createElement("span", { style: { color: "var(--gold)", fontWeight: 700 } }, fmtMoney(q.total)),
+                  q.projName && [" · ", /*#__PURE__*/React.createElement("span", { key: "pn", style: { color: "var(--blue)" } }, "#", q.projNum, " ", q.projName)]
+                )
+              ),
+              /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" } },
+                /*#__PURE__*/React.createElement("span", {
+                  style: { fontSize: 11, padding: "3px 10px", borderRadius: 12,
+                    background: q.approved ? "var(--green)20" : "var(--orange)20",
+                    color: q.approved ? "var(--green)" : "var(--orange)" }
+                }, q.approved ? "✓ מאושר" : "ממתין"),
+                /*#__PURE__*/React.createElement("button", { className: "btn-blue btn-sm", onClick: () => printQuote(q, q.lines || [], q.total) }, "🖨️"),
+                /*#__PURE__*/React.createElement("button", {
+                  className: "btn-ghost btn-sm", title: "שכפל",
+                  onClick: () => { onSave(q.projId2, { ...q, id: uid(), date: todayStr(), approved: false }); }
+                }, "📋"),
+                isAdmin && proj && /*#__PURE__*/React.createElement("button", {
+                  className: "btn-ghost btn-sm", title: "ערוך",
+                  onClick: () => {
+                    setProjId(q.projId2);
+                    setTplName(q.template || "");
+                    setLines((q.lines || []).map(l => ({ ...l, id: uid() })));
+                    setQClient(q.client || "");
+                    setQProjName(q.projName || "");
+                    setQProjDesc(q.projDesc || "");
+                    setQScope(q.scope || "");
+                    setQFormats(q.formats || "");
+                    setQUsageRights(q.usageRights || "");
+                    setQClientResp(q.clientResp || "");
+                    setQPayment(q.payment || "50% בחתימה, 50% במסירה");
+                    setQNote(q.note || DEFAULT_NOTE);
+                    if (q.deliverables) setDeliverRows(q.deliverables.split("\n").filter(Boolean).map(t => ({ id: uid(), text: t })));
+                    setStep("build");
+                  }
+                }, "✏️")
+              )
+            )
+          );
+        })
+      )
+    );
+  }
   if (step === "pick") return /*#__PURE__*/React.createElement("div", {
     className: "fade"
   }, /*#__PURE__*/React.createElement("button", {
@@ -7678,19 +7882,28 @@ function App({
       if (!rec || rec.deleted) return;
       const s = rowToShift(rec);
       if (!s.projId) {
-        upd(d => ({
-          ...d,
-          globalShifts: evt === "INSERT" ? [...d.globalShifts, s] : evt === "UPDATE" ? d.globalShifts.map(x => x.id === s.id ? s : x) : d.globalShifts.filter(x => x.id !== s.id)
-        }));
+        upd(d => {
+          const gs = d.globalShifts || [];
+          const alreadyExists = gs.some(x => x.id === s.id);
+          return {
+            ...d,
+            globalShifts: evt === "DELETE" ? gs.filter(x => x.id !== s.id)
+              : alreadyExists ? gs.map(x => x.id === s.id ? s : x)
+              : [...gs, s]
+          };
+        });
       } else {
         upd(d => ({
           ...d,
           projects: d.projects.map(p => {
             if (p.id !== s.projId) return p;
             const sh = p.shifts || [];
+            const alreadyExists = sh.some(x => x.id === s.id);
             return {
               ...p,
-              shifts: evt === "INSERT" ? [...sh, s] : evt === "UPDATE" ? sh.map(x => x.id === s.id ? s : x) : sh.filter(x => x.id !== s.id)
+              shifts: evt === "DELETE" ? sh.filter(x => x.id !== s.id)
+                : alreadyExists ? sh.map(x => x.id === s.id ? s : x)
+                : [...sh, s]
             };
           })
         }));
