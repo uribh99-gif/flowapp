@@ -886,9 +886,7 @@ function ProjectsList({projects,user,users,onSelect,onNew,onUpdate}){
     const cols=["projectNumber","name","client","producer","status","shootDate","offlineScreening","onlineScreening","deliveryDate","description"];
     const headers=["מספר","שם פרויקט","לקוח","מפיקה","סטטוס","צילום","אופליין","אונליין","מסירה","תיאור"];
     const rows=toExport.map(p=>cols.map(k=>`"${(p[k]||"").toString().replace(/"/g,'""')}"`).join(","));
-    const csv="﻿"+headers.join(",")+"
-"+rows.join("
-");
+    const csv="\uFEFF"+headers.join(",")+"\n"+rows.join("\n");
     const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
     a.download=`postflow_projects_${todayStr()}.csv`;a.click();
     setShowExportMenu(false);
@@ -1795,12 +1793,7 @@ ${q.note?`<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(q.
       <button className="btn-ghost btn-sm" onClick={()=>{
         const cols=["תיאור","כמות","יחידה","מחיר יחידה","סה"כ"];
         const rows=lines.map(l=>[l.desc,l.qty,l.unit||"",l.price,l.qty*l.price].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","));
-        const csv="﻿"+["לקוח,"+qClient,"פרויקט,"+qProjName,"תאריך,"+todayStr(),"",""].join("
-")+cols.join(",")+"
-"+rows.join("
-")+"
-,,,,
-סה"כ,,,,"+total;
+        const csv="\uFEFF"+["לקוח,"+qClient,"פרויקט,"+qProjName,"תאריך,"+todayStr(),"",""].join("\n")+cols.join(",")+"\n"+rows.join("\n")+"\n,,,,\nסה\"כ,,,,"+total;
         const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
         a.download=`quote_${qClient}_${todayStr()}.csv`;a.click();
       }}>⬇️ CSV לאקסל</button>
@@ -2525,7 +2518,6 @@ function AppLoader(){
     Splash.set(10,"מתחבר ל-Supabase...");
     const withTimeout=(p,ms=8000)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error("timeout")),ms))]);
     try{
-      // Load all data in parallel from Supabase (8 second timeout)
       const [sbUsers,sbProjects,sbShifts,sbHours,sbSettings]=await withTimeout(Promise.all([
         sbGet("users","?order=name"),
         sbGet("projects","?order=project_number"),
@@ -2581,27 +2573,12 @@ function AppLoader(){
       setInitData(loadLocal());
     }
   })();},[]);
-  useEffect(()=>{
-    if(initData){
-      Splash.set(100,"מוכן!");
-      setTimeout(()=>Splash.hide(), 300);
-    }
-  },[initData]);
-
-  if(!initData)return(
-    <div style={{position:"fixed",inset:0,background:"#07090f",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16,zIndex:9998}}>
-      <div style={{color:"#5a6478",fontSize:13}}>טוען נתונים...</div>
-      <button onClick={()=>{
-        const local=loadLocal();
-        Splash.set(100,"טוען מקומי...");
-        setTimeout(()=>Splash.hide(),300);
-        // force set via a hidden setter — use a workaround
-        document.dispatchEvent(new CustomEvent("pf-force-local",{detail:local}));
-      }} style={{background:"transparent",border:"1px solid #2f3748",color:"#7a8498",padding:"6px 16px",borderRadius:8,cursor:"pointer",fontFamily:"Heebo,sans-serif",fontSize:12,marginTop:8}}>
-        טען מקומי במקום
-      </button>
-    </div>
-  );
+  if(!initData){
+    Splash.set(50,"טוען...");
+    return null;
+  }
+  Splash.set(100,"מוכן!");
+  setTimeout(()=>Splash.hide(),200);
   return <App initialData={initData}/>;
 }
 const domContainer = document.getElementById('root');
