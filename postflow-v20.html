@@ -3888,7 +3888,6 @@ function ProjectDetail({
   onChange,
   onBack
 }) {
-  const [tab, setTab] = useState("overview");
   const isAdmin = user.role === "admin",
     canEdit = user.role === "admin" || user.role === "producer";
   const sts = shiftTypes || DEF_SHIFT_TYPES;
@@ -4032,19 +4031,7 @@ function ProjectDetail({
   };
   const done = (project.tasks || []).filter(t => t.done).length;
   const taskPct = (project.tasks || []).length ? pct(done, (project.tasks || []).length) : 0;
-  const TABS = [{
-    id: "overview",
-    label: "סקירה"
-  }, ...(canEdit ? [{
-    id: "schedule",
-    label: "לו״ז"
-  }, {
-    id: "planning",
-    label: "תכנון"
-  }] : []), {
-    id: "hours",
-    label: "שעות"
-  }];
+  // Single card — no tabs
   return /*#__PURE__*/React.createElement("div", {
     className: "fade"
   }, /*#__PURE__*/React.createElement("button", {
@@ -4142,512 +4129,51 @@ function ProjectDetail({
       fontSize: 13
     }
   }, project.statusNote || "—")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 0,
-      marginBottom: 20,
-      borderBottom: "1px solid var(--border)",
-      overflowX: "auto"
-    }
-  }, TABS.map(t => /*#__PURE__*/React.createElement("button", {
-    key: t.id,
-    className: `tab-btn${tab === t.id ? " active" : ""}`,
-    onClick: () => setTab(t.id)
-  }, t.label))), tab === "overview" && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-      gap: 14,
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      marginBottom: 10
-    }
-  }, "\uD83D\uDCC5 \u05DC\u05D5\u05F4\u05D6"), [{
-    l: "📷 צילום",
-    k: "shootDate"
-  }, {
-    l: "🎬 אופליין",
-    k: "offlineScreening"
-  }, {
-    l: "📽 אונליין",
-    k: "onlineScreening"
-  }, {
-    l: "📦 מסירה",
-    k: "deliveryDate"
-  }].map(x => /*#__PURE__*/React.createElement("div", {
-    key: x.k,
-    style: {
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, null, x.l), canEdit ? /*#__PURE__*/React.createElement(DatePicker, {
-    value: project[x.k] || "",
-    onChange: v => onChange({
-      ...project,
-      [x.k]: v
-    })
-  }) : /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      color: project[x.k] ? "var(--gold)" : "var(--muted)"
-    }
-  }, project[x.k] || "—")))), /*#__PURE__*/React.createElement("div", {
-    className: "card"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      marginBottom: 10
-    }
-  }, "\uD83D\uDCCB \u05E4\u05E8\u05D8\u05D9\u05DD"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05DC\u05E7\u05D5\u05D7"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700
-    }
-  }, project.client || "—")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05DE\u05E4\u05D9\u05E7\u05D4"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700
-    }
-  }, project.producer || "—")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05E1\u05D8\u05D8\u05D5\u05E1"), /*#__PURE__*/React.createElement(StatusBadge, {
-    status: project.status
-  })), project.statusNote && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 8,
-      fontSize: 12,
-      color: "var(--muted)",
-      background: "var(--card2)",
-      padding: "8px 10px",
-      borderRadius: 8
-    }
-  }, project.statusNote)), project.description && /*#__PURE__*/React.createElement("div", {
-    className: "card"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      marginBottom: 8
-    }
-  }, "\uD83D\uDCDD \u05EA\u05D9\u05D0\u05D5\u05E8"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      lineHeight: 1.7,
-      color: "var(--muted2)"
-    }
-  }, project.description)))), tab === "tasks" && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "frow"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "fcol"
-  }, /*#__PURE__*/React.createElement("input", {
-    placeholder: "\u05E9\u05DD \u05DE\u05E9\u05D9\u05DE\u05D4",
-    value: nt.title,
-    onChange: e => setNt(p => ({
-      ...p,
-      title: e.target.value
-    })),
-    onKeyDown: e => e.key === "Enter" && addTask()
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "fcol",
-    style: {
-      maxWidth: 160
-    }
-  }, /*#__PURE__*/React.createElement("select", {
-    value: nt.type,
-    onChange: e => setNt(p => ({
-      ...p,
-      type: e.target.value
-    }))
-  }, sts.map(t => /*#__PURE__*/React.createElement("option", {
-    key: t.id,
-    value: t.id
-  }, t.label)))), /*#__PURE__*/React.createElement("button", {
-    className: "btn-gold btn-sm",
-    onClick: addTask
-  }, "+ \u05D4\u05D5\u05E1\u05E3")), (project.tasks || []).map(t => {
-    const col = stColor(t.type, sts);
-    return /*#__PURE__*/React.createElement("div", {
-      key: t.id,
-      style: {
-        display: "flex",
-        gap: 12,
-        alignItems: "center",
-        padding: "10px 0",
-        borderBottom: "1px solid var(--border)"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 20,
-        height: 20,
-        borderRadius: 6,
-        background: t.done ? "var(--green)" : "transparent",
-        border: `2px solid ${t.done ? "var(--green)" : "var(--border2)"}`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-        transition: "all .2s",
-        flexShrink: 0
-      },
-      onClick: () => onChange({
-        ...project,
-        tasks: (project.tasks || []).map(x => x.id === t.id ? {
-          ...x,
-          done: !x.done
-        } : x)
-      })
-    }, t.done && /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: "#07090f",
-        fontSize: 11,
-        fontWeight: 900
-      }
-    }, "\u2713")), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        fontWeight: 600,
-        textDecoration: t.done ? "line-through" : "none",
-        color: t.done ? "var(--muted)" : "var(--text)"
-      }
-    }, t.title), /*#__PURE__*/React.createElement("span", {
-      className: "tag",
-      style: {
-        background: col + "20",
-        color: col
-      }
-    }, stLabel(t.type, sts)), /*#__PURE__*/React.createElement("button", {
-      className: "btn-red",
-      style: {
-        fontSize: 10,
-        padding: "3px 8px"
-      },
-      onClick: () => onChange({
-        ...project,
-        tasks: (project.tasks || []).filter(x => x.id !== t.id)
-      })
-    }, "\u2715"));
-  })), tab === "schedule" && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "card",
-    style: {
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      marginBottom: 12
-    }
-  }, "+ \u05D4\u05D5\u05E1\u05E4\u05EA \u05DE\u05E9\u05DE\u05E8\u05EA"), /*#__PURE__*/React.createElement("div", {
-    className: "frow"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "fcol"
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05EA\u05D0\u05E8\u05D9\u05DA"), /*#__PURE__*/React.createElement(DatePicker, {
-    value: ns.date,
-    onChange: v => setNs(x => ({
-      ...x,
-      date: v
-    }))
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "fcol"
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05E2\u05D5\u05D1\u05D3"), /*#__PURE__*/React.createElement("select", {
-    value: ns.person,
-    onChange: e => setNs(x => ({
-      ...x,
-      person: e.target.value
-    }))
-  }, /*#__PURE__*/React.createElement("option", {
-    value: ""
-  }, "\u2014 \u05D1\u05D7\u05E8 \u2014"), users.map(u => /*#__PURE__*/React.createElement("option", {
-    key: u.id,
-    value: u.id
-  }, u.name)))), /*#__PURE__*/React.createElement("div", {
-    className: "fcol"
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05DE\u05E9\u05E2\u05D4"), /*#__PURE__*/React.createElement("input", {
-    type: "time",
-    value: ns.timeStart,
-    onChange: e => setNs(x => ({
-      ...x,
-      timeStart: e.target.value
-    }))
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "fcol"
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05E2\u05D3 \u05E9\u05E2\u05D4"), /*#__PURE__*/React.createElement("input", {
-    type: "time",
-    value: ns.timeEnd,
-    onChange: e => setNs(x => ({
-      ...x,
-      timeEnd: e.target.value
-    }))
-  }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05DE\u05E9\u05D9\u05DE\u05D5\u05EA"), /*#__PURE__*/React.createElement(TaskChips, {
-    shiftTypes: sts,
-    selected: ns.tasks,
-    onChange: tasks => setNs(x => ({
-      ...x,
-      tasks
-    }))
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05D4\u05E2\u05E8\u05D4"), /*#__PURE__*/React.createElement("input", {
-    value: ns.note,
-    onChange: e => setNs(x => ({
-      ...x,
-      note: e.target.value
-    }))
-  })), /*#__PURE__*/React.createElement("button", {
-    className: "btn-gold btn-sm",
-    onClick: addShift
-  }, "+ \u05D4\u05D5\u05E1\u05E3")), (project.shifts || []).sort((a, b) => a.date.localeCompare(b.date)).map(s => {
-    const tasks = s.tasks || [];
-    const firstCol = stColor(tasks[0] || "other", sts);
-    return /*#__PURE__*/React.createElement("div", {
-      key: s.id,
-      className: "card2",
-      style: {
-        marginBottom: 8,
-        borderRight: `3px solid ${firstCol}`
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        gap: 8
-      }
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontWeight: 700,
-        fontSize: 13
-      }
-    }, s.date, " \xB7 ", s.timeStart || "—", " \xB7 ", s.hours ? "" + s.hours + "h" : calcHoursDisplay(s.timeStart, s.timeEnd) + "h"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 12,
-        color: "var(--muted)",
-        marginTop: 3
-      }
-    }, tasks.map(t => /*#__PURE__*/React.createElement("span", {
-      key: t,
-      className: "tag",
-      style: {
-        background: stColor(t, sts) + "20",
-        color: stColor(t, sts),
-        marginLeft: 4
-      }
-    }, stLabel(t, sts))), s.person && /*#__PURE__*/React.createElement("span", {
-      style: {
-        marginRight: 6
-      }
-    }, wName(s.person)), s.note && /*#__PURE__*/React.createElement("span", {
-      style: {
-        opacity: .7
-      }
-    }, "\xB7 ", s.note))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 6
-      }
-    }, /*#__PURE__*/React.createElement("a", {
-      href: gcalLink(s, project.name, project.client),
-      target: "_blank",
-      rel: "noreferrer"
-    }, /*#__PURE__*/React.createElement("button", {
-      className: "btn-blue btn-sm"
-    }, "\uD83D\uDCC5")), /*#__PURE__*/React.createElement("button", {
-      className: "btn-red",
-      onClick: () => onChange({
-        ...project,
-        shifts: (project.shifts || []).filter(x => x.id !== s.id)
-      })
-    }, "\u05D4\u05E1\u05E8"))));
-  })), tab === "hours" && /*#__PURE__*/React.createElement("div", null, canEdit && /*#__PURE__*/React.createElement("div", {
-    className: "card",
-    style: {
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      marginBottom: 12
-    }
-  }, "\u05D4\u05D5\u05E1\u05E4\u05EA \u05E9\u05E2\u05D5\u05EA"), /*#__PURE__*/React.createElement("div", {
-    className: "frow"
-  }, isAdmin && /*#__PURE__*/React.createElement("div", {
-    className: "fcol"
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05E2\u05D5\u05D1\u05D3"), /*#__PURE__*/React.createElement("select", {
-    value: nh.worker,
-    onChange: e => setNh(x => ({
-      ...x,
-      worker: e.target.value
-    }))
-  }, users.map(u => /*#__PURE__*/React.createElement("option", {
-    key: u.id,
-    value: u.id
-  }, u.name)))), /*#__PURE__*/React.createElement("div", {
-    className: "fcol"
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05EA\u05D0\u05E8\u05D9\u05DA"), /*#__PURE__*/React.createElement(DatePicker, {
-    value: nh.date,
-    onChange: v => setNh(x => ({
-      ...x,
-      date: v
-    }))
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "fcol"
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05DB\u05E0\u05D9\u05E1\u05D4"), /*#__PURE__*/React.createElement("input", {
-    type: "time",
-    value: nh.timeIn,
-    onChange: e => setNh(x => ({
-      ...x,
-      timeIn: e.target.value
-    }))
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "fcol"
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05D9\u05E6\u05D9\u05D0\u05D4"), /*#__PURE__*/React.createElement("input", {
-    type: "time",
-    value: nh.timeOut,
-    onChange: e => setNh(x => ({
-      ...x,
-      timeOut: e.target.value
-    }))
-  }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05D4\u05E2\u05E8\u05D4"), /*#__PURE__*/React.createElement("input", {
-    value: nh.note,
-    onChange: e => setNh(x => ({
-      ...x,
-      note: e.target.value
-    }))
-  })), /*#__PURE__*/React.createElement("button", {
-    className: "btn-gold btn-sm",
-    onClick: addHour
-  }, "+ \u05D4\u05D5\u05E1\u05E3")), users.map(u => {
-    const wh = (project.hours || []).filter(h => h.worker === u.id);
-    if (!wh.length) return null;
-    return /*#__PURE__*/React.createElement("div", {
-      key: u.id,
-      className: "card",
-      style: {
-        marginBottom: 12
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        justifyContent: "space-between",
-        marginBottom: 10
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontWeight: 700
-      }
-    }, u.name), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontWeight: 900,
-        color: "var(--gold)",
-        fontSize: 18
-      }
-    }, wh.reduce((s, h) => s + h.hours, 0).toFixed(1), "h")), wh.sort((a, b) => b.date.localeCompare(a.date)).map(h => /*#__PURE__*/React.createElement("div", {
-      key: h.id,
-      style: {
-        display: "flex",
-        gap: 8,
-        justifyContent: "space-between",
-        fontSize: 12,
-        color: "var(--muted)",
-        padding: "5px 0",
-        borderBottom: "1px solid var(--border)"
-      }
-    }, /*#__PURE__*/React.createElement("span", null, h.date), /*#__PURE__*/React.createElement("span", null, h.timeIn && h.timeOut ? `${h.timeIn}–${h.timeOut}` : ""), /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: h.correction ? "var(--orange)" : "var(--text)",
-        fontWeight: 700
-      }
-    }, h.correction ? "[תיקון]" : h.hours.toFixed(1) + "h"), /*#__PURE__*/React.createElement("span", {
-      style: {
-        flex: 1,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap"
-      }
-    }, h.note))));
-  })), tab === "planning" && /*#__PURE__*/React.createElement(ProjectPlanning, {
-    project: project,
-    users: users,
-    onChange: onChange,
-    canEdit: canEdit
-  }), tab === "budget" && isAdmin && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 14,
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card"
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05EA\u05E7\u05E6\u05D9\u05D1 \u05DE\u05EA\u05D5\u05DB\u05E0\u05DF"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 30,
-      fontWeight: 900,
-      color: "var(--blue)"
-    }
-  }, fmtMoney(project.budgetPlanned)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 10
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05E2\u05D3\u05DB\u05D5\u05DF"), /*#__PURE__*/React.createElement("input", {
-    type: "number",
-    value: project.budgetPlanned || 0,
-    onChange: e => onChange({
-      ...project,
-      budgetPlanned: +e.target.value
-    })
-  }))), /*#__PURE__*/React.createElement("div", {
-    className: "card"
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05EA\u05E7\u05E6\u05D9\u05D1 \u05D1\u05E4\u05D5\u05E2\u05DC"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 30,
-      fontWeight: 900,
-      color: pct(project.budgetActual, project.budgetPlanned) > 80 ? "var(--red)" : "var(--green)"
-    }
-  }, fmtMoney(project.budgetActual)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 10
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05E2\u05D3\u05DB\u05D5\u05DF"), /*#__PURE__*/React.createElement("input", {
-    type: "number",
-    value: project.budgetActual || 0,
-    onChange: e => onChange({
-      ...project,
-      budgetActual: +e.target.value
-    })
-  })))), /*#__PURE__*/React.createElement("div", {
-    className: "card"
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05E0\u05D9\u05E6\u05D5\u05DC"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 26,
-      fontWeight: 900,
-      color: "var(--gold)",
-      marginBottom: 8
-    }
-  }, pct(project.budgetActual, project.budgetPlanned), "%"), /*#__PURE__*/React.createElement(PBar, {
-    v: pct(project.budgetActual, project.budgetPlanned),
-    color: pct(project.budgetActual, project.budgetPlanned) > 80 ? "var(--red)" : "var(--green)"
-  }))));
+    className: "card fade"
+  },
+  /* ── שם פרויקט ── */
+  /*#__PURE__*/React.createElement("div", { className: "frow" },
+    /*#__PURE__*/React.createElement("div", { className: "fcol" },
+      /*#__PURE__*/React.createElement(Lbl, null, "שם פרויקט"),
+      canEdit
+        ? /*#__PURE__*/React.createElement("input", { value: project.name || "", onChange: e => onChange({ ...project, name: e.target.value }) })
+        : /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700 } }, project.name || "—")
+    )
+  ),
+  /* ── מפיקה + לקוח ── */
+  /*#__PURE__*/React.createElement("div", { className: "frow" },
+    /*#__PURE__*/React.createElement("div", { className: "fcol" },
+      /*#__PURE__*/React.createElement(Lbl, null, "מפיקה"),
+      canEdit
+        ? /*#__PURE__*/React.createElement("input", { value: project.producer || "", onChange: e => onChange({ ...project, producer: e.target.value }) })
+        : /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700 } }, project.producer || "—")
+    ),
+    /*#__PURE__*/React.createElement("div", { className: "fcol" },
+      /*#__PURE__*/React.createElement(Lbl, null, "לקוח"),
+      canEdit
+        ? /*#__PURE__*/React.createElement("input", { value: project.client || "", onChange: e => onChange({ ...project, client: e.target.value }) })
+        : /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700 } }, project.client || "—")
+    )
+  ),
+  /* ── לוז ── */
+  /*#__PURE__*/React.createElement("div", { style: { height: 1, background: "var(--border)", margin: "14px 0" } }),
+  /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "var(--gold)", fontWeight: 700, marginBottom: 10 } }, "📅 לוז"),
+  /*#__PURE__*/React.createElement("div", { className: "frow" },
+    [{ l: "📷 צילום", k: "shootDate" }, { l: "🎬 אופליין", k: "offlineScreening" }, { l: "📽 אונליין", k: "onlineScreening" }, { l: "📦 מסירה", k: "deliveryDate" }]
+      .map(x => /*#__PURE__*/React.createElement("div", { key: x.k, className: "fcol" },
+        /*#__PURE__*/React.createElement(Lbl, null, x.l),
+        canEdit
+          ? /*#__PURE__*/React.createElement(DatePicker, { value: project[x.k] || "", onChange: v => onChange({ ...project, [x.k]: v }) })
+          : /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, color: project[x.k] ? "var(--gold)" : "var(--muted)" } }, project[x.k] || "—")
+      ))
+  ),
+  /* ── הערות ── */
+  /*#__PURE__*/React.createElement("div", { style: { height: 1, background: "var(--border)", margin: "14px 0" } }),
+  /*#__PURE__*/React.createElement(Lbl, null, "הערות"),
+  canEdit
+    ? /*#__PURE__*/React.createElement("textarea", { value: project.description || "", onChange: e => onChange({ ...project, description: e.target.value }), placeholder: "הערות כלליות על הפרויקט...", style: { minHeight: 80 } })
+    : /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: "var(--muted2)", lineHeight: 1.7 } }, project.description || "—")
+  ));
 }
 function ProjectPlanning({
   project,
