@@ -5106,15 +5106,21 @@ function QuoteBuilder({
   const [qScope, setQScope] = useState("");
   const [deliverRows, setDeliverRows] = useState([{
     id: uid(),
-    text: ""
+    text: "",
+    ratio: "",
+    resolution: "",
+    platform: ""
   }]);
   const addDeliverRow = () => setDeliverRows(r => [...r, {
     id: uid(),
-    text: ""
+    text: "",
+    ratio: "",
+    resolution: "",
+    platform: ""
   }]);
-  const updDeliverRow = (id, v) => setDeliverRows(r => r.map(x => x.id === id ? {
+  const updDeliverRow = (id, field, v) => setDeliverRows(r => r.map(x => x.id === id ? {
     ...x,
-    text: v
+    [field]: v
   } : x));
   const delDeliverRow = id => setDeliverRows(r => r.filter(x => x.id !== id));
   const RATIO_OPTS = ["16:9", "9:16", "9:16 טיקטוק", "4:5", "1:1"];
@@ -5213,7 +5219,10 @@ function QuoteBuilder({
     setQScope("");
     setDeliverRows([{
       id: uid(),
-      text: ""
+      text: "",
+      ratio: "",
+      resolution: "",
+      platform: ""
     }]);
     setSelRatios([]);
     setRatioCustom("");
@@ -5229,7 +5238,7 @@ function QuoteBuilder({
     setTplName("");
   };
   const save = () => {
-    if (!projId) return;
+    if (!projId) { alert("יש לבחור פרויקט לפני השמירה"); return; }
     const q = {
       id: uid(),
       date: todayStr(),
@@ -5241,7 +5250,7 @@ function QuoteBuilder({
       projId,
       projName: qProjName,
       projDesc: qProjDesc,
-      deliverables: deliverRows.map(r => r.text).filter(Boolean).join("\n"),
+      deliverables: deliverRows.filter(r => r.text).map(r => [r.text, r.ratio, r.resolution, r.platform].filter(Boolean).join(" | ")).join("\n"),
       formats: qFormats,
       resolutions: getRes(),
       ratios: getRatios(),
@@ -5349,7 +5358,7 @@ tbody tr:last-child td{border-bottom:none}
 <div class="secs-grid">
   ${q.projDesc ? `<div class="sec sec-full">${sec("תיאור הפרויקט", q.projDesc)}</div>` : ""}
   ${q.scope ? `<div class="sec sec-full">${sec("תכולה מפורטת", q.scope)}</div>` : ""}
-  ${q.deliverables ? `<div class="sec">${sec("תוצרים", q.deliverables)}</div>` : ""}
+  ${q.deliverables ? `<div class="sec sec-full"><div class="sec-label">תוצרים</div><table style="width:100%;border-collapse:collapse;margin-top:4px;font-size:11.5px"><thead><tr style="background:#eff6ff"><th style="padding:5px 8px;text-align:right;border:1px solid #dbeafe;font-weight:700">תוצר</th><th style="padding:5px 8px;text-align:right;border:1px solid #dbeafe;font-weight:700">פרופורציה</th><th style="padding:5px 8px;text-align:right;border:1px solid #dbeafe;font-weight:700">רזולוציה</th><th style="padding:5px 8px;text-align:right;border:1px solid #dbeafe;font-weight:700">פלטפורמה</th></tr></thead><tbody>${q.deliverables.split("\n").filter(Boolean).map((row,idx)=>{const p=row.split(" | ");return `<tr style="background:${idx%2===0?"#fff":"#f8fafc"}"><td style="padding:5px 8px;border:1px solid #e5e7eb">${p[0]||""}</td><td style="padding:5px 8px;border:1px solid #e5e7eb;color:#1d4ed8">${p[1]||"—"}</td><td style="padding:5px 8px;border:1px solid #e5e7eb">${p[2]||"—"}</td><td style="padding:5px 8px;border:1px solid #e5e7eb">${p[3]||"—"}</td></tr>`;}).join("")}</tbody></table></div>` : ""}
   ${q.ratios ? `<div class="sec">${sec("פרופורציות", q.ratios)}</div>` : ""}
   ${q.resolutions ? `<div class="sec">${sec("רזולוציות", q.resolutions)}</div>` : ""}
   ${q.formats ? `<div class="sec">${sec("פורמטים", q.formats)}</div>` : ""}
@@ -5558,7 +5567,10 @@ ${q.note ? `<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(
                     setQClientResp(q.clientResp || "");
                     setQPayment(q.payment || "שוטף+40");
                     setQNote(q.note || DEFAULT_NOTE);
-                    if (q.deliverables) setDeliverRows(q.deliverables.split("\n").filter(Boolean).map(t => ({ id: uid(), text: t })));
+                    if (q.deliverables) setDeliverRows(q.deliverables.split("\n").filter(Boolean).map(t => {
+                      const parts = t.split(" | ");
+                      return { id: uid(), text: parts[0] || "", ratio: parts[1] || "", resolution: parts[2] || "", platform: parts[3] || "" };
+                    }));
                     setStep("build");
                   }
                 }, "✏️")
@@ -5614,36 +5626,37 @@ ${q.note ? `<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(
           style: { width: "100%", marginTop: 8 },
           onClick: () => setStep("build")
         }, "המשך לעריכה ←")
-      : /*#__PURE__*/React.createElement(React.Fragment, null,
-          /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 10 } }, "בחר תבנית:"),
-          /*#__PURE__*/React.createElement("div", {
-            style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 10 }
-          }, tmpls.map(t => {
-            var _t$lines;
-            return /*#__PURE__*/React.createElement("div", {
-              key: t.id, className: "card",
-              style: { cursor: "pointer", padding: 14, textAlign: "center" },
-              onClick: () => loadTemplate(t.id)
-            },
-              /*#__PURE__*/React.createElement("div", { style: { fontSize: 22, marginBottom: 4 } }, "📋"),
-              /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 13 } }, t.name),
-              /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "var(--muted)" } }, ((_t$lines = t.lines) === null || _t$lines === void 0 ? void 0 : _t$lines.length) || 0, " שורות")
-            );
-          }),
-          /*#__PURE__*/React.createElement("div", {
-            className: "card",
-            style: { cursor: "pointer", padding: 14, textAlign: "center", borderStyle: "dashed" },
-            onClick: () => {
-              setTplName("הצעה חדשה");
-              setLines([{ id: uid(), desc: "", qty: 1, unit: "פרויקט", price: 0 }]);
-              setStep("build");
-            }
+      : null
+    ),
+    !tplName && /*#__PURE__*/React.createElement(React.Fragment, null,
+        /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 10, marginTop: 16 } }, "בחר תבנית:"),
+        /*#__PURE__*/React.createElement("div", {
+          style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 10 }
+        }, tmpls.map(t => {
+          var _t$lines;
+          return /*#__PURE__*/React.createElement("div", {
+            key: t.id, className: "card",
+            style: { cursor: "pointer", padding: 14, textAlign: "center" },
+            onClick: () => loadTemplate(t.id)
           },
-            /*#__PURE__*/React.createElement("div", { style: { fontSize: 22, marginBottom: 4 } }, "✏️"),
-            /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 13 } }, "ריק")
-          ))
-        )
-    )
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 22, marginBottom: 4 } }, "📋"),
+            /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 13 } }, t.name),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "var(--muted)" } }, ((_t$lines = t.lines) === null || _t$lines === void 0 ? void 0 : _t$lines.length) || 0, " שורות")
+          );
+        }),
+        /*#__PURE__*/React.createElement("div", {
+          className: "card",
+          style: { cursor: "pointer", padding: 14, textAlign: "center", borderStyle: "dashed" },
+          onClick: () => {
+            setTplName("הצעה חדשה");
+            setLines([{ id: uid(), desc: "", qty: 1, unit: "פרויקט", price: 0 }]);
+            setStep("build");
+          }
+        },
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 22, marginBottom: 4 } }, "✏️"),
+          /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 13 } }, "ריק")
+        ))
+      )
   ));
   return /*#__PURE__*/React.createElement("div", {
     className: "fade"
@@ -5663,6 +5676,23 @@ ${q.note ? `<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(
   }, /*#__PURE__*/React.createElement("div", {
     style: { fontWeight: 700, marginBottom: 12 }
   }, "👤 פרטי לקוח ופרויקט"), /*#__PURE__*/React.createElement("div", {
+    style: { marginBottom: 12 }
+  }, /*#__PURE__*/React.createElement(Lbl, null, "פרויקט מקושר"),
+    /*#__PURE__*/React.createElement("select", {
+      value: projId,
+      onChange: e => {
+        setProjId(e.target.value);
+        const p = projects.find(x => x.id === e.target.value);
+        if (p) { if (!qClient) setQClient(p.client || ""); if (!qProjName) setQProjName(p.name || ""); }
+      },
+      style: { borderColor: !projId ? "var(--red)" : undefined }
+    },
+      /*#__PURE__*/React.createElement("option", { value: "" }, "— בחר פרויקט (חובה) —"),
+      projects.filter(p => p.status !== "cancelled").map(p =>
+        /*#__PURE__*/React.createElement("option", { key: p.id, value: p.id }, `#${p.projectNumber} ${p.name}`)
+      )
+    )
+  ), /*#__PURE__*/React.createElement("div", {
     className: "frow"
   }, /*#__PURE__*/React.createElement("div", {
     className: "fcol"
@@ -5710,38 +5740,49 @@ ${q.note ? `<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(
     style: {
       fontWeight: 700
     }
-  }, "\uD83D\uDCE6 \u05E8\u05E9\u05D9\u05DE\u05EA \u05EA\u05D5\u05E6\u05E8\u05D9\u05DD"), /*#__PURE__*/React.createElement("button", {
+  }, "📦 רשימת תוצרים"), /*#__PURE__*/React.createElement("button", {
     className: "btn-ghost btn-sm",
     onClick: addDeliverRow
-  }, "+ \u05D4\u05D5\u05E1\u05E3 \u05E9\u05D5\u05E8\u05D4")), deliverRows.map((r, i) => /*#__PURE__*/React.createElement("div", {
-    key: r.id,
-    style: {
-      display: "flex",
-      gap: 8,
-      marginBottom: 6,
-      alignItems: "center"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "var(--muted)",
-      fontSize: 12,
-      minWidth: 20
-    }
-  }, i + 1, "."), /*#__PURE__*/React.createElement("input", {
-    value: r.text,
-    onChange: e => updDeliverRow(r.id, e.target.value),
-    placeholder: "\u05EA\u05D5\u05E6\u05E8...",
-    style: {
-      flex: 1
-    }
-  }), deliverRows.length > 1 && /*#__PURE__*/React.createElement("button", {
-    className: "btn-red",
-    style: {
-      padding: "4px 8px",
-      fontSize: 11
-    },
-    onClick: () => delDeliverRow(r.id)
-  }, "\u2715")))), /*#__PURE__*/React.createElement("div", {
+  }, "+ הוסף שורה")),
+  /*#__PURE__*/React.createElement("div", { style: { overflowX: "auto" } },
+    /*#__PURE__*/React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } },
+      /*#__PURE__*/React.createElement("thead", null,
+        /*#__PURE__*/React.createElement("tr", { style: { borderBottom: "1px solid var(--border)" } },
+          ["#", "תוצר", "פרופורציה", "רזולוציה", "פלטפורמת שידור", ""].map(h =>
+            /*#__PURE__*/React.createElement("th", { key: h, style: { textAlign: "right", padding: "6px 4px", fontSize: 11, color: "var(--muted)", fontWeight: 700 } }, h)
+          )
+        )
+      ),
+      /*#__PURE__*/React.createElement("tbody", null,
+        deliverRows.map((r, i) =>
+          /*#__PURE__*/React.createElement("tr", { key: r.id, style: { borderBottom: "1px solid var(--border)" } },
+            /*#__PURE__*/React.createElement("td", { style: { padding: "4px 4px", color: "var(--muted)", fontSize: 11, minWidth: 22 } }, i + 1, "."),
+            /*#__PURE__*/React.createElement("td", { style: { padding: "4px 3px", minWidth: 140 } },
+              /*#__PURE__*/React.createElement("input", { value: r.text, onChange: e => updDeliverRow(r.id, "text", e.target.value), placeholder: "תוצר...", style: { padding: "5px 8px" } })
+            ),
+            /*#__PURE__*/React.createElement("td", { style: { padding: "4px 3px", width: 110 } },
+              /*#__PURE__*/React.createElement("select", { value: r.ratio, onChange: e => updDeliverRow(r.id, "ratio", e.target.value), style: { padding: "5px 8px" } },
+                /*#__PURE__*/React.createElement("option", { value: "" }, "—"),
+                ["16:9", "9:16", "9:16 טיקטוק", "4:5", "1:1"].map(o => /*#__PURE__*/React.createElement("option", { key: o, value: o }, o))
+              )
+            ),
+            /*#__PURE__*/React.createElement("td", { style: { padding: "4px 3px", width: 130 } },
+              /*#__PURE__*/React.createElement("input", { value: r.resolution, onChange: e => updDeliverRow(r.id, "resolution", e.target.value), placeholder: "1920×1080...", style: { padding: "5px 8px" } })
+            ),
+            /*#__PURE__*/React.createElement("td", { style: { padding: "4px 3px", width: 130 } },
+              /*#__PURE__*/React.createElement("select", { value: r.platform, onChange: e => updDeliverRow(r.id, "platform", e.target.value), style: { padding: "5px 8px" } },
+                /*#__PURE__*/React.createElement("option", { value: "" }, "—"),
+                ["טלוויזיה", "רדיו", "דיגיטל", "קולנוע", "אינסטגרם", "יוטיוב", "פייסבוק", "טיקטוק", "לינקדאין"].map(o => /*#__PURE__*/React.createElement("option", { key: o, value: o }, o))
+              )
+            ),
+            /*#__PURE__*/React.createElement("td", { style: { padding: "4px 3px", width: 36 } },
+              deliverRows.length > 1 && /*#__PURE__*/React.createElement("button", { className: "btn-red", style: { padding: "4px 8px", fontSize: 11 }, onClick: () => delDeliverRow(r.id) }, "✕")
+            )
+          )
+        )
+      )
+    )
+  )), /*#__PURE__*/React.createElement("div", {
     className: "card",
     style: {
       marginBottom: 14
@@ -6009,7 +6050,7 @@ ${q.note ? `<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(
       client: qClient,
       projName: qProjName,
       projDesc: qProjDesc,
-      deliverables: deliverRows.map(r => r.text).filter(Boolean).join("\n"),
+      deliverables: deliverRows.filter(r => r.text).map(r => [r.text, r.ratio, r.resolution, r.platform].filter(Boolean).join(" | ")).join("\n"),
       formats: qFormats,
       resolutions: getRes(),
       ratios: getRatios(),
