@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow v28</title>
+<title>PostFlow v27</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 
@@ -7581,6 +7581,7 @@ function App({
   const upsertScreeningEvent = (p, dateField, type, title) => {
     const date = p[dateField];
     const evId = `${type}-${p.id}`;
+    console.log(`[screening event] ${type} date=${date} evId=${evId}`);
     if (!date) {
       upd({ events: (data.events||[]).filter(e => e.id !== evId) });
       sbPatch("events", evId, { deleted: true, updated_at: new Date().toISOString() }).catch(() => {});
@@ -7600,9 +7601,10 @@ function App({
       color: type === "offline" ? "#f59e0b" : "#3b82f6",
       allDay: false
     };
+    console.log(`[screening event] sending to supabase:`, eventToRow(ev));
     const existing = (data.events||[]).some(e => e.id === evId);
     upd({ events: existing ? (data.events||[]).map(e => e.id === evId ? ev : e) : [...(data.events||[]), ev] });
-    sbUpsert("events", eventToRow(ev)).catch(() => {});
+    sbUpsert("events", eventToRow(ev)).then(r => console.log(`[screening event] result:`, r)).catch(e => console.error(`[screening event] error:`, e.message));
   };
   const updateProject = p => {
     upd({
