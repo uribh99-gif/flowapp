@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow v28-1</title>
+<title>PostFlow v27</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 
@@ -754,7 +754,28 @@ function eventToRow(ev) {
     updated_at: new Date().toISOString()
   };
 }
-function rowToEvent(r) {
+function quoteToRow(q, projNumber) {
+  return {
+    id: q.id,
+    quote_number: `QT-${new Date(q.date||Date.now()).getFullYear()}-${String(q.id).slice(-4).toUpperCase()}`,
+    proj_id: q.projId || null,
+    client_name: q.client || "",
+    title: q.template || q.projName || "",
+    status: q.approved ? "approved" : "draft",
+    total_amount: q.total || 0,
+    currency: "ILS",
+    valid_until: null,
+    items: q.lines || [],
+    deliverables: q.deliverables || "",
+    notes: q.note || "",
+    template_used: q.template || "",
+    sent_at: null,
+    approved_at: q.approved ? new Date().toISOString() : null,
+    created_at: q.date ? new Date(q.date).toISOString() : new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    deleted: false
+  };
+}
   return {
     id: r.id,
     title: r.title,
@@ -7635,9 +7656,10 @@ function App({
       return { ...p, quotes: [...(p.quotes || []), q] };
     });
     upd({ projects: updatedProjects });
-    // sync updated project (with new/updated quote inside) to Supabase
     const proj = updatedProjects.find(p => p.id === pid);
     if (proj) sbUpsert("projects", projToRow(proj)).catch(() => {});
+    // sync to quotes table
+    sbUpsert("quotes", quoteToRow(q, proj?.projectNumber)).catch(() => {});
   };
   const [driveFolder, setDriveFolderState] = useState(getDriveFolder);
   const handleUpdateDriveFolder = v => {
