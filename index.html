@@ -2910,7 +2910,8 @@ function ProjectsList({
   users,
   onSelect,
   onNew,
-  onUpdate
+  onUpdate,
+  onDelete
 }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -3309,7 +3310,11 @@ function ProjectsList({
           deliveryDate: p.deliveryDate || ""
         });
       }
-    }, "\u270F\uFE0F \u05E2\u05E8\u05D9\u05DB\u05D4 \u05DE\u05D4\u05D9\u05E8\u05D4")));
+    }, "\u270F\uFE0F \u05E2\u05E8\u05D9\u05DB\u05D4 \u05DE\u05D4\u05D9\u05E8\u05D4"), onDelete && isAdmin && /*#__PURE__*/React.createElement("button", {
+      className: "btn-red",
+      style: { fontSize: 10, padding: "2px 8px" },
+      onClick: e => { e.stopPropagation(); onDelete(p); }
+    }, "🗑 מחק")));
   })));
 }
 function HoursLog({
@@ -5268,61 +5273,64 @@ function QuoteBuilder({
     const logoHtml = logo ? `<img src="${logo.src}" style="height:54px;object-fit:contain;"/>` : `<div class="co-logo-text">FLOW</div>`;
     w.document.write(`<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>הצעת מחיר — ${q.client || ""}</title>
 <style>
-@page{size:A4;margin:18mm 16mm 18mm 16mm}
+@page{size:A4 portrait;margin:14mm 15mm 14mm 15mm}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Arial,Helvetica,sans-serif;background:#fff;color:#111827;direction:rtl;font-size:12.5px;line-height:1.55}
-.page{width:210mm;max-width:100%;margin:0 auto;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:#fff;color:#111827;direction:rtl;font-size:11.5px;line-height:1.5}
+.page{width:180mm;max-width:100%;margin:0 auto;padding:0}
 /* Header */
-.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1d4ed8;padding-bottom:16px;margin-bottom:20px}
-.co-logo-text{font-size:26px;font-weight:900;color:#1d4ed8;letter-spacing:-1px}
-.co-info{text-align:left;font-size:10.5px;color:#4b5563;line-height:1.9}
-.co-info b{color:#111827;font-size:11px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1d4ed8;padding-bottom:12px;margin-bottom:14px}
+.co-logo-text{font-size:24px;font-weight:900;color:#1d4ed8;letter-spacing:-1px}
+.co-info{text-align:left;font-size:9.5px;color:#4b5563;line-height:1.8}
+.co-info b{color:#111827;font-size:10px}
 .doc-block{margin-bottom:4px}
-.doc-title{font-size:24px;font-weight:900;color:#1d4ed8;letter-spacing:-.5px}
-.doc-sub{font-size:11px;color:#6b7280;margin-top:3px}
+.doc-title{font-size:22px;font-weight:900;color:#1d4ed8;letter-spacing:-.5px}
+.doc-sub{font-size:10px;color:#6b7280;margin-top:2px}
 /* Client strip */
-.client-strip{display:flex;justify-content:space-between;align-items:flex-end;background:#eff6ff;border:1px solid #bfdbfe;border-right:4px solid #1d4ed8;border-radius:0 8px 8px 0;padding:13px 18px;margin-bottom:18px}
-.cl-name{font-size:17px;font-weight:900;color:#1e3a8a}
-.cl-proj{font-size:12px;color:#3b82f6;margin-top:2px;font-weight:600}
-.quote-badge{font-size:10px;color:#6b7280;text-align:left}
-.quote-badge b{color:#1d4ed8;font-size:11px}
+.client-strip{display:flex;justify-content:space-between;align-items:flex-end;background:#eff6ff;border:1px solid #bfdbfe;border-right:4px solid #1d4ed8;border-radius:0 6px 6px 0;padding:10px 14px;margin-bottom:12px}
+.cl-name{font-size:15px;font-weight:900;color:#1e3a8a}
+.cl-proj{font-size:11px;color:#3b82f6;margin-top:2px;font-weight:600}
+.quote-badge{font-size:9.5px;color:#6b7280;text-align:left}
+.quote-badge b{color:#1d4ed8;font-size:10.5px}
 /* Sections */
-.secs-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;margin-bottom:12px}
-.sec{margin-bottom:11px}
-.sec-label{font-size:9.5px;font-weight:800;color:#1d4ed8;letter-spacing:.6px;text-transform:uppercase;margin-bottom:3px;border-bottom:1px solid #dbeafe;padding-bottom:2px}
-.sec-val{font-size:12px;color:#374151;line-height:1.65}
+.secs-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 20px;margin-bottom:10px}
+.sec{margin-bottom:9px}
+.sec-label{font-size:8.5px;font-weight:800;color:#1d4ed8;letter-spacing:.6px;text-transform:uppercase;margin-bottom:2px;border-bottom:1px solid #dbeafe;padding-bottom:2px}
+.sec-val{font-size:11px;color:#374151;line-height:1.55}
 .sec-full{grid-column:1/-1}
 /* Divider */
-.div{height:1px;background:#e5e7eb;margin:14px 0}
+.div{height:1px;background:#e5e7eb;margin:10px 0}
 /* Price table */
-.tbl-wrap{margin:14px 0}
+.tbl-wrap{margin:10px 0}
 table{width:100%;border-collapse:collapse}
 thead tr{background:#1e3a8a}
-thead th{color:#fff;padding:9px 11px;text-align:right;font-size:11px;font-weight:700}
+thead th{color:#fff;padding:7px 9px;text-align:right;font-size:10px;font-weight:700}
 tbody tr:nth-child(even){background:#f8fafc}
-tbody td{padding:8px 11px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#1f2937}
+tbody td{padding:6px 9px;border-bottom:1px solid #e5e7eb;font-size:11px;color:#1f2937}
 tbody tr:last-child td{border-bottom:none}
 /* Total block */
-.total-wrap{display:flex;justify-content:flex-end;margin:10px 0 4px}
-.total-box{background:#1e3a8a;color:#fff;padding:14px 22px 14px 32px;border-radius:10px;min-width:280px}
-.total-label{font-size:11px;color:#93c5fd;font-weight:600;margin-bottom:4px}
-.total-amount{font-size:22px;font-weight:900;letter-spacing:-.5px}
-.total-vat{font-size:11px;color:#93c5fd;margin-top:4px;font-weight:500}
+.total-wrap{display:flex;justify-content:flex-end;margin:8px 0 3px}
+.total-box{background:#1e3a8a;color:#fff;padding:11px 18px 11px 26px;border-radius:8px;min-width:250px}
+.total-label{font-size:10px;color:#93c5fd;font-weight:600;margin-bottom:3px}
+.total-amount{font-size:20px;font-weight:900;letter-spacing:-.5px}
+.total-vat{font-size:10px;color:#93c5fd;margin-top:3px;font-weight:500}
 /* Payment */
-.payment-row{display:flex;align-items:center;gap:10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin:12px 0}
-.payment-icon{font-size:18px}
-.payment-label{font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
-.payment-val{font-size:12.5px;color:#111827;font-weight:700}
+.payment-row{display:flex;align-items:center;gap:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:8px 12px;margin:9px 0}
+.payment-icon{font-size:16px}
+.payment-label{font-size:9px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px}
+.payment-val{font-size:11.5px;color:#111827;font-weight:700}
 /* Notes */
-.note{background:#f9fafb;border:1px solid #e5e7eb;border-right:3px solid #1d4ed8;border-radius:0 8px 8px 0;padding:12px 16px;margin-top:12px;font-size:11px;line-height:1.8;color:#4b5563}
+.note{background:#f9fafb;border:1px solid #e5e7eb;border-right:3px solid #1d4ed8;border-radius:0 6px 6px 0;padding:10px 13px;margin-top:9px;font-size:10px;line-height:1.75;color:#4b5563}
 .note b{color:#111827}
 /* Footer */
-.footer{margin-top:22px;border-top:2px solid #1d4ed8;padding-top:12px;display:flex;justify-content:space-between;align-items:center}
-.footer-text{font-size:10px;color:#6b7280}
-.footer-brand{font-size:11px;font-weight:800;color:#1d4ed8}
+.footer{margin-top:14px;border-top:2px solid #1d4ed8;padding-top:9px;display:flex;justify-content:space-between;align-items:center}
+.footer-text{font-size:9px;color:#6b7280}
+.footer-brand{font-size:10px;font-weight:800;color:#1d4ed8}
 @media print{
-  body{-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:12px}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .page{padding:0}
+  .note{page-break-inside:avoid}
+  .tbl-wrap{page-break-inside:avoid}
+  .total-wrap{page-break-inside:avoid}
 }
 </style></head><body><div class="page">
 <div class="header">
@@ -7583,19 +7591,22 @@ function App({
     });
     sbUpsert("projects", projToRow(p)).catch(() => {});
   };
-  const addQuote = (pid, q, update) => upd({
-    projects: data.projects.map(p => {
+  const deleteProject = p => {
+    if (!window.confirm(`למחוק את הפרויקט "${p.name}"?\nפעולה זו לא ניתנת לביטול.`)) return;
+    upd({ projects: data.projects.filter(x => x.id !== p.id) });
+    sbPatch("projects", p.id, { status: "cancelled", status_note: "נמחק", updated_at: new Date().toISOString() }).catch(() => {});
+  };
+  const addQuote = (pid, q, update) => {
+    const updatedProjects = data.projects.map(p => {
       if (p.id !== pid) return p;
-      if (update) return {
-        ...p,
-        quotes: (p.quotes || []).map(x => x.id === q.id ? q : x)
-      };
-      return {
-        ...p,
-        quotes: [...(p.quotes || []), q]
-      };
-    })
-  });
+      if (update) return { ...p, quotes: (p.quotes || []).map(x => x.id === q.id ? q : x) };
+      return { ...p, quotes: [...(p.quotes || []), q] };
+    });
+    upd({ projects: updatedProjects });
+    // sync updated project (with new/updated quote inside) to Supabase
+    const proj = updatedProjects.find(p => p.id === pid);
+    if (proj) sbUpsert("projects", projToRow(proj)).catch(() => {});
+  };
   const [driveFolder, setDriveFolderState] = useState(getDriveFolder);
   const handleUpdateDriveFolder = v => {
     setDriveFolderState(v);
@@ -8350,7 +8361,8 @@ view === n.id && !selProjId ? " active" : ""}`,
     users: users,
     onSelect: gotoProj,
     onNew: () => setShowNewProj(true),
-    onUpdate: updateProject
+    onUpdate: updateProject,
+    onDelete: isAdmin ? deleteProject : null
   }) : view === "hours" ? /*#__PURE__*/React.createElement(HoursLog, {
     projects: projects,
     user: currentUser,
@@ -8380,7 +8392,10 @@ view === n.id && !selProjId ? " active" : ""}`,
     currentUser: currentUser,
     quoteTemplates: quoteTemplates,
     onSaveQuote: addQuote,
-    onUpdateTemplates: t => upd({ quoteTemplates: t }),
+    onUpdateTemplates: t => {
+      upd({ quoteTemplates: t });
+      sbSetting("quoteTemplates", t, "תבניות הצעות מחיר").catch(() => {});
+    },
     onAddProject: p => { addProject(p); gotoProj(p.id); },
     nextProjNum: nextProjNum || 1
   }) : view === "diary" && (isAdmin || isProd) ? /*#__PURE__*/React.createElement(DiaryModule, {
@@ -8440,16 +8455,13 @@ view === n.id && !selProjId ? " active" : ""}`,
   }) : view === "settings" ? /*#__PURE__*/React.createElement(Settings, {
     shiftTypes: sts,
     onUpdateShiftTypes: st => {
-      upd({
-        shiftTypes: st
-      });
+      upd({ shiftTypes: st });
+      sbSetting("shiftTypes", st, "סוגי משמרות").catch(() => {});
     },
     logoUrl: logoUrl,
     onUpdateLogo: url => {
-      upd({
-        logoUrl: url
-      });
-      syncSettingsToSheets("logoUrl", url, "לוגו");
+      upd({ logoUrl: url });
+      sbSetting("logoUrl", url, "לוגו").catch(() => {});
     },
     driveFolder: driveFolder,
     onUpdateDriveFolder: handleUpdateDriveFolder,
