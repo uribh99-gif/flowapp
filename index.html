@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow v27</title>
+<title>PostFlow v28-1</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 
@@ -740,9 +740,9 @@ function eventToRow(ev) {
   return {
     id: ev.id,
     title: ev.title || "",
-    date: ev.date || "",
-    time: ev.time || "",
-    end_time: ev.endTime || "",
+    date: ev.date || null,
+    time: ev.time || null,
+    end_time: ev.endTime || null,
     type: ev.type || "meeting",
     proj_id: ev.projId || null,
     client: ev.client || "",
