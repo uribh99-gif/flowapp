@@ -6,6 +6,7 @@
 <title>PostFlow v30</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <style>
 body{background:#07090f;margin:0;padding:0;font-family:'Heebo',sans-serif;height:100vh;overflow:hidden}
@@ -944,10 +945,15 @@ function dlJSON(obj, fn) {
   a.click();
 }
 // ══════════════════════════════════════════
-// GOOGLE CALENDAR API
+// GOOGLE CALENDAR — OAuth 2.0
 // ══════════════════════════════════════════
+const GCAL_CLIENT_ID = "18515309826-kj8ou1t1q85kdhd1o617nrqoqcsq7rov.apps.googleusercontent.com";
+const GCAL_SCOPES    = "https://www.googleapis.com/auth/calendar.events";
 const GCAL_DEFAULT_ID = "c64c5191fa750e1253efaadcaa029f771fe9dc14a6a53cf63879b55caf388d43@group.calendar.google.com";
-const GCAL_DEFAULT_KEY = "AIzaSyAGGeSlcHP0MsWQINo66iCQXzyLujl1cck";
+
+let _gcalToken = null;       // current access token
+let _gcalTokenClient = null; // GIS token client
+let _gcalTokenExpiry = 0;
 
 function getCalendarId() {
   try {
@@ -955,16 +961,50 @@ function getCalendarId() {
     return d.calendarId || GCAL_DEFAULT_ID;
   } catch { return GCAL_DEFAULT_ID; }
 }
+
+// Request a fresh OAuth token via Google Identity Services popup
+function gcalRequestToken() {
+  return new Promise((resolve, reject) => {
+    if (!window.google || !window.google.accounts) {
+      reject(new Error("Google Identity Services לא נטען"));
+      return;
+    }
+    if (!_gcalTokenClient) {
+      _gcalTokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: GCAL_CLIENT_ID,
+        scope: GCAL_SCOPES,
+        callback: (resp) => {
+          if (resp.error) { reject(new Error(resp.error)); return; }
+          _gcalToken = resp.access_token;
+          _gcalTokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+          resolve(_gcalToken);
+        }
+      });
+    }
+    // If token still valid — reuse
+    if (_gcalToken && Date.now() < _gcalTokenExpiry) {
+      resolve(_gcalToken);
+      return;
+    }
+    _gcalTokenClient.requestAccessToken({ prompt: "" });
+  });
+}
+
+// Get token, requesting if needed
+async function gcalGetToken() {
+  if (_gcalToken && Date.now() < _gcalTokenExpiry) return _gcalToken;
+  return gcalRequestToken();
+}
+
 function getCalendarApiKey() {
   try {
     const d = JSON.parse(localStorage.getItem("postflow_data") || "{}");
-    return d.calendarApiKey || GCAL_DEFAULT_KEY;
-  } catch { return GCAL_DEFAULT_KEY; }
+    return d.calendarApiKey || "";
+  } catch { return ""; }
 }
 
 async function gcalCreateEvent({ summary, description, date, timeStart, timeEnd, location }) {
   const calId = encodeURIComponent(getCalendarId());
-  const key = getCalendarApiKey();
   const isAllDay = !timeStart;
   const body = isAllDay
     ? { summary, description: description||"", location: location||"",
@@ -973,9 +1013,12 @@ async function gcalCreateEvent({ summary, description, date, timeStart, timeEnd,
         start: { dateTime: `${date}T${timeStart || "09:00"}:00`, timeZone: "Asia/Jerusalem" },
         end:   { dateTime: `${date}T${timeEnd   || "18:00"}:00`, timeZone: "Asia/Jerusalem" } };
   try {
+    const token = await gcalGetToken();
     const res = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/${calId}/events?key=${key}`,
-      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
+      `https://www.googleapis.com/calendar/v3/calendars/${calId}/events`,
+      { method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify(body) }
     );
     if (!res.ok) { console.warn("gcal create error", await res.text()); return null; }
     const ev = await res.json();
@@ -986,7 +1029,6 @@ async function gcalCreateEvent({ summary, description, date, timeStart, timeEnd,
 async function gcalUpdateEvent(eventId, { summary, description, date, timeStart, timeEnd, location }) {
   if (!eventId) return null;
   const calId = encodeURIComponent(getCalendarId());
-  const key = getCalendarApiKey();
   const isAllDay = !timeStart;
   const body = isAllDay
     ? { summary, description: description||"", location: location||"",
@@ -995,9 +1037,12 @@ async function gcalUpdateEvent(eventId, { summary, description, date, timeStart,
         start: { dateTime: `${date}T${timeStart}:00`, timeZone: "Asia/Jerusalem" },
         end:   { dateTime: `${date}T${timeEnd  }:00`, timeZone: "Asia/Jerusalem" } };
   try {
+    const token = await gcalGetToken();
     const res = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${eventId}?key=${key}`,
-      { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
+      `https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${eventId}`,
+      { method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify(body) }
     );
     if (!res.ok) { console.warn("gcal update error", await res.text()); return null; }
     const ev = await res.json();
@@ -1008,11 +1053,11 @@ async function gcalUpdateEvent(eventId, { summary, description, date, timeStart,
 async function gcalDeleteEvent(eventId) {
   if (!eventId) return;
   const calId = encodeURIComponent(getCalendarId());
-  const key = getCalendarApiKey();
   try {
+    const token = await gcalGetToken();
     await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${eventId}?key=${key}`,
-      { method: "DELETE" }
+      `https://www.googleapis.com/calendar/v3/calendars/${calId}/events/${eventId}`,
+      { method: "DELETE", headers: { "Authorization": `Bearer ${token}` } }
     );
   } catch(e) { console.warn("gcal delete:", e); }
 }
@@ -7588,9 +7633,16 @@ function Settings({
         /*#__PURE__*/React.createElement("input", { value: calLoc, onChange: e => setCalLoc(e.target.value), placeholder: "\u05E8\u05D7\u05D5\u05D1, \u05E2\u05D9\u05E8...", style: { fontSize: 12 } })
       )
     ),
-    /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", style: { marginTop: 10 }, onClick: () => {
-      if (onUpdateCalendar) onUpdateCalendar({ calendarId: calId, calendarApiKey: calKey, studioLocation: calLoc });
-    }}, "\uD83D\uDCBE \u05E9\u05DE\u05D5\u05E8 \u05D4\u05D2\u05D3\u05E8\u05D5\u05EA \u05D9\u05D5\u05DE\u05DF"),
+    /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" } },
+      /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", onClick: () => {
+        if (onUpdateCalendar) onUpdateCalendar({ calendarId: calId, calendarApiKey: calKey, studioLocation: calLoc });
+      }}, "\uD83D\uDCBE \u05E9\u05DE\u05D5\u05E8 \u05D4\u05D2\u05D3\u05E8\u05D5\u05EA"),
+      /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", onClick: () => {
+        gcalRequestToken().then(() => {
+          alert("\u2705 \u05D4\u05EA\u05D7\u05D1\u05E8\u05EA \u05DC-Google Calendar \u05D1\u05D4\u05E6\u05DC\u05D7\u05D4!");
+        }).catch(e => alert("\u274C \u05E9\u05D2\u05D9\u05D0\u05D4: " + e.message));
+      }}, "\uD83D\uDD17 \u05D4\u05EA\u05D7\u05D1\u05E8 \u05DC-Google Calendar")
+    ),
     calId && /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "var(--green)", marginTop: 8 } }, "\u2705 \u05D9\u05D5\u05DE\u05DF \u05DE\u05D5\u05D2\u05D3\u05E8 \u2014 \u05D0\u05D9\u05E8\u05D5\u05E2\u05D9\u05DD \u05D9\u05E1\u05EA\u05E0\u05DB\u05E8\u05E0\u05D5 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA")
   ), /*#__PURE__*/React.createElement("div", {
     className: "card",
