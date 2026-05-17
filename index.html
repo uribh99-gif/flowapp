@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow v28-6</title>
+<title>PostFlow v30</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 
@@ -25,7 +25,7 @@ body{background:#07090f;margin:0;padding:0;font-family:'Heebo',sans-serif}
   <div class="sp-logo" id="splashLogo"><img src="FPP_LOGO.png" onerror="this.parentElement.innerHTML='🎞 PostFlow'" style="height:72px;object-fit:contain;border-radius:12px" id="appLogo"/></div>
   <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
     <div class="sp-sub">Post-Production Management</div>
-    <div style="background:#e8c547;color:#07090f;font-size:9px;font-weight:900;padding:2px 7px;border-radius:20px;letter-spacing:1px;text-transform:uppercase">v27</div>
+    <div style="background:#e8c547;color:#07090f;font-size:9px;font-weight:900;padding:2px 7px;border-radius:20px;letter-spacing:1px;text-transform:uppercase">v30</div>
   </div>
   <div class="sp-bar-wrap"><div class="sp-bar" id="spBar"></div></div>
   <div class="sp-msg" id="spMsg">מאתחל...</div>
@@ -106,14 +106,13 @@ button{font-family:'Heebo',sans-serif;cursor:pointer;border:none;border-radius:8
 .tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
 .proj-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;cursor:pointer;transition:border-color .2s,transform .15s}
 .proj-card:hover{border-color:var(--gold)60;transform:translateY(-2px)}
-/* Calendar */
-.cal-day{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 6px;min-height:110px;transition:border-color .15s;cursor:pointer}
-.cal-day:hover{border-color:var(--gold)40}
+.cal-day{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 6px;min-height:110px;transition:border-color .15s,background .15s;cursor:pointer}
+.cal-day:hover{border-color:var(--gold)40;background:var(--gold)06}
 .cal-day.today{border-color:var(--gold)70;border-top:2px solid var(--gold)}
 .cal-day.weekend{background:#0b0d13;border-color:#1a1f2b;opacity:.9}
-.cal-day.weekend:hover{border-color:var(--gold)40}
-.cal-ev{border-radius:6px;padding:4px 7px;font-size:10px;font-weight:600;margin-bottom:3px;cursor:pointer;transition:opacity .15s;line-height:1.4}
-.cal-ev:hover{opacity:.75}
+.cal-day.weekend:hover{border-color:var(--gold)40;background:#0b0d13}
+.cal-ev{border-radius:6px;padding:4px 7px;font-size:10px;font-weight:600;margin-bottom:3px;cursor:pointer;transition:opacity .15s,transform .1s;line-height:1.4;border-right:3px solid transparent}
+.cal-ev:hover{opacity:.85;transform:translateX(-2px)}
 /* Search */
 .srch-wrap{position:relative}
 .srch-wrap input{padding-right:34px}
@@ -2977,6 +2976,7 @@ function ProjectsList({
   const [editInline, setEditInline] = useState(null);
   const [checked, setChecked] = useState([]);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showStatusReport, setShowStatusReport] = useState(false);
   const highlightRef = useRef();
   const isAdmin = user.role === "admin",
     canEdit = isAdmin || user.role === "producer";
@@ -3033,141 +3033,145 @@ function ProjectsList({
     setEditInline(null);
   };
   const producerList = [...new Set(projects.map(p => p.producer).filter(Boolean))].sort();
-  return /*#__PURE__*/React.createElement("div", {
-    className: "fade"
-  }, /*#__PURE__*/React.createElement("div", {
+
+  // Status report inline render (moved from Reports)
+  const StatusReportPanel = () => {
+    const [reportMode, setReportMode] = useState("active");
+    const [selectedIds, setSelectedIds] = useState([]);
+    const toggleProj = id => setSelectedIds(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+    const reportProjects = reportMode === "active" ? projects.filter(p => p.status === "active") : projects.filter(p => selectedIds.includes(p.id));
+    return React.createElement("div", { className: "fade", style: { marginTop: 16 } },
+      React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" } },
+        React.createElement("button", { className: `btn-sm ${reportMode === "active" ? "btn-gold" : "btn-ghost"}`, onClick: () => setReportMode("active") }, `✅ פרויקטים פעילים (${projects.filter(p => p.status === "active").length})`),
+        React.createElement("button", { className: `btn-sm ${reportMode === "custom" ? "btn-gold" : "btn-ghost"}`, onClick: () => setReportMode("custom") }, `🎯 בחירה ידנית (${selectedIds.length} נבחרו)`)
+      ),
+      reportMode === "custom" && React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14, maxHeight: 180, overflowY: "auto" } },
+        projects.filter(p => p.status !== "cancelled").map(p => {
+          const sel = selectedIds.includes(p.id);
+          const sc = STATUS_CFG[p.status]?.color || "#aaa";
+          return React.createElement("div", { key: p.id, onClick: () => toggleProj(p.id),
+            style: { display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 8, cursor: "pointer",
+              border: `1px solid ${sel ? "var(--gold)" : "var(--border)"}`, background: sel ? "var(--gold)15" : "transparent" } },
+            React.createElement("span", { style: { fontSize: 10, color: "var(--gold)", fontWeight: 800 } }, `#${p.projectNumber || "—"}`),
+            React.createElement("span", { style: { fontSize: 12, fontWeight: 600 } }, p.name),
+            React.createElement("span", { style: { width: 6, height: 6, borderRadius: "50%", background: sc, display: "inline-block" } })
+          );
+        })
+      ),
+      React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 12 } },
+        React.createElement("button", { className: "btn-green btn-sm", onClick: () => {
+          const rows = [["#","שם","לקוח","מפיקה","סטטוס","התקדמות","הקרנה","מסירה","שעות","הערות"]];
+          reportProjects.forEach(p => rows.push([p.projectNumber||"",p.name,p.client||"",p.producer||"",STATUS_CFG[p.status]?.label||"",p.progress+"%",p.onlineScreening||"",p.deliveryDate||"",(p.hours||[]).reduce((s,h)=>s+h.hours,0).toFixed(1),p.statusNote||""]));
+          dlCSV(rows, `סטטוס_${todayStr()}.csv`);
+        }}, "📤 CSV")
+      ),
+      React.createElement("div", { style: { overflowX: "auto" } },
+        React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } },
+          React.createElement("thead", null,
+            React.createElement("tr", { style: { borderBottom: "2px solid var(--border)" } },
+              ["#","שם","לקוח","מפיקה","סטטוס","התקדמות","הקרנה","שעות","הערות"].map(h =>
+                React.createElement("th", { key: h, style: { textAlign: "right", padding: "8px 6px", color: "var(--muted)", fontWeight: 700, whiteSpace: "nowrap" } }, h)
+              )
+            )
+          ),
+          React.createElement("tbody", null,
+            reportProjects.map(p =>
+              React.createElement("tr", { key: p.id, style: { borderBottom: "1px solid var(--border)" } },
+                React.createElement("td", { style: { padding: "8px 6px", fontWeight: 800, color: "var(--gold)" } }, p.projectNumber || "—"),
+                React.createElement("td", { style: { padding: "8px 6px", fontWeight: 700 } }, p.name),
+                React.createElement("td", { style: { padding: "8px 6px", color: "var(--muted)" } }, p.client),
+                React.createElement("td", { style: { padding: "8px 6px", color: "var(--green)" } }, p.producer),
+                React.createElement("td", { style: { padding: "8px 6px" } }, React.createElement(StatusBadge, { s: p.status })),
+                React.createElement("td", { style: { padding: "8px 6px" } },
+                  React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } },
+                    React.createElement("div", { style: { width: 40 } }, React.createElement(PBar, { v: p.progress })),
+                    React.createElement("span", { style: { color: "var(--gold)" } }, p.progress, "%")
+                  )
+                ),
+                React.createElement("td", { style: { padding: "8px 6px", color: "var(--red)" } }, p.onlineScreening || "—"),
+                React.createElement("td", { style: { padding: "8px 6px", color: "var(--blue)" } }, (p.hours||[]).reduce((s,h)=>s+h.hours,0).toFixed(1)+"h"),
+                React.createElement("td", { style: { padding: "8px 6px", color: "var(--muted)", maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.statusNote || "—")
+              )
+            )
+          )
+        )
+      )
+    );
+  };
+
+  return /*#__PURE__*/React.createElement("div", { className: "fade" },
+  /* ── Sticky header + search/filter bar ── */
+  /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 14,
-      flexWrap: "wrap",
-      gap: 10
+      position: "sticky", top: 0, zIndex: 20, background: "var(--bg)",
+      paddingBottom: 10, borderBottom: "1px solid var(--border)", marginBottom: 0
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "section-title",
-    style: {
-      marginBottom: 0
-    }
-  }, "\u05E4\u05E8\u05D5\u05D9\u05E7\u05D8\u05D9\u05DD (", filtered.length, ")"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 8,
-      flexWrap: "wrap",
-      alignItems: "center"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: { display: "flex", background: "var(--card2)", borderRadius: 8, padding: 2, gap: 2 }
   },
-    /*#__PURE__*/React.createElement("button", {
-      onClick: () => setViewMode("grid"),
-      style: { padding: "5px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700,
-        background: viewMode === "grid" ? "var(--gold)" : "transparent",
-        color: viewMode === "grid" ? "#07090f" : "var(--muted2)" }
-    }, "⊞ רשת"),
-    /*#__PURE__*/React.createElement("button", {
-      onClick: () => setViewMode("list"),
-      style: { padding: "5px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700,
-        background: viewMode === "list" ? "var(--gold)" : "transparent",
-        color: viewMode === "list" ? "#07090f" : "var(--muted2)" }
-    }, "☰ רשימה")
-  ), canEdit && /*#__PURE__*/React.createElement("button", {
-    className: "btn-gold btn-sm",
-    onClick: onNew
-  }, "+ \u05E4\u05E8\u05D5\u05D9\u05E7\u05D8 \u05D7\u05D3\u05E9"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: "relative"
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "btn-ghost btn-sm",
-    onClick: () => setShowExportMenu(x => !x)
-  }, "\u2B07\uFE0F \u05D9\u05D9\u05E6\u05D5\u05D0 CSV", checked.length ? ` (${checked.length})` : " הכל"), showExportMenu && /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: "absolute",
-      top: "calc(100%+4px)",
-      left: 0,
-      background: "var(--card)",
-      border: "1px solid var(--border2)",
-      borderRadius: 10,
-      padding: 8,
-      zIndex: 200,
-      minWidth: 160,
-      boxShadow: "0 4px 20px rgba(0,0,0,.4)"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: "6px 12px",
-      cursor: "pointer",
-      fontSize: 13
-    },
-    onClick: exportCSV
-  }, checked.length ? `ייצא ${checked.length} נבחרים` : "ייצא הכל"), checked.length > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: "6px 12px",
-      cursor: "pointer",
-      fontSize: 13,
-      color: "var(--muted)"
-    },
-    onClick: () => {
-      setChecked([]);
-      setShowExportMenu(false);
-    }
-  }, "\u05E0\u05E7\u05D4 \u05D1\u05D7\u05D9\u05E8\u05D4"))))),
-  /* ── Sticky search/filter bar ── */
+    /* Title row */
+    /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 4, paddingBottom: 10, flexWrap: "wrap", gap: 10 } },
+      /*#__PURE__*/React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 12 } },
+        /*#__PURE__*/React.createElement("div", { className: "section-title", style: { marginBottom: 0 } }, "פרויקטים (", filtered.length, ")"),
+        /*#__PURE__*/React.createElement("button", { className: `btn-sm ${showStatusReport ? "btn-gold" : "btn-ghost"}`, onClick: () => setShowStatusReport(x => !x) }, "📊 דוח סטטוס")
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" } },
+        /*#__PURE__*/React.createElement("div", { style: { display: "flex", background: "var(--card2)", borderRadius: 8, padding: 2, gap: 2 } },
+          /*#__PURE__*/React.createElement("button", { onClick: () => setViewMode("grid"), style: { padding: "5px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, background: viewMode === "grid" ? "var(--gold)" : "transparent", color: viewMode === "grid" ? "#07090f" : "var(--muted2)" } }, "⊞ רשת"),
+          /*#__PURE__*/React.createElement("button", { onClick: () => setViewMode("list"), style: { padding: "5px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, background: viewMode === "list" ? "var(--gold)" : "transparent", color: viewMode === "list" ? "#07090f" : "var(--muted2)" } }, "☰ רשימה")
+        ),
+        canEdit && /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", onClick: onNew }, "+ פרויקט חדש"),
+        /*#__PURE__*/React.createElement("div", { style: { position: "relative" } },
+          /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", onClick: () => setShowExportMenu(x => !x) }, "⬇️ ייצוא CSV", checked.length ? ` (${checked.length})` : " הכל"),
+          showExportMenu && /*#__PURE__*/React.createElement("div", { style: { position: "absolute", top: "calc(100%+4px)", left: 0, background: "var(--card)", border: "1px solid var(--border2)", borderRadius: 10, padding: 8, zIndex: 200, minWidth: 160, boxShadow: "0 4px 20px rgba(0,0,0,.4)" } },
+            /*#__PURE__*/React.createElement("div", { style: { padding: "6px 12px", cursor: "pointer", fontSize: 13 }, onClick: exportCSV }, checked.length ? `ייצא ${checked.length} נבחרים` : "ייצא הכל"),
+            checked.length > 0 && /*#__PURE__*/React.createElement("div", { style: { padding: "6px 12px", cursor: "pointer", fontSize: 13, color: "var(--muted)" }, onClick: () => { setChecked([]); setShowExportMenu(false); } }, "נקה בחירה")
+          )
+        )
+      )
+    ),
+    /* Search+filter row */
+    /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" } },
+      /*#__PURE__*/React.createElement("div", { className: "srch-wrap", style: { position: "relative", flex: 1, minWidth: 200, maxWidth: 400 } },
+        /*#__PURE__*/React.createElement("span", { className: "srch-icon" }, "🔍"),
+        /*#__PURE__*/React.createElement("input", { value: search, onChange: e => setSearch(e.target.value), placeholder: "חיפוש פרויקט, לקוח, מפיקה...", style: { paddingRight: 34 } }),
+        search ? /*#__PURE__*/React.createElement("span", { onClick: () => setSearch(""), style: { position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "var(--muted)", fontSize: 14 } }, "✕") : null
+      ),
+      /*#__PURE__*/React.createElement("select", { value: statusFilter, onChange: e => setStatusFilter(e.target.value), style: { width: "auto", fontSize: 12 } },
+        /*#__PURE__*/React.createElement("option", { value: "all" }, "כל הסטטוסים"),
+        Object.entries(STATUS_CFG).map(([k, v]) => /*#__PURE__*/React.createElement("option", { key: k, value: k }, v.label))
+      ),
+      /*#__PURE__*/React.createElement("select", { value: sortBy, onChange: e => setSortBy(e.target.value), style: { width: "auto", fontSize: 12 } },
+        /*#__PURE__*/React.createElement("option", { value: "status" }, "מיון: לפי סטטוס"),
+        /*#__PURE__*/React.createElement("option", { value: "number" }, "מיון: לפי מספר"),
+        /*#__PURE__*/React.createElement("option", { value: "updated" }, "מיון: עדכון אחרון ↓")
+      )
+    )
+  ),
+  /* Status report panel */
+  showStatusReport && /*#__PURE__*/React.createElement("div", { className: "card", style: { marginTop: 14, marginBottom: 8 } },
+    /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } },
+      /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 15 } }, "📊 דוח סטטוס פרויקטים"),
+      /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", onClick: () => setShowStatusReport(false) }, "✕")
+    ),
+    /*#__PURE__*/React.createElement(StatusReportPanel, null)
+  ),
+  /* ── Main layout: 2-col list + side quick-edit panel ── */
   /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
-      gap: 10,
-      marginBottom: 14,
-      flexWrap: "wrap",
-      alignItems: "center",
-      position: "sticky",
-      top: 0,
-      zIndex: 20,
-      background: "var(--bg)",
-      paddingTop: 10,
-      paddingBottom: 10,
-      marginTop: -4,
-      borderBottom: "1px solid var(--border)"
+      gap: 16,
+      alignItems: "flex-start",
+      marginTop: 14
     }
   },
-  /*#__PURE__*/React.createElement("div", { className: "srch-wrap", style: { position: "relative", flex: 1, minWidth: 200, maxWidth: 360 } },
-    /*#__PURE__*/React.createElement("span", { className: "srch-icon" }, "🔍"),
-    /*#__PURE__*/React.createElement("input", {
-      value: search,
-      onChange: e => setSearch(e.target.value),
-      placeholder: "חיפוש פרויקט, לקוח, מפיקה...",
-      style: { paddingRight: 34 }
-    }),
-    search ? /*#__PURE__*/React.createElement("span", {
-      onClick: () => setSearch(""),
-      style: { position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "var(--muted)", fontSize: 14 }
-    }, "✕") : null
-  ),
-  /*#__PURE__*/React.createElement("select", {
-    value: statusFilter,
-    onChange: e => setStatusFilter(e.target.value),
-    style: { width: "auto", fontSize: 12 }
-  },
-    /*#__PURE__*/React.createElement("option", { value: "all" }, "כל הסטטוסים"),
-    Object.entries(STATUS_CFG).map(([k, v]) => /*#__PURE__*/React.createElement("option", { key: k, value: k }, v.label))
-  ),
-  /*#__PURE__*/React.createElement("select", {
-    value: sortBy,
-    onChange: e => setSortBy(e.target.value),
-    style: { width: "auto", fontSize: 12 }
-  },
-    /*#__PURE__*/React.createElement("option", { value: "status" }, "מיון: לפי סטטוס"),
-    /*#__PURE__*/React.createElement("option", { value: "number" }, "מיון: לפי מספר"),
-    /*#__PURE__*/React.createElement("option", { value: "updated" }, "מיון: עדכון אחרון ↓")
-  )),
+  /* Left side: projects list */
+  /*#__PURE__*/React.createElement("div", { style: { flex: editInline ? "0 0 58%" : 1, minWidth: 0, transition: "flex .2s" } },
   /* ── Grid view ── */
   viewMode === "grid" && /*#__PURE__*/React.createElement("div", null,
     filtered.length === 0 && /*#__PURE__*/React.createElement("div", {
       style: { color: "var(--muted)", padding: 32, textAlign: "center" }
     }, "\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0\u05D5 \u05E4\u05E8\u05D5\u05D9\u05E7\u05D8\u05D9\u05DD"),
     /*#__PURE__*/React.createElement("div", {
-      style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 14 }
+      style: { display: "grid", gridTemplateColumns: editInline ? "repeat(2,1fr)" : "repeat(auto-fill,minmax(280px,1fr))", gap: 14 }
     },
     filtered.map((p) => {
       var _STATUS_CFG$p$status;
@@ -3181,9 +3185,11 @@ function ProjectsList({
         className: "proj-card",
         style: {
           padding: 16,
-          borderRight: `4px solid ${sc.color || "var(--border)"}`,
+          borderRight: `4px solid ${isEditing ? "var(--gold)" : (sc.color || "var(--border)")}`,
           cursor: "pointer",
-          position: "relative"
+          position: "relative",
+          background: isEditing ? "var(--gold)08" : "var(--card)",
+          transition: "all .2s"
         },
         onClick: () => !isEditing && onSelect(p.id)
       },
@@ -3199,7 +3205,7 @@ function ProjectsList({
         /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "var(--muted2)", marginBottom: 8 } },
           p.client && /*#__PURE__*/React.createElement("span", null, "🏢 ", p.client),
           p.client && p.producer && /*#__PURE__*/React.createElement("span", { style: { margin: "0 6px", opacity: .4 } }, "·"),
-          p.producer && /*#__PURE__*/React.createElement("span", null, "👤 ", p.producer)
+          p.producer && /*#__PURE__*/React.createElement("span", null, "👩‍💼 ", p.producer)
         ),
         /* Progress bar */
         /*#__PURE__*/React.createElement("div", { className: "pbar", style: { marginBottom: 4 } },
@@ -3210,8 +3216,12 @@ function ProjectsList({
           totalTasks > 0 && /*#__PURE__*/React.createElement("span", null, "✓ ", doneTasks, "/", totalTasks),
           totalHours > 0 && /*#__PURE__*/React.createElement("span", null, "⏱ ", totalHours.toFixed(1), "h")
         ),
-        /* Delivery date */
-        p.deliveryDate && /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", marginBottom: 8 } }, "📦 מסירה: ", p.deliveryDate),
+        /* Dates */
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", marginBottom: 6, display: "flex", flexWrap: "wrap", gap: 8 } },
+          p.offlineScreening && /*#__PURE__*/React.createElement("span", null, "🖥 ", p.offlineScreening),
+          p.onlineScreening && /*#__PURE__*/React.createElement("span", { style: { color: "var(--red)" } }, "📡 ", p.onlineScreening),
+          p.deliveryDate && /*#__PURE__*/React.createElement("span", null, "📦 ", p.deliveryDate)
+        ),
         /* Edit button */
         !isEditing && canEdit && /*#__PURE__*/React.createElement("div", {
           style: { display: "flex", gap: 6, marginTop: 4 },
@@ -3219,7 +3229,7 @@ function ProjectsList({
         },
           /*#__PURE__*/React.createElement("button", {
             className: "btn-ghost btn-sm",
-            style: { fontSize: 10, padding: "2px 8px" },
+            style: { fontSize: 10, padding: "2px 8px", borderColor: "var(--gold)40", color: "var(--gold)" },
             onClick: e => {
               e.stopPropagation();
               setEditInline({
@@ -3236,44 +3246,6 @@ function ProjectsList({
             style: { fontSize: 10, padding: "2px 8px" },
             onClick: e => { e.stopPropagation(); onDelete(p); }
           }, "🗑")
-        ),
-        /* Inline edit panel */
-        isEditing && /*#__PURE__*/React.createElement("div", {
-          style: { marginTop: 10, padding: "10px", background: "var(--bg)", borderRadius: 8, border: "1px solid var(--border2)" },
-          onClick: e => e.stopPropagation()
-        },
-          /*#__PURE__*/React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 } },
-            /*#__PURE__*/React.createElement("div", null,
-              /*#__PURE__*/React.createElement(Lbl, null, "שם"),
-              /*#__PURE__*/React.createElement("input", { value: editInline.name, onChange: e => setEditInline(x => ({ ...x, name: e.target.value })), style: { fontSize: 12 } })
-            ),
-            /*#__PURE__*/React.createElement("div", null,
-              /*#__PURE__*/React.createElement(Lbl, null, "מספר"),
-              /*#__PURE__*/React.createElement("input", { value: editInline.projectNumber, onChange: e => setEditInline(x => ({ ...x, projectNumber: e.target.value })), style: { fontSize: 12 } })
-            ),
-            /*#__PURE__*/React.createElement("div", null,
-              /*#__PURE__*/React.createElement(Lbl, null, "לקוח"),
-              /*#__PURE__*/React.createElement("input", { value: editInline.client, onChange: e => setEditInline(x => ({ ...x, client: e.target.value })), style: { fontSize: 12 } })
-            ),
-            /*#__PURE__*/React.createElement("div", null,
-              /*#__PURE__*/React.createElement(Lbl, null, "סטטוס"),
-              /*#__PURE__*/React.createElement("select", { value: editInline.status, onChange: e => setEditInline(x => ({ ...x, status: e.target.value })), style: { fontSize: 12 } },
-                Object.entries(STATUS_CFG).map(([k, v]) => /*#__PURE__*/React.createElement("option", { key: k, value: k }, v.label))
-              )
-            ),
-            /*#__PURE__*/React.createElement("div", null,
-              /*#__PURE__*/React.createElement(Lbl, null, "מסירה"),
-              /*#__PURE__*/React.createElement("input", { type: "date", value: editInline.deliveryDate, onChange: e => setEditInline(x => ({ ...x, deliveryDate: e.target.value })), style: { fontSize: 12 } })
-            ),
-            /*#__PURE__*/React.createElement("div", null,
-              /*#__PURE__*/React.createElement(Lbl, null, "אונליין"),
-              /*#__PURE__*/React.createElement("input", { type: "date", value: editInline.onlineScreening, onChange: e => setEditInline(x => ({ ...x, onlineScreening: e.target.value })), style: { fontSize: 12 } })
-            )
-          ),
-          /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 6 } },
-            /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", onClick: saveInline }, "💾 שמור"),
-            /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", onClick: () => setEditInline(null) }, "ביטול")
-          )
         )
       );
     }))
@@ -3321,217 +3293,115 @@ function ProjectsList({
         gap: 6,
         padding: "8px 10px",
         alignItems: "center",
-        background: isFirstMatch ? "var(--gold)12" : "var(--card)",
+        background: isFirstMatch ? "var(--gold)12" : isEditing ? "var(--gold)08" : "var(--card)",
         borderRadius: 8,
         marginBottom: 2,
-        borderLeft: `3px solid ${isFirstMatch ? "var(--gold)" : (((_STATUS_CFG$p$status = STATUS_CFG[p.status]) === null || _STATUS_CFG$p$status === void 0 ? void 0 : _STATUS_CFG$p$status.color) || "var(--border)")}`,
+        borderLeft: `3px solid ${isFirstMatch ? "var(--gold)" : isEditing ? "var(--gold)" : (((_STATUS_CFG$p$status = STATUS_CFG[p.status]) === null || _STATUS_CFG$p$status === void 0 ? void 0 : _STATUS_CFG$p$status.color) || "var(--border)")}`,
         cursor: "pointer"
       },
-      onClick: () => !isEditing && onSelect(p.id)
+      onClick: () => {
+        if (isEditing) return;
+        if (canEdit) {
+          setEditInline({ id: p.id, name: p.name, projectNumber: p.projectNumber || "", producer: p.producer || "", client: p.client || "", description: p.description || "", status: p.status || "active", shootDate: p.shootDate || "", offlineScreening: p.offlineScreening || "", onlineScreening: p.onlineScreening || "", deliveryDate: p.deliveryDate || "" });
+        } else {
+          onSelect(p.id);
+        }
+      }
     }, /*#__PURE__*/React.createElement("div", {
       onClick: e => e.stopPropagation()
     }, /*#__PURE__*/React.createElement("input", {
       type: "checkbox",
       checked: checked.includes(p.id),
       onChange: () => toggleCheck(p.id)
-    })), isEditing ? /*#__PURE__*/React.createElement("input", {
-      value: editInline.projectNumber,
-      onChange: e => setEditInline(x => ({
-        ...x,
-        projectNumber: e.target.value
-      })),
-      style: {
-        padding: "3px 6px",
-        fontSize: 12
-      },
-      onClick: e => e.stopPropagation()
-    }) : /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontWeight: 800,
-        fontSize: 12,
-        color: "var(--gold)"
-      }
-    }, p.projectNumber || "—"), isEditing ? /*#__PURE__*/React.createElement("input", {
-      value: editInline.name,
-      onChange: e => setEditInline(x => ({
-        ...x,
-        name: e.target.value
-      })),
-      style: {
-        padding: "3px 6px",
-        fontSize: 13
-      },
-      onClick: e => e.stopPropagation()
-    }) : /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontWeight: 600,
-        fontSize: 13,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap"
-      }
-    }, p.name), isEditing ? /*#__PURE__*/React.createElement("input", {
-      value: editInline.client,
-      onChange: e => setEditInline(x => ({ ...x, client: e.target.value })),
-      placeholder: "לקוח...",
-      style: { padding: "3px 6px", fontSize: 12 },
-      onClick: e => e.stopPropagation()
-    }) : /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 12,
-        color: "var(--muted2)",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap"
-      }
-    }, p.client || "—"), isEditing ? /*#__PURE__*/React.createElement("select", {
-      value: editInline.producer,
-      onChange: e => setEditInline(x => ({
-        ...x,
-        producer: e.target.value
-      })),
-      style: {
-        padding: "3px 6px",
-        fontSize: 12
-      },
-      onClick: e => e.stopPropagation()
-    }, producerList.map(pr => /*#__PURE__*/React.createElement("option", {
-      key: pr,
-      value: pr
-    }, pr)), /*#__PURE__*/React.createElement("option", {
-      value: editInline.producer
-    }, editInline.producer)) : /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 12,
-        color: "var(--muted2)",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap"
-      }
-    }, p.producer || "—"),
-    /* Status - editable in list mode */
-    isEditing ? /*#__PURE__*/React.createElement("select", {
-      value: editInline.status,
-      onChange: e => setEditInline(x => ({ ...x, status: e.target.value })),
-      style: { padding: "3px 6px", fontSize: 12 },
-      onClick: e => e.stopPropagation()
-    }, Object.entries(STATUS_CFG).map(([k, v]) => /*#__PURE__*/React.createElement("option", { key: k, value: k }, v.label)))
-    : /*#__PURE__*/React.createElement(StatusBadge, {
-      status: p.status
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: "var(--muted)"
-      }
-    }, p.deliveryDate || "—")), isEditing && /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 8,
-        padding: "6px 10px",
-        background: "var(--card2)",
-        borderRadius: "0 0 8px 8px",
-        marginBottom: 4
-      },
-      onClick: e => e.stopPropagation()
-    }, /*#__PURE__*/React.createElement("button", {
-      className: "btn-gold btn-sm",
-      onClick: saveInline
-    }, "\uD83D\uDCBE \u05E9\u05DE\u05D5\u05E8"), /*#__PURE__*/React.createElement("button", {
-      className: "btn-ghost btn-sm",
-      onClick: () => setEditInline(null)
-    }, "\u05D1\u05D9\u05D8\u05D5\u05DC")), isEditing && /*#__PURE__*/React.createElement("div", {
-      style: {
-        background: "var(--bg)",
-        border: "1px solid var(--border)",
-        borderTop: "none",
-        borderRadius: "0 0 8px 8px",
-        padding: "12px 14px",
-        marginBottom: 4,
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-        gap: 10
-      },
-      onClick: e => e.stopPropagation()
-    },
-      /*#__PURE__*/React.createElement("div", null,
+    })),
+    /*#__PURE__*/React.createElement("div", { style: { fontWeight: 800, fontSize: 12, color: "var(--gold)" } }, p.projectNumber || "—"),
+    /*#__PURE__*/React.createElement("div", { style: { fontWeight: 600, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.name),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: "var(--muted2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.client || "—"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: "var(--muted2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.producer || "—"),
+    /*#__PURE__*/React.createElement(StatusBadge, { status: p.status }),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "var(--muted)" } }, p.deliveryDate || "—")
+    ));
+  }))
+  )
+  ), /* end left side */
+  /* Right side: quick edit panel */
+  editInline && /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: "0 0 38%",
+      minWidth: 280,
+      maxWidth: 360,
+      position: "sticky",
+      top: 90,
+      alignSelf: "flex-start"
+    }
+  },
+    /*#__PURE__*/React.createElement("div", { className: "card", style: { border: "1px solid var(--gold)40", boxShadow: "0 4px 24px rgba(232,197,71,.1)" } },
+      /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 } },
+        /*#__PURE__*/React.createElement("div", { style: { fontWeight: 800, fontSize: 16, color: "var(--gold)" } }, "✏️ עריכה מהירה"),
+        /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 6 } },
+          /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", style: { fontSize: 11 }, onClick: () => onSelect(editInline.id) }, "🔍 פתח מלא"),
+          /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", onClick: () => setEditInline(null) }, "✕")
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { marginBottom: 10 } },
+        /*#__PURE__*/React.createElement(Lbl, null, "שם פרויקט"),
+        /*#__PURE__*/React.createElement("input", { value: editInline.name, onChange: e => setEditInline(x => ({ ...x, name: e.target.value })), style: { fontSize: 13 } })
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 } },
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement(Lbl, null, "מספר"),
+          /*#__PURE__*/React.createElement("input", { value: editInline.projectNumber, onChange: e => setEditInline(x => ({ ...x, projectNumber: e.target.value })), style: { fontSize: 12 } })
+        ),
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement(Lbl, null, "סטטוס"),
+          /*#__PURE__*/React.createElement("select", { value: editInline.status, onChange: e => setEditInline(x => ({ ...x, status: e.target.value })), style: { fontSize: 12 } },
+            Object.entries(STATUS_CFG).map(([k, v]) => /*#__PURE__*/React.createElement("option", { key: k, value: k }, v.label))
+          )
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { marginBottom: 10 } },
+        /*#__PURE__*/React.createElement(Lbl, null, "לקוח"),
+        /*#__PURE__*/React.createElement("input", { value: editInline.client, onChange: e => setEditInline(x => ({ ...x, client: e.target.value })), style: { fontSize: 12 } })
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { marginBottom: 10 } },
+        /*#__PURE__*/React.createElement(Lbl, null, "👩‍💼 מפיקה אחראית"),
+        /*#__PURE__*/React.createElement("select", { value: editInline.producer, onChange: e => setEditInline(x => ({ ...x, producer: e.target.value })), style: { fontSize: 12 } },
+          /*#__PURE__*/React.createElement("option", { value: "" }, "— בחר מפיקה —"),
+          producerList.map(pr => /*#__PURE__*/React.createElement("option", { key: pr, value: pr }, pr)),
+          !producerList.includes(editInline.producer) && editInline.producer &&
+            /*#__PURE__*/React.createElement("option", { value: editInline.producer }, editInline.producer)
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 } },
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement(Lbl, null, "🖥 הקרנת אופליין"),
+          /*#__PURE__*/React.createElement("input", { type: "date", value: editInline.offlineScreening, onChange: e => setEditInline(x => ({ ...x, offlineScreening: e.target.value })), style: { fontSize: 12 } })
+        ),
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement(Lbl, null, "📡 הקרנת אונליין"),
+          /*#__PURE__*/React.createElement("input", { type: "date", value: editInline.onlineScreening, onChange: e => setEditInline(x => ({ ...x, onlineScreening: e.target.value })), style: { fontSize: 12 } })
+        ),
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement(Lbl, null, "🎬 תאריך צילום"),
+          /*#__PURE__*/React.createElement("input", { type: "date", value: editInline.shootDate, onChange: e => setEditInline(x => ({ ...x, shootDate: e.target.value })), style: { fontSize: 12 } })
+        ),
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement(Lbl, null, "📦 מסירה"),
+          /*#__PURE__*/React.createElement("input", { type: "date", value: editInline.deliveryDate, onChange: e => setEditInline(x => ({ ...x, deliveryDate: e.target.value })), style: { fontSize: 12 } })
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { marginBottom: 14 } },
         /*#__PURE__*/React.createElement(Lbl, null, "📝 הערות"),
-        /*#__PURE__*/React.createElement("textarea", {
-          value: editInline.description,
-          onChange: e => setEditInline(x => ({ ...x, description: e.target.value })),
-          placeholder: "תיאור / הערות...",
-          style: { minHeight: 60, fontSize: 12 }
-        })
+        /*#__PURE__*/React.createElement("textarea", { value: editInline.description, onChange: e => setEditInline(x => ({ ...x, description: e.target.value })), placeholder: "תיאור / הערות...", style: { minHeight: 60, fontSize: 12 } })
       ),
-      /*#__PURE__*/React.createElement("div", null,
-        /*#__PURE__*/React.createElement(Lbl, null, "🎬 תאריך צילום"),
-        /*#__PURE__*/React.createElement("input", {
-          type: "date",
-          value: editInline.shootDate,
-          onChange: e => setEditInline(x => ({ ...x, shootDate: e.target.value })),
-          style: { fontSize: 12 }
-        })
-      ),
-      /*#__PURE__*/React.createElement("div", null,
-        /*#__PURE__*/React.createElement(Lbl, null, "🖥 הקרנת אופליין"),
-        /*#__PURE__*/React.createElement("input", {
-          type: "date",
-          value: editInline.offlineScreening,
-          onChange: e => setEditInline(x => ({ ...x, offlineScreening: e.target.value })),
-          style: { fontSize: 12 }
-        })
-      ),
-      /*#__PURE__*/React.createElement("div", null,
-        /*#__PURE__*/React.createElement(Lbl, null, "📡 הקרנת אונליין"),
-        /*#__PURE__*/React.createElement("input", {
-          type: "date",
-          value: editInline.onlineScreening,
-          onChange: e => setEditInline(x => ({ ...x, onlineScreening: e.target.value })),
-          style: { fontSize: 12 }
-        })
-      ),
-      /*#__PURE__*/React.createElement("div", null,
-        /*#__PURE__*/React.createElement(Lbl, null, "📦 מסירה"),
-        /*#__PURE__*/React.createElement("input", {
-          type: "date",
-          value: editInline.deliveryDate,
-          onChange: e => setEditInline(x => ({ ...x, deliveryDate: e.target.value })),
-          style: { fontSize: 12 }
-        })
+      /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 8 } },
+        /*#__PURE__*/React.createElement("button", { className: "btn-gold", style: { flex: 1 }, onClick: saveInline }, "💾 שמור"),
+        /*#__PURE__*/React.createElement("button", { className: "btn-ghost", onClick: () => setEditInline(null) }, "ביטול")
       )
-    ), !isEditing && canEdit && /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        justifyContent: "flex-end",
-        padding: "0 10px 4px"
-      }
-    }, /*#__PURE__*/React.createElement("button", {
-      className: "btn-ghost btn-sm",
-      style: {
-        fontSize: 10,
-        padding: "2px 8px"
-      },
-      onClick: e => {
-        e.stopPropagation();
-        setEditInline({
-          id: p.id,
-          name: p.name,
-          projectNumber: p.projectNumber || "",
-          producer: p.producer || "",
-          client: p.client || "",
-          description: p.description || "",
-          status: p.status || "active",
-          shootDate: p.shootDate || "",
-          offlineScreening: p.offlineScreening || "",
-          onlineScreening: p.onlineScreening || "",
-          deliveryDate: p.deliveryDate || ""
-        });
-      }
-    }, "\u270F\uFE0F \u05E2\u05E8\u05D9\u05DB\u05D4 \u05DE\u05D4\u05D9\u05E8\u05D4"), onDelete && isAdmin && /*#__PURE__*/React.createElement("button", {
-      className: "btn-red",
-      style: { fontSize: 10, padding: "2px 8px" },
-      onClick: e => { e.stopPropagation(); onDelete(p); }
-    }, "🗑 מחק")));
-  }))));
+    )
+  )
+  ) /* end main layout flex */
+  );
 }
 function HoursLog({
   projects,
@@ -3815,6 +3685,9 @@ function HoursLog({
   }, {
     id: "attendance",
     label: "📋 נוכחות"
+  }, {
+    id: "report",
+    label: "📊 דוח שעות"
   }].map(t => /*#__PURE__*/React.createElement("button", {
     key: t.id,
     onClick: () => setHoursTab(t.id),
@@ -4183,7 +4056,45 @@ function HoursLog({
       textAlign: "center",
       padding: 32
     }
-  }, "\u05D0\u05D9\u05DF \u05D3\u05D9\u05D5\u05D5\u05D7\u05D9\u05DD \u05DC\u05D7\u05D5\u05D3\u05E9 \u05D6\u05D4")), "  ");
+  }, "\u05D0\u05D9\u05DF \u05D3\u05D9\u05D5\u05D5\u05D7\u05D9\u05DD \u05DC\u05D7\u05D5\u05D3\u05E9 \u05D6\u05D4")),
+  /* Report tab */
+  hoursTab === "report" && (() => {
+    const all = [];
+    projects.forEach(p => (p.hours || []).filter(h => h.date && h.date.startsWith(month)).forEach(h => {
+      const u = users.find(u => u.id === h.worker);
+      all.push({ ...h, projName: p.name, workerName: u?.name || h.worker });
+    }));
+    all.sort((a, b) => b.date.localeCompare(a.date));
+    return React.createElement("div", { className: "fade" },
+      React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 14, alignItems: "center", flexWrap: "wrap" } },
+        React.createElement("input", { type: "month", value: month, onChange: e => setMonth(e.target.value), style: { fontSize: 12 } }),
+        React.createElement("div", { style: { color: "var(--muted2)" } }, 'סה"כ ', React.createElement("span", { style: { color: "var(--gold)", fontWeight: 800 } }, all.reduce((s, h) => s + h.hours, 0).toFixed(1), "h")),
+        React.createElement("button", { className: "btn-green btn-sm", onClick: () => {
+          const rows = [["עובד","פרויקט","תאריך","כניסה","יציאה","שעות","הערה"]];
+          all.forEach(h => rows.push([h.workerName, h.projName, h.date, h.timeIn||"", h.timeOut||"", h.hours.toFixed(1), h.note||""]));
+          dlCSV(rows, "שעות_" + month + ".csv");
+        }}, "📤 ייצוא CSV")
+      ),
+      [...new Set(all.map(h => h.worker))].map(wid => {
+        const wh = all.filter(h => h.worker === wid);
+        const wt = wh.reduce((s, h) => s + h.hours, 0);
+        return React.createElement("div", { key: wid, className: "card", style: { marginBottom: 14 } },
+          React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 10 } },
+            React.createElement("div", { style: { fontWeight: 700, fontSize: 15 } }, wh[0]?.workerName),
+            React.createElement("div", { style: { fontWeight: 900, color: "var(--gold)", fontSize: 18 } }, wt.toFixed(1), "h")
+          ),
+          wh.map(h => React.createElement("div", { key: h.id, style: { display: "flex", gap: 8, justifyContent: "space-between", fontSize: 12, color: "var(--muted)", padding: "5px 0", borderBottom: "1px solid var(--border)" } },
+            React.createElement("span", { style: { minWidth: 80 } }, h.date),
+            React.createElement("span", { style: { flex: 1 } }, h.projName),
+            React.createElement("span", null, h.timeIn && h.timeOut ? h.timeIn + "–" + h.timeOut : ""),
+            React.createElement("span", { style: { color: "var(--text)", fontWeight: 700 } }, h.hours.toFixed(1), "h")
+          ))
+        );
+      }),
+      all.length === 0 && React.createElement("div", { className: "card", style: { textAlign: "center", padding: 32, color: "var(--muted)" } }, "אין דיווחים לחודש זה")
+    );
+  })(),
+  "  ");
 }
 
 // ══════════════════════════════════════════
@@ -8275,6 +8186,24 @@ function App({
     };
     // Write to Supabase shifts table
     sbUpsert("shifts", shiftToRow(s, users, projects)).catch(e => console.error("[shifts]", e.message));
+
+    // 🗓 Sync screening shifts to diary calendar
+    const SCREENING_TYPES = { screening_off: { label: "🖥 הקרנת אופליין", type: "screening" }, screening_on: { label: "📡 הקרנת אונליין", type: "screening" } };
+    const screeningTask = (s.tasks || []).find(t => SCREENING_TYPES[t]);
+    if (screeningTask && s.date) {
+      const screeningProj = s.projId ? projects.find(p => p.id === s.projId) : null;
+      const stInfo = SCREENING_TYPES[screeningTask];
+      const evId = `cal-${screeningTask}-${s.id}`;
+      const ev = {
+        id: evId, title: `${stInfo.label}${screeningProj ? ": " + screeningProj.name : ""}`,
+        date: s.date, time: s.timeStart || "10:00", endTime: s.timeEnd || "",
+        type: stInfo.type, projId: s.projId || "", client: screeningProj?.client || "", location: "", note: s.note || "", allDay: false
+      };
+      const isNew = !(data.events || []).some(x => x.id === evId);
+      upd({ events: isNew ? [...(data.events || []), ev] : (data.events || []).map(x => x.id === evId ? ev : x) });
+      sbUpsert("events", eventToRow(ev)).catch(() => {});
+    }
+
     // Update local state
     if (!s.projId) {
       const existing = (data.globalShifts || []).find(x => x.id === shift.id);
@@ -8349,11 +8278,7 @@ function App({
     id: "hours",
     icon: "⏱",
     label: "שעות"
-  }, ...(isAdmin || isProd ? [{
-    id: "reports",
-    icon: "📊",
-    label: "דוחות"
-  }] : []), ...(isAdmin ? [{
+  }, ...(isAdmin ? [{
     id: "finance",
     icon: "💰",
     label: "Finance"
@@ -8434,7 +8359,7 @@ function App({
       color: "var(--muted)",
       marginTop: 2
     }
-  }, "v27 ", /*#__PURE__*/React.createElement("span", {
+  }, "v30 ", /*#__PURE__*/React.createElement("span", {
     style: {
       background: "var(--gold)",
       color: "#07090f",
