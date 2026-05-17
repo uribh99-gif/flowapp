@@ -16,7 +16,7 @@ body{background:#07090f;margin:0;padding:0;font-family:'Heebo',sans-serif}
 .sp-bar-wrap{width:220px;height:3px;background:#1a1f2b;border-radius:99px;overflow:hidden}
 .sp-bar{height:100%;background:linear-gradient(90deg,#e8c547,#fb923c);border-radius:99px;width:0%;transition:width .35s}
 .sp-msg{font-size:11px;color:#3a4258;min-height:14px;text-align:center}
-#root{opacity:0;transition:opacity .5s}
+#root{opacity:0;transition:opacity .5s;height:100vh;overflow:hidden}
 #root.visible{opacity:1}
 </style>
 </head>
@@ -129,6 +129,7 @@ button{font-family:'Heebo',sans-serif;cursor:pointer;border:none;border-radius:8
   .desktop-sidebar{display:none!important}
   .mob-bar{display:flex!important}
 }
+.desktop-sidebar-wrap{height:100vh;overflow-y:auto;flex-shrink:0;width:220px}
 .mob-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1px solid var(--border);padding:6px 0;z-index:800;justify-content:space-around}
 .mob-btn{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--muted2);font-size:9px;font-family:'Heebo',sans-serif;cursor:pointer;padding:4px 6px}
 .mob-btn.active{color:var(--gold)}
@@ -3059,11 +3060,55 @@ function ProjectsList({
         })
       ),
       React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 12 } },
-        React.createElement("button", { className: "btn-green btn-sm", onClick: () => {
+        React.createElement("button", { className: "btn-ghost btn-sm", onClick: () => {
           const rows = [["#","שם","לקוח","מפיקה","סטטוס","התקדמות","הקרנה","מסירה","שעות","הערות"]];
           reportProjects.forEach(p => rows.push([p.projectNumber||"",p.name,p.client||"",p.producer||"",STATUS_CFG[p.status]?.label||"",p.progress+"%",p.onlineScreening||"",p.deliveryDate||"",(p.hours||[]).reduce((s,h)=>s+h.hours,0).toFixed(1),p.statusNote||""]));
           dlCSV(rows, `סטטוס_${todayStr()}.csv`);
-        }}, "📤 CSV")
+        }}, "📊 Excel / CSV"),
+        React.createElement("button", { className: "btn-gold btn-sm", onClick: () => {
+          const dateStr = new Date().toLocaleDateString("he-IL",{year:"numeric",month:"long",day:"numeric"});
+          const logo = document.querySelector("#appLogo");
+          const rows = reportProjects.map(p => {
+            const sc = STATUS_CFG[p.status]||{};
+            const hrs = (p.hours||[]).reduce((s,h)=>s+h.hours,0).toFixed(1);
+            const tasks = p.tasks||[];
+            return `<tr style="page-break-inside:avoid">
+              <td style="padding:10px 8px;font-weight:900;color:#b8950f;font-size:12px">#${p.projectNumber||"—"}</td>
+              <td style="padding:10px 8px;font-weight:800;font-size:14px">${p.name}</td>
+              <td style="padding:10px 8px;font-size:12px;color:#555">${p.client||"—"}</td>
+              <td style="padding:10px 8px;font-size:12px;color:#555">${p.producer||"—"}</td>
+              <td style="padding:10px 8px"><span style="background:${sc.color||"#aaa"}20;color:${sc.color||"#aaa"};border:1px solid ${sc.color||"#aaa"}40;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700">${sc.label||p.status}</span></td>
+              <td style="padding:10px 8px">
+                <div style="background:#eee;border-radius:4px;height:7px;width:80px;margin-bottom:3px"><div style="background:#e8c547;height:7px;border-radius:4px;width:${p.progress||0}%"></div></div>
+                <span style="font-size:11px;color:#888">${p.progress||0}%</span>
+              </td>
+              <td style="padding:10px 8px;font-size:12px;color:#c00">${p.onlineScreening||"—"}</td>
+              <td style="padding:10px 8px;font-size:12px;color:#555">${hrs}h</td>
+              <td style="padding:10px 8px;font-size:11px;color:#777;max-width:140px">${p.statusNote||""}</td>
+            </tr>`;
+          }).join("");
+          const w = window.open("","_blank");
+          w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>דוח סטטוס — ${dateStr}</title>
+          <style>body{font-family:Arial,sans-serif;padding:28px 36px;direction:rtl;color:#1a1a2e}
+          h1{font-size:20px;font-weight:900;margin:0}
+          .sub{font-size:12px;color:#888;margin-top:4px}
+          table{width:100%;border-collapse:collapse;margin-top:20px}
+          th{background:#1a1a2e;color:#fff;padding:9px 8px;text-align:right;font-size:12px;font-weight:700}
+          tr:nth-child(even){background:#f9f9f9}
+          @media print{@page{size:A4 landscape;margin:15mm}}</style></head>
+          <body>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #e8c547;padding-bottom:14px;margin-bottom:6px">
+            <div><h1>📊 דוח סטטוס פרויקטים</h1><div class="sub">${dateStr} · ${reportProjects.length} פרויקטים</div></div>
+            ${logo?`<img src="${logo.src}" style="height:44px;object-fit:contain"/>`:""}
+          </div>
+          <table><thead><tr>
+            <th>#</th><th>שם פרויקט</th><th>לקוח</th><th>מפיקה</th><th>סטטוס</th><th>התקדמות</th><th>הקרנה</th><th>שעות</th><th>הערות</th>
+          </tr></thead><tbody>${rows}</tbody></table>
+          <div style="margin-top:24px;font-size:10px;color:#bbb;text-align:center;border-top:1px solid #eee;padding-top:10px">PostFlow · הופק ${dateStr}</div>
+          <script>setTimeout(()=>window.print(),300)</script>
+          </body></html>`);
+          w.document.close();
+        }}, "🖨️ PDF / הדפסה")
       ),
       React.createElement("div", { style: { overflowX: "auto" } },
         React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } },
@@ -4424,15 +4469,7 @@ function ProjectPlanning({
       ...p
     }
   });
-  const [nc, setNc] = useState({
-    userId: "",
-    role: ""
-  });
-  const [nm, setNm] = useState({
-    title: "",
-    date: "",
-    done: false
-  });
+  // staffRows managed via plan.staffRows
   // Planned shift form state
   const sts = shiftTypes || DEF_SHIFT_TYPES;
   const [np, setNp] = useState({
@@ -4610,97 +4647,74 @@ function ProjectPlanning({
       )
     ),
 
-    /* ── Crew ── */
-    /*#__PURE__*/React.createElement("div", {
-      className: "card",
-      style: { marginBottom: 14 }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: { fontWeight: 700, marginBottom: 12 }
-    }, "\uD83D\uDC65 \u05E6\u05D5\u05D5\u05EA"), canEdit && /*#__PURE__*/React.createElement("div", {
-      className: "frow"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "fcol"
-    }, /*#__PURE__*/React.createElement("select", {
-      value: nc.userId,
-      onChange: e => setNc(x => ({ ...x, userId: e.target.value }))
-    }, /*#__PURE__*/React.createElement("option", { value: "" }, "\u2014 \u05D1\u05D7\u05E8 \u05E2\u05D5\u05D1\u05D3 \u2014"), users.map(u => /*#__PURE__*/React.createElement("option", { key: u.id, value: u.id }, u.name)))), /*#__PURE__*/React.createElement("div", {
-      className: "fcol"
-    }, /*#__PURE__*/React.createElement("input", {
-      placeholder: "\u05EA\u05E4\u05E7\u05D9\u05D3",
-      value: nc.role,
-      onChange: e => setNc(x => ({ ...x, role: e.target.value }))
-    })), /*#__PURE__*/React.createElement("button", {
-      className: "btn-gold btn-sm",
-      onClick: () => {
-        if (!nc.userId) return;
-        upd({ crew: [...(plan.crew || []), { id: uid(), ...nc }] });
-        setNc({ userId: "", role: "" });
-      }
-    }, "+ \u05D4\u05D5\u05E1\u05E3")), (plan.crew || []).map(c => {
-      const u = users.find(u => u.id === c.userId);
-      return /*#__PURE__*/React.createElement("div", {
-        key: c.id,
-        className: "card2",
-        style: { marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: { fontWeight: 700 }
-      }, (u && u.name) || c.userId, " ", /*#__PURE__*/React.createElement("span", {
-        style: { color: "var(--muted)", fontWeight: 400, fontSize: 12 }
-      }, "\xB7 ", c.role)), canEdit && /*#__PURE__*/React.createElement("button", {
-        className: "btn-red",
-        onClick: () => upd({ crew: (plan.crew || []).filter(x => x.id !== c.id) })
-      }, "\u05D4\u05E1\u05E8"));
-    })),
+        /* ── Staff Budget Table ── */
+    /*#__PURE__*/React.createElement("div", { className: "card", style: { marginBottom: 14 } },
+      /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 } },
+        /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 15 } }, "👥 תכנון כוח אדם ועלויות"),
+        canEdit && /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", onClick: () => {
+          upd({ staffRows: [...(plan.staffRows || []), { id: uid(), role: "", name: "", shifts: 1, costPerShift: 0 }] });
+        }}, "+ הוסף שורה")
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { overflowX: "auto" } },
+        /*#__PURE__*/React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } },
+          /*#__PURE__*/React.createElement("thead", null,
+            /*#__PURE__*/React.createElement("tr", { style: { borderBottom: "2px solid var(--border2)" } },
+              /*#__PURE__*/React.createElement("th", { style: { padding: "8px 10px", textAlign: "right", color: "var(--muted)", fontWeight: 700 } }, "תפקיד"),
+              /*#__PURE__*/React.createElement("th", { style: { padding: "8px 10px", textAlign: "right", color: "var(--muted)", fontWeight: 700 } }, "שם"),
+              /*#__PURE__*/React.createElement("th", { style: { padding: "8px 10px", textAlign: "center", color: "var(--muted)", fontWeight: 700 } }, "משמרות"),
+              /*#__PURE__*/React.createElement("th", { style: { padding: "8px 10px", textAlign: "center", color: "var(--muted)", fontWeight: 700 } }, "עלות למשמרת ₪"),
+              /*#__PURE__*/React.createElement("th", { style: { padding: "8px 10px", textAlign: "center", color: "var(--gold)", fontWeight: 700 } }, "סה\"כ"),
+              canEdit && /*#__PURE__*/React.createElement("th", { style: { width: 36 } })
+            )
+          ),
+          /*#__PURE__*/React.createElement("tbody", null,
+            !(plan.staffRows || []).length && /*#__PURE__*/React.createElement("tr", null,
+              /*#__PURE__*/React.createElement("td", { colSpan: canEdit ? 6 : 5, style: { padding: 24, textAlign: "center", color: "var(--muted)" } }, "לחץ '+ הוסף שורה' להוספת תפקיד")
+            ),
+            (plan.staffRows || []).map((row, idx) => {
+              const total = (parseFloat(row.shifts)||0) * (parseFloat(row.costPerShift)||0);
+              return /*#__PURE__*/React.createElement("tr", { key: row.id, style: { borderBottom: "1px solid var(--border)", background: idx%2===0 ? "transparent" : "var(--card2)30" } },
+                /*#__PURE__*/React.createElement("td", { style: { padding: "6px 10px" } },
+                  canEdit ? /*#__PURE__*/React.createElement("input", { value: row.role, onChange: e => upd({ staffRows: (plan.staffRows||[]).map(r => r.id===row.id ? {...r, role: e.target.value} : r) }), placeholder: "תפקיד...", style: { fontSize: 12, padding: "4px 8px" } })
+                  : /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700 } }, row.role||"—")
+                ),
+                /*#__PURE__*/React.createElement("td", { style: { padding: "6px 10px" } },
+                  canEdit ? /*#__PURE__*/React.createElement("input", { value: row.name, onChange: e => upd({ staffRows: (plan.staffRows||[]).map(r => r.id===row.id ? {...r, name: e.target.value} : r) }), placeholder: "שם...", style: { fontSize: 12, padding: "4px 8px" } })
+                  : /*#__PURE__*/React.createElement("span", { style: { color: "var(--muted2)" } }, row.name||"—")
+                ),
+                /*#__PURE__*/React.createElement("td", { style: { padding: "6px 10px", textAlign: "center" } },
+                  canEdit ? /*#__PURE__*/React.createElement("input", { type: "number", min: 0, value: row.shifts, onChange: e => upd({ staffRows: (plan.staffRows||[]).map(r => r.id===row.id ? {...r, shifts: e.target.value} : r) }), style: { fontSize: 12, padding: "4px 8px", textAlign: "center", width: 70 } })
+                  : /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700, color: "var(--blue)" } }, row.shifts)
+                ),
+                /*#__PURE__*/React.createElement("td", { style: { padding: "6px 10px", textAlign: "center" } },
+                  canEdit ? /*#__PURE__*/React.createElement("input", { type: "number", min: 0, value: row.costPerShift, onChange: e => upd({ staffRows: (plan.staffRows||[]).map(r => r.id===row.id ? {...r, costPerShift: e.target.value} : r) }), style: { fontSize: 12, padding: "4px 8px", textAlign: "center", width: 90 } })
+                  : /*#__PURE__*/React.createElement("span", null, "₪", Number(row.costPerShift||0).toLocaleString())
+                ),
+                /*#__PURE__*/React.createElement("td", { style: { padding: "6px 10px", textAlign: "center", fontWeight: 800, color: "var(--gold)" } },
+                  total > 0 ? "₪"+total.toLocaleString() : "—"
+                ),
+                canEdit && /*#__PURE__*/React.createElement("td", { style: { padding: "6px 10px" } },
+                  /*#__PURE__*/React.createElement("button", { className: "btn-red", style: { fontSize: 10, padding: "2px 6px" }, onClick: () => upd({ staffRows: (plan.staffRows||[]).filter(r => r.id!==row.id) }) }, "✕")
+                )
+              );
+            }),
+            (plan.staffRows||[]).length > 0 && /*#__PURE__*/React.createElement("tr", { style: { borderTop: "2px solid var(--border2)", background: "var(--card2)", fontWeight: 800 } },
+              /*#__PURE__*/React.createElement("td", { colSpan: 4, style: { padding: "8px 10px", color: "var(--muted)", fontSize: 12 } }, "סה\"כ תקציב"),
+              /*#__PURE__*/React.createElement("td", { style: { padding: "8px 10px", textAlign: "center", color: "var(--gold)", fontSize: 15 } },
+                "₪", (plan.staffRows||[]).reduce((s,r)=>s+(parseFloat(r.shifts)||0)*(parseFloat(r.costPerShift)||0),0).toLocaleString()
+              ),
+              canEdit && /*#__PURE__*/React.createElement("td", null)
+            )
+          )
+        )
+      )
+    ),
 
-    /* ── Milestones ── */
-    /*#__PURE__*/React.createElement("div", {
-      className: "card",
-      style: { marginBottom: 14 }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: { fontWeight: 700, marginBottom: 12 }
-    }, "\uD83C\uDFC1 \u05D0\u05D1\u05E0\u05D9 \u05D3\u05E8\u05DA"), canEdit && /*#__PURE__*/React.createElement("div", {
-      className: "frow"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "fcol"
-    }, /*#__PURE__*/React.createElement("input", {
-      placeholder: "\u05DB\u05D5\u05EA\u05E8\u05EA",
-      value: nm.title,
-      onChange: e => setNm(x => ({ ...x, title: e.target.value }))
-    })), /*#__PURE__*/React.createElement("div", {
-      className: "fcol"
-    }, /*#__PURE__*/React.createElement(DatePicker, {
-      value: nm.date,
-      onChange: v => setNm(x => ({ ...x, date: v }))
-    })), /*#__PURE__*/React.createElement("button", {
-      className: "btn-gold btn-sm",
-      onClick: () => {
-        if (!nm.title) return;
-        upd({ milestones: [...(plan.milestones || []), { id: uid(), ...nm }] });
-        setNm({ title: "", date: "", done: false });
-      }
-    }, "+ \u05D4\u05D5\u05E1\u05E3")), (plan.milestones || []).map(m => /*#__PURE__*/React.createElement("div", {
-      key: m.id,
-      style: { display: "flex", gap: 10, alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)" }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: { width: 18, height: 18, borderRadius: 4, background: m.done ? "var(--green)" : "transparent", border: `2px solid ${m.done ? "var(--green)" : "var(--border2)"}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-      onClick: () => upd({ milestones: (plan.milestones || []).map(x => x.id === m.id ? { ...x, done: !x.done } : x) })
-    }, m.done && /*#__PURE__*/React.createElement("span", { style: { color: "#07090f", fontSize: 10, fontWeight: 900 } }, "\u2713")), /*#__PURE__*/React.createElement("div", {
-      style: { flex: 1, textDecoration: m.done ? "line-through" : "none", color: m.done ? "var(--muted)" : "var(--text)" }
-    }, m.title), m.date && /*#__PURE__*/React.createElement("div", {
-      style: { fontSize: 11, color: "var(--red)" }
-    }, m.date)))),
-
-    /* ── Notes ── */
-    /*#__PURE__*/React.createElement("div", {
-      className: "card"
-    }, /*#__PURE__*/React.createElement("div", {
-      style: { fontWeight: 700, marginBottom: 8 }
-    }, "\uD83D\uDCDD \u05D4\u05E2\u05E8\u05D5\u05EA \u05EA\u05DB\u05E0\u05D5\u05DF"), /*#__PURE__*/React.createElement("textarea", {
-      value: plan.notes || "",
-      onChange: e => upd({ notes: e.target.value }),
-      disabled: !canEdit,
-      style: { minHeight: 80, width: "100%" }
-    }))
+    /* ── Planning Notes ── */
+    /*#__PURE__*/React.createElement("div", { className: "card" },
+      /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 8 } }, "📝 הערות תכנון"),
+      /*#__PURE__*/React.createElement("textarea", { value: plan.notes||"", onChange: e => upd({ notes: e.target.value }), disabled: !canEdit, style: { minHeight: 80, width: "100%" } })
+    )
   );
 }
 
@@ -8477,7 +8491,8 @@ view === n.id && !selProjId ? " active" : ""}`,
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(GS, null), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
-      minHeight: "100vh"
+      height: "100vh",
+      overflow: "hidden"
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "desktop-sidebar",
@@ -8499,7 +8514,7 @@ view === n.id && !selProjId ? " active" : ""}`,
   })), /*#__PURE__*/React.createElement("main", {
     style: {
       flex: 1,
-      padding: "24px 22px 90px",
+      padding: "24px 22px 40px",
       overflowY: "auto",
       minWidth: 0
     }
