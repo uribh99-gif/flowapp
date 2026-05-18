@@ -5381,6 +5381,7 @@ function QuoteBuilder({
   quoteTemplates,
   onSave,
   onUpdateTemplates,
+  onConvertToProject,
   user
 }) {
   const isAdmin = user.role === "admin";
@@ -5441,6 +5442,7 @@ function QuoteBuilder({
   const [paymentExtra, setPaymentExtra] = useState(false);
   const DEFAULT_NOTE = `רישיון שימוש בלתי מוגבל:\nבהתאם למסמך תנאים והגבלות המצורף, ועם סיום הפרויקט וקבלת תשלום מלא, פלואו-פוסט-וידאו בע"מ תעניק רישיון שימוש בלעדי ובלתי מוגבל ללקוח כמפורט בסעיף "פלטפורמות" לעיל.\nרישיון זה הוא רישיון "חד-יישומי" ולא רישיון "רב שימושי".\nאין להפיץ מחדש את הסרט כחומרי ספרייה, בכלי או תבנית, או עם קבצי מקור.\n\nמדיניות ביטולים:\nביטול עד 48 שעות מתחילת עבודה — 5% דמי ביטול.\nביטול לאחר תחילת עבודה — חלק יחסי + 10% עמלת הפקה.`;
   const [qNote, setQNote] = useState(DEFAULT_NOTE);
+  const [qDesign, setQDesign] = useState({ headerColor: "#1a1f2b", rowColor: "#ffffff", altRowColor: "#f9f9f9", rowHeight: "normal", accentColor: "#e8c547" });
   const UNIT_OPTS = ["פרויקט", "משמרת", "יום", "סרט", "שעה", ""];
   const tmpls = quoteTemplates || DEF_QUOTE_TMPLS;
   const total = lines.reduce((s, l) => s + l.qty * l.price, 0);
@@ -5554,7 +5556,12 @@ function QuoteBuilder({
     resetForm();
     setStep("list");
   };
-  const printQuote = (q, lns, tot) => {
+  const printQuote = (q, lns, tot, design) => {
+    const d = design || qDesign || {};
+    const hdrColor = d.headerColor || "#1e3a8a";
+    const accentColor = d.accentColor || "#1d4ed8";
+    const altRow = d.altRowColor || "#f8fafc";
+    const rowPad = d.rowHeight === "compact" ? "4px 9px" : d.rowHeight === "spacious" ? "10px 9px" : "6px 9px";
     const w = window.open("", "_blank");
     const dateStr = new Date().toLocaleDateString("he-IL", { year: "numeric", month: "long", day: "numeric" });
     const quoteNum = `QT-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
@@ -5568,7 +5575,7 @@ function QuoteBuilder({
 body{font-family:Arial,Helvetica,sans-serif;background:#fff;color:#111827;direction:rtl;font-size:11.5px;line-height:1.5}
 .page{width:180mm;max-width:100%;margin:0 auto;padding:0}
 /* Header */
-.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1d4ed8;padding-bottom:12px;margin-bottom:14px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid ${accentColor};padding-bottom:12px;margin-bottom:14px}
 .co-logo-text{font-size:24px;font-weight:900;color:#1d4ed8;letter-spacing:-1px}
 .co-info{text-align:left;font-size:9.5px;color:#4b5563;line-height:1.8}
 .co-info b{color:#111827;font-size:10px}
@@ -5592,10 +5599,10 @@ body{font-family:Arial,Helvetica,sans-serif;background:#fff;color:#111827;direct
 /* Price table */
 .tbl-wrap{margin:10px 0}
 table{width:100%;border-collapse:collapse}
-thead tr{background:#1e3a8a}
+thead tr{background:${hdrColor}}
 thead th{color:#fff;padding:7px 9px;text-align:right;font-size:10px;font-weight:700}
-tbody tr:nth-child(even){background:#f8fafc}
-tbody td{padding:6px 9px;border-bottom:1px solid #e5e7eb;font-size:11px;color:#1f2937}
+tbody tr:nth-child(even){background:${altRow}}
+tbody td{padding:${rowPad};border-bottom:1px solid #e5e7eb;font-size:11px;color:#1f2937}
 tbody tr:last-child td{border-bottom:none}
 /* Total block */
 .total-wrap{display:flex;justify-content:flex-end;margin:8px 0 3px}
@@ -5833,13 +5840,25 @@ ${q.note ? `<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(
                   style: { padding: "3px 8px", fontSize: 12, color: q.quoteStatus === "approved" ? "var(--green)" : undefined, borderColor: q.quoteStatus === "approved" ? "#6ee7b740" : undefined },
                   onClick: () => onSave(q.projId2, { ...q, quoteStatus: q.quoteStatus === "approved" ? "sent" : "approved", approved: q.quoteStatus !== "approved" }, true)
                 }, "✅ אושרה"),
+                isAdmin && q.quoteStatus === "approved" && !q.convertedToProjId && /*#__PURE__*/React.createElement("button", {
+                  className: "btn-gold btn-sm",
+                  title: "פתח פרויקט חדש מהצעה זו",
+                  style: { padding: "3px 10px", fontSize: 12, fontWeight: 800 },
+                  onClick: () => onConvertToProject && onConvertToProject(q)
+                }, "🚀 פתח פרויקט"),
+                q.convertedToProjId && /*#__PURE__*/React.createElement("span", {
+                  style: { fontSize: 11, color: "var(--green)", fontWeight: 700 }
+                }, "✓ פרויקט #", q.convertedProjNum),
                 isAdmin && /*#__PURE__*/React.createElement("button", {
                   className: "btn-ghost btn-sm",
                   title: "הצעה מעודכנת נשלחה",
                   style: { padding: "3px 8px", fontSize: 12, color: q.quoteStatus === "updated" ? "var(--purple)" : undefined, borderColor: q.quoteStatus === "updated" ? "#c084fc40" : undefined },
                   onClick: () => onSave(q.projId2, { ...q, quoteStatus: q.quoteStatus === "updated" ? "sent" : "updated" }, true)
                 }, "🔄 עודכנה"),
-                /*#__PURE__*/React.createElement("button", { className: "btn-blue btn-sm", onClick: () => printQuote(q, q.lines || [], q.total) }, "🖨️"),
+                /*#__PURE__*/React.createElement("button", { className: "btn-blue btn-sm", onClick: () => {
+                const d = q.design || {};
+                printQuote(q, q.lines || [], q.total, d);
+              }}, "🖨️"),
                 /*#__PURE__*/React.createElement("button", {
                   className: "btn-ghost btn-sm", title: "שכפל",
                   onClick: () => { onSave(q.projId2, { ...q, id: uid(), date: todayStr(), quoteStatus: "draft", approved: false }); }
@@ -9403,14 +9422,16 @@ function FinanceModule({ projects, users, currentUser, quoteTemplates, onSaveQuo
     ...standaloneQuotes.map(q => ({ ...q, projId2: null, isStandalone: true }))
   ].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
-  // Approve a standalone quote → create project
+  // Approve a standalone quote → create project with next sequential number
   const approveStandalone = q => {
+    const allNums = projects.map(p => parseInt(p.projectNumber)||0);
+    const nextNum = (allNums.length ? Math.max(...allNums) : (nextProjNum||0)) + 1;
     const newProj = {
       id: uid(),
-      projectNumber: nextProjNum || 1,
+      projectNumber: String(nextNum),
       name: q.projName || q.client || "פרויקט חדש",
       client: q.client || "",
-      producer: "",
+      producer: currentUser.name || "",
       status: "active",
       progress: 0,
       description: q.projDesc || "",
@@ -9418,13 +9439,56 @@ function FinanceModule({ projects, users, currentUser, quoteTemplates, onSaveQuo
       tasks: [],
       shifts: [],
       hours: [],
-      quotes: [{ ...q, approved: true, quoteStatus: "approved", isStandalone: false }],
-      plan: { crew: [], milestones: [], notes: "" }
+      quotes: [{ ...q, approved: true, quoteStatus: "approved", isStandalone: false, convertedToProjId: uid(), convertedProjNum: nextNum }],
+      plan: {
+        staffRows: (q.lines||[]).map(l => ({
+          id: uid(), role: l.desc||"", name: "",
+          rate: l.price||0, unit: l.unit||"משמרת", qty: l.qty||1
+        })),
+        notes: "", plannedShifts: []
+      },
+      updatedAt: new Date().toISOString()
     };
-    onSaveQuote && onSaveQuote(newProj.id, { ...q, approved: true, quoteStatus: "approved" });
+    if (window.confirm("פתח פרויקט #" + nextNum + " — " + newProj.name + "?")) {
+      onAddProject && onAddProject(newProj);
+      saveStandalone(standaloneQuotes.filter(x => x.id !== q.id));
+      alert("✅ פרויקט #" + nextNum + " נפתח!");
+    }
+  };
+
+  // Approve a project-linked quote → also create project if needed
+  const approveLinkedQuote = (projId, q) => {
+    const proj = projects.find(p => p.id === projId);
+    if (!proj) return;
+    const allNums = projects.map(p => parseInt(p.projectNumber)||0);
+    const nextNum = (allNums.length ? Math.max(...allNums) : 0) + 1;
+    if (q.convertedToProjId) { alert("הצעה זו כבר הומרה לפרויקט #" + q.convertedProjNum); return; }
+    if (!window.confirm("פתח פרויקט #" + nextNum + " מהצעה זו?")) return;
+    const newProj = {
+      id: uid(),
+      projectNumber: String(nextNum),
+      name: q.projName || proj.name || "פרויקט חדש",
+      client: q.client || proj.client || "",
+      producer: currentUser.name || "",
+      status: "active",
+      progress: 0,
+      description: q.projDesc || "",
+      statusNote: "",
+      tasks: [], shifts: [], hours: [],
+      quotes: [{ ...q, approved: true, quoteStatus: "approved", convertedToProjId: "", convertedProjNum: nextNum }],
+      plan: {
+        staffRows: (q.lines||[]).map(l => ({
+          id: uid(), role: l.desc||"", name: "",
+          rate: l.price||0, unit: l.unit||"משמרת", qty: l.qty||1
+        })),
+        notes: "", plannedShifts: []
+      },
+      updatedAt: new Date().toISOString()
+    };
     onAddProject && onAddProject(newProj);
-    // Remove from standalone
-    saveStandalone(standaloneQuotes.filter(x => x.id !== q.id));
+    // Mark original quote as converted
+    onSaveQuote && onSaveQuote(projId, { ...q, quoteStatus: "approved", approved: true, convertedToProjId: newProj.id, convertedProjNum: nextNum }, true);
+    alert("✅ פרויקט #" + nextNum + " נפתח!");
   };
 
   const LABELS = { quotes: "📝 הצעות מחיר", pricelist: "💲 מחירון", reports: "📊 דוחות" };
@@ -9453,7 +9517,7 @@ function FinanceModule({ projects, users, currentUser, quoteTemplates, onSaveQuo
 
     // ── TAB: מחירון ─────────────────────────────────────────────
     finTab === "pricelist" && React.createElement(PriceListModule, {
-      priceLists, onSave: savePL, projects
+      priceLists, onSave: savePL, projects, user
     }),
 
     // ── TAB: דוחות ──────────────────────────────────────────────
@@ -9925,6 +9989,7 @@ function QuoteBuilderForm({ projects, quoteTemplates, onUpdateTemplates, editing
   };
 
   const [saveTemplModal, setSaveTemplModal] = useState(false);
+  const [qDesign, setQDesign] = useState({ headerColor: "#1e3a8a", accentColor: "#1d4ed8", altRowColor: "#f8fafc", rowHeight: "normal" });
   const [newTplName, setNewTplName] = useState("");
   const saveAsTemplate = () => {
     if (!newTplName.trim()) return;
@@ -10165,6 +10230,41 @@ function QuoteBuilderForm({ projects, quoteTemplates, onUpdateTemplates, editing
       React.createElement("textarea", { value: qNote, onChange: e => setQNote(e.target.value), style: { minHeight: 120, fontSize: 12, lineHeight: 1.6 } })
     ),
 
+    // ── עיצוב הצעת המחיר ──
+    React.createElement("div", { className: "card", style: { marginBottom: 14 } },
+      React.createElement("div", { style: { fontWeight: 700, marginBottom: 12, fontSize: 13 } }, "🎨 6. עיצוב הצעת המחיר"),
+      React.createElement("div", { className: "frow" },
+        React.createElement("div", { className: "fcol" },
+          React.createElement(Lbl, null, "צבע כותרת טבלה"),
+          React.createElement("input", { type: "color", value: qDesign.headerColor, onChange: e => setQDesign(d => ({...d, headerColor: e.target.value})), style: { width: 60, height: 36, padding: 2, cursor: "pointer" } })
+        ),
+        React.createElement("div", { className: "fcol" },
+          React.createElement(Lbl, null, "צבע הדגשה"),
+          React.createElement("input", { type: "color", value: qDesign.accentColor, onChange: e => setQDesign(d => ({...d, accentColor: e.target.value})), style: { width: 60, height: 36, padding: 2, cursor: "pointer" } })
+        ),
+        React.createElement("div", { className: "fcol" },
+          React.createElement(Lbl, null, "צבע שורות"),
+          React.createElement("input", { type: "color", value: qDesign.altRowColor, onChange: e => setQDesign(d => ({...d, altRowColor: e.target.value})), style: { width: 60, height: 36, padding: 2, cursor: "pointer" } })
+        ),
+        React.createElement("div", { className: "fcol" },
+          React.createElement(Lbl, null, "גובה שורות"),
+          React.createElement("select", { value: qDesign.rowHeight, onChange: e => setQDesign(d => ({...d, rowHeight: e.target.value})) },
+            React.createElement("option", { value: "compact" }, "צפוף"),
+            React.createElement("option", { value: "normal" }, "רגיל"),
+            React.createElement("option", { value: "spacious" }, "מרווח")
+          )
+        ),
+        React.createElement("div", { className: "fcol" },
+          React.createElement(Lbl, null, "תצוגה מקדימה"),
+          React.createElement("div", { style: { display: "flex", gap: 4, marginTop: 4 } },
+            React.createElement("div", { style: { width: 28, height: 20, background: qDesign.headerColor, borderRadius: 3 } }),
+            React.createElement("div", { style: { width: 28, height: 20, background: qDesign.altRowColor, borderRadius: 3, border: "1px solid #eee" } }),
+            React.createElement("div", { style: { width: 28, height: 20, background: qDesign.accentColor, borderRadius: 3 } })
+          )
+        )
+      )
+    ),
+
     // ── כפתורי פעולה ──
     React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 40, marginTop: 20 } },
       React.createElement("button", { className: "btn-blue", onClick: () => setShowPreview(true) }, "👁️ תצוגה מקדימה"),
@@ -10189,20 +10289,20 @@ function QuoteBuilderForm({ projects, quoteTemplates, onUpdateTemplates, editing
 // ══════════════════════════════════════════
 // PRICE LIST MODULE
 // ══════════════════════════════════════════
-function PriceListModule({ priceLists, onSave, projects }) {
+function PriceListModule({ priceLists, onSave, projects, user }) {
   const [tab, setTab] = useState("base"); // "base" | "byClient"
   const [editingItem, setEditingItem] = useState(null);
   const [selClient, setSelClient] = useState("");
-  const [newItem, setNewItem] = useState({ desc: "", unit: "פרויקט", price: 0, category: "" });
+  const [newItem, setNewItem] = useState({ desc: "", unit: "פרויקט", price: 0, cost_price: 0, category: "" });
   const clientList = [...new Set(projects.map(p => p.client).filter(Boolean))].sort();
   const base = priceLists.base || [];
   const byClient = priceLists.byClient || [];
 
   const addBaseItem = () => {
     if (!newItem.desc) return;
-    const item = { id: uid(), ...newItem, price: parseFloat(newItem.price) || 0 };
+    const item = { id: uid(), ...newItem, price: parseFloat(newItem.price) || 0, cost_price: parseFloat(newItem.cost_price) || 0 };
     onSave({ ...priceLists, base: [...base, item] });
-    setNewItem({ desc: "", unit: "פרויקט", price: 0, category: "" });
+    setNewItem({ desc: "", unit: "פרויקט", price: 0, cost_price: 0, category: "" });
   };
   const delBase = id => onSave({ ...priceLists, base: base.filter(x => x.id !== id) });
   const updBase = (id, k, v) => onSave({ ...priceLists, base: base.map(x => x.id === id ? { ...x, [k]: k === "price" ? parseFloat(v)||0 : v } : x) });
@@ -10220,13 +10320,28 @@ function PriceListModule({ priceLists, onSave, projects }) {
   const UNITS = ["פרויקט", "משמרת", "יום", "שעה", "סרט"];
   const cats = [...new Set(base.map(x => x.category).filter(Boolean))];
 
+  const isAdminPL = !!(typeof user !== "undefined" && user && user.role === "admin");
   const ItemRow = ({ item, onDel, onUpd }) => React.createElement("div", { key: item.id, className: "card2", style: { display: "flex", gap: 8, alignItems: "center", marginBottom: 6, flexWrap: "wrap" } },
     React.createElement("div", { style: { flex: 2, minWidth: 120, fontWeight: 600, fontSize: 13 } }, item.desc),
     item.category && React.createElement("span", { className: "tag", style: { color: "var(--purple)", background: "var(--purple)20", fontSize: 10 } }, item.category),
     React.createElement("span", { style: { fontSize: 12, color: "var(--muted)" } }, item.unit),
-    onUpd
-      ? React.createElement("input", { type: "number", value: item.price, onChange: e => onUpd(item.id, "price", e.target.value), style: { width: 100, textAlign: "left", fontSize: 13 } })
-      : React.createElement("span", { style: { fontWeight: 800, color: "var(--gold)" } }, fmtMoney(item.price)),
+    // מחיר ללקוח
+    React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 2 } },
+      React.createElement("div", { style: { fontSize: 9, color: "var(--muted)", textAlign: "center" } }, "מחיר ללקוח"),
+      onUpd
+        ? React.createElement("input", { type: "number", value: item.price, onChange: e => onUpd(item.id, "price", e.target.value), style: { width: 90, textAlign: "left", fontSize: 13 } })
+        : React.createElement("span", { style: { fontWeight: 800, color: "var(--gold)" } }, fmtMoney(item.price))
+    ),
+    // עלות פנימית — אדמין בלבד
+    isAdminPL && React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 2 } },
+      React.createElement("div", { style: { fontSize: 9, color: "var(--red)", textAlign: "center" } }, "עלות פנימית"),
+      onUpd
+        ? React.createElement("input", { type: "number", value: item.cost_price || 0, onChange: e => onUpd(item.id, "cost_price", e.target.value), style: { width: 90, textAlign: "left", fontSize: 13, borderColor: "var(--red)40" } })
+        : React.createElement("span", { style: { fontWeight: 700, color: "var(--red)", fontSize: 12 } }, fmtMoney(item.cost_price || 0))
+    ),
+    isAdminPL && item.price > 0 && (item.cost_price||0) > 0 && React.createElement("span", { style: { fontSize: 10, color: "var(--green)", fontWeight: 700 } },
+      "+" + Math.round((item.price - (item.cost_price||0)) / item.price * 100) + "%"
+    ),
     React.createElement("button", { className: "btn-red", onClick: () => onDel(item.id) }, "✕")
   );
 
@@ -10245,7 +10360,8 @@ function PriceListModule({ priceLists, onSave, projects }) {
           React.createElement("div", { className: "fcol", style: { flex: 2 } }, React.createElement(Lbl, null, "תיאור"), React.createElement("input", { value: newItem.desc, onChange: NI("desc"), placeholder: "עריכת תמונה..." })),
           React.createElement("div", { className: "fcol", style: { flex: 1 } }, React.createElement(Lbl, null, "קטגוריה"), React.createElement("input", { value: newItem.category, onChange: NI("category"), list: "cat-list", placeholder: "עריכה, צבע..." }), React.createElement("datalist", { id: "cat-list" }, cats.map(c => React.createElement("option", { key: c, value: c })))),
           React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "יחידה"), React.createElement("select", { value: newItem.unit, onChange: NI("unit") }, UNITS.map(u => React.createElement("option", { key: u, value: u }, u)))),
-          React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "מחיר (₪)"), React.createElement("input", { type: "number", value: newItem.price, onChange: NI("price") }))
+          React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "מחיר ללקוח (₪)"), React.createElement("input", { type: "number", value: newItem.price, onChange: NI("price") })),
+          isAdminPL && React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "עלות פנימית (₪)"), React.createElement("input", { type: "number", value: newItem.cost_price || 0, onChange: NI("cost_price"), style: { borderColor: "var(--red)40" } }))
         ),
         React.createElement("button", { className: "btn-gold btn-sm", onClick: addBaseItem }, "+ הוסף לרשימה")
       ),
