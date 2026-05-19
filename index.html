@@ -9845,15 +9845,24 @@ function QuoteBuilderForm({ projects, quoteTemplates, onUpdateTemplates, editing
 
   // --- HTML Generator for Preview & Print ---
   const buildHtmlDocument = () => {
+    // ── Pull design settings ──
+    const hdrBg    = qDesign.headerColor  || "#1e3a8a";
+    const accent   = qDesign.accentColor  || "#1d4ed8";
+    const altRow   = qDesign.altRowColor  || "#f8fafc";
+    const rowPad   = qDesign.rowHeight === "compact" ? "5px 11px" : qDesign.rowHeight === "spacious" ? "14px 11px" : "9px 11px";
+    const clientBg = accent + "18";
+    const clientBd = accent + "60";
+    const accentDark = hdrBg;
+
     const dateStr = new Date().toLocaleDateString("he-IL", { year: "numeric", month: "long", day: "numeric" });
     const quoteNum = `QT-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
     const logo = document.querySelector("#appLogo");
-    const logoHtml = logo ? `<img src="${logo.src}" style="height:54px;object-fit:contain;"/>` : `<div style="font-size:26px;font-weight:900;color:#1d4ed8">FLOW</div>`;
+    const logoHtml = logo ? `<img src="${logo.src}" style="height:54px;object-fit:contain;"/>` : `<div style="font-size:26px;font-weight:900;color:${accent}">FLOW</div>`;
     const sec = (label, val) => val ? `<div class="sec"><div class="sec-label">${label}</div><div class="sec-val">${String(val).replace(/\n/g,"<br/>")}</div></div>` : "";
     
     // HTML for Deliverables Table
     const deliverablesHtml = deliverables.filter(d => d.desc).length > 0 ? `
-      <div class="sec-label" style="font-size:14px; margin-top:24px; border-bottom:2px solid #1d4ed8;">רשימת תוצרים ומפרט טכני</div>
+      <div class="sec-label" style="font-size:14px; margin-top:24px; border-bottom:2px solid ${accent};">רשימת תוצרים ומפרט טכני</div>
       <table style="margin-top:10px; margin-bottom:24px;">
         <thead><tr>
           <th style="text-align:right;">תיאור התוצר</th>
@@ -9878,7 +9887,7 @@ function QuoteBuilderForm({ projects, quoteTemplates, onUpdateTemplates, editing
 
     // HTML for Costs Table
     const costsHtml = lines.length > 0 ? `
-      <div class="sec-label" style="font-size:14px; margin-top:20px; border-bottom:2px solid #1d4ed8;">פירוט עלויות</div>
+      <div class="sec-label" style="font-size:14px; margin-top:20px; border-bottom:2px solid ${accent};">פירוט עלויות</div>
       <table style="margin-top:10px; margin-bottom:20px;">
         <thead><tr>
           <th>תיאור שירות / תפקיד</th>
@@ -9893,7 +9902,7 @@ function QuoteBuilderForm({ projects, quoteTemplates, onUpdateTemplates, editing
             <td style="text-align:center">${l.qty}</td>
             <td>${l.unit||""}</td>
             <td>${fmtMoney(l.price)}</td>
-            <td style="font-weight:700;color:#1e3a8a">${fmtMoney(l.qty*l.price)}</td>
+            <td style="font-weight:700;color:${hdrBg}">${fmtMoney(l.qty*l.price)}</td>
           </tr>`).join("")}
         </tbody>
       </table>
@@ -9918,23 +9927,23 @@ function QuoteBuilderForm({ projects, quoteTemplates, onUpdateTemplates, editing
       <style>
       @page{size:A4;margin:18mm 16mm}*{margin:0;padding:0;box-sizing:border-box}
       body{font-family:Arial,sans-serif;color:#111;direction:rtl;font-size:12.5px;line-height:1.55; background:#fff;}
-      .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1d4ed8;padding-bottom:16px;margin-bottom:20px}
+      .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid ${accent};padding-bottom:16px;margin-bottom:20px}
       .co-info{text-align:left;font-size:10.5px;color:#4b5563;line-height:1.9}
-      .doc-title{font-size:24px;font-weight:900;color:#1d4ed8}
-      .client-strip{display:flex;justify-content:space-between;align-items:flex-end;background:#eff6ff;border:1px solid #bfdbfe;border-right:4px solid #1d4ed8;border-radius:0 8px 8px 0;padding:13px 18px;margin-bottom:18px}
-      .cl-name{font-size:17px;font-weight:900;color:#1e3a8a}
+      .doc-title{font-size:24px;font-weight:900;color:${accent}}
+      .client-strip{display:flex;justify-content:space-between;align-items:flex-end;background:${clientBg};border:1px solid ${clientBd};border-right:4px solid ${accent};border-radius:0 8px 8px 0;padding:13px 18px;margin-bottom:18px}
+      .cl-name{font-size:17px;font-weight:900;color:${accentDark}}
       .sec{margin-bottom:14px}
-      .sec-label{font-size:10px;font-weight:800;color:#1d4ed8;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;border-bottom:1px solid #dbeafe;padding-bottom:2px}
+      .sec-label{font-size:10px;font-weight:800;color:${accent};letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;border-bottom:1px solid ${clientBd};padding-bottom:2px}
       .sec-val{font-size:12px;color:#374151;line-height:1.6}
       table{width:100%;border-collapse:collapse; margin-bottom: 20px;}
-      thead tr{background:#1e3a8a}
-      thead th{color:#fff;padding:9px 11px;text-align:right;font-size:11px}
-      tbody tr:nth-child(even){background:#f8fafc}
-      tbody td{padding:10px 11px;border-bottom:1px solid #e5e7eb;font-size:12px; vertical-align: top;}
-      .total-box{background:#1e3a8a;color:#fff;padding:14px 22px;border-radius:10px;min-width:240px; margin-right:auto; margin-bottom: 30px;}
+      thead tr{background:${hdrBg}}
+      thead th{color:#fff;padding:${rowPad};text-align:right;font-size:11px}
+      tbody tr:nth-child(even){background:${altRow}}
+      tbody td{padding:${rowPad};border-bottom:1px solid #e5e7eb;font-size:12px; vertical-align: top;}
+      .total-box{background:${hdrBg};color:#fff;padding:14px 22px;border-radius:10px;min-width:240px; margin-right:auto; margin-bottom: 30px;}
       .signature-block{display:flex; justify-content:space-between; border-top:1px solid #ccc; padding-top:15px; margin-top:40px; font-weight:bold; color:#444;}
-      .note{background:#f9fafb;border:1px solid #e5e7eb;border-right:3px solid #1d4ed8;border-radius:0 8px 8px 0;padding:16px 20px; font-size:12px; line-height:1.8; color:#374151;}
-      .footer{margin-top:22px;border-top:2px solid #1d4ed8;padding-top:12px;display:flex;justify-content:space-between;font-size:10px;color:#6b7280}
+      .note{background:#f9fafb;border:1px solid #e5e7eb;border-right:3px solid ${accent};border-radius:0 8px 8px 0;padding:16px 20px; font-size:12px; line-height:1.8; color:#374151;}
+      .footer{margin-top:22px;border-top:2px solid ${accent};padding-top:12px;display:flex;justify-content:space-between;font-size:10px;color:#6b7280}
       @media print{ body{-webkit-print-color-adjust:exact;print-color-adjust:exact} .page-break { page-break-before: always; } }
       </style></head><body>
       
@@ -9971,9 +9980,9 @@ function QuoteBuilderForm({ projects, quoteTemplates, onUpdateTemplates, editing
 
       <div class="page-break" style="page-break-before: always; padding-top: 20px;">
         <div class="doc-title" style="margin-bottom:20px;">תנאים והגבלות</div>
-        ${qPayment?`<div style="font-size:14px; margin-bottom:15px; background:#eff6ff; padding:10px 15px; border-radius:8px; color:#1e3a8a; font-weight:bold;">💳 תנאי תשלום: ${qPayment}</div>`:""}
+        ${qPayment?`<div style="font-size:14px; margin-bottom:15px; background:#eff6ff; padding:10px 15px; border-radius:8px; color:${accentDark}; font-weight:bold;">💳 תנאי תשלום: ${qPayment}</div>`:""}
         ${qNote?`<div class="note">${String(qNote).replace(/\n/g,"<br/>")}</div>`:""}
-        <div class="footer" style="margin-top:40px;"><span>מסמך זה הינו הצעת מחיר בלבד ואינו חשבונית מס</span><b style="color:#1d4ed8">FLOW | Post Production</b><span>ח.פ 516791274</span></div>
+        <div class="footer" style="margin-top:40px;"><span>מסמך זה הינו הצעת מחיר בלבד ואינו חשבונית מס</span><b style="color:${accent}">FLOW | Post Production</b><span>ח.פ 516791274</span></div>
       </div>
 
       ${appendixHtml}
