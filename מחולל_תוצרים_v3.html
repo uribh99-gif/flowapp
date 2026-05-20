@@ -28,7 +28,7 @@ body { font-family: 'Heebo', sans-serif; background: #0f172a; color: var(--gray-
 .header-content { position: relative; z-index: 2; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 
 /* Fixed company logo always visible */
-.company-logo-fixed { position: absolute; top: 12px; right: 16px; z-index: 10; max-height: 44px; max-width: 140px; object-fit: contain; display: none; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); border-radius: 4px; }
+.company-logo-fixed { position: absolute; top: 12px; right: 16px; z-index: 10; max-height: 44px; max-width: 140px; object-fit: contain; display: block; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); border-radius: 4px; }
 .company-logo-placeholder { position: absolute; top: 12px; right: 16px; z-index: 10; background: rgba(255,255,255,0.15); border: 1.5px dashed rgba(255,255,255,0.4); border-radius: 8px; padding: 6px 10px; font-size: 11px; color: rgba(255,255,255,0.7); cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s; }
 .company-logo-placeholder:hover { background: rgba(255,255,255,0.25); }
 
@@ -160,8 +160,8 @@ body { font-family: 'Heebo', sans-serif; background: #0f172a; color: var(--gray-
     <div class="header-overlay" id="headerOverlay"></div>
     
     <!-- Fixed company logo top-right -->
-    <img src="" id="companyLogoFixed" class="company-logo-fixed" alt="לוגו חברה">
-    <div class="company-logo-placeholder" id="logoPlaceholder" onclick="document.getElementById('logoUploadFixed').click()" title="העלה לוגו חברה קבוע">
+    <img src="FPP_LOGO.png" id="companyLogoFixed" class="company-logo-fixed" alt="לוגו חברה">
+    <div class="company-logo-placeholder" id="logoPlaceholder" style="display:none;" onclick="document.getElementById('logoUploadFixed').click()" title="העלה לוגו חברה קבוע">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
       לוגו
     </div>
@@ -270,24 +270,16 @@ body { font-family: 'Heebo', sans-serif; background: #0f172a; color: var(--gray-
         </div>
         <div class="color-pickers-grid">
           <div class="field-row">
-            <label class="field-label">צבע רקע הדף</label>
+            <label class="field-label">בחר צבע רקע</label>
             <div class="color-picker-wrapper">
               <input type="color" id="colorPageBg" class="color-input" value="#ffffff" onchange="updatePageBgColor()">
               <span style="font-size:13px; color:var(--gray-600);">ברירת מחדל: לבן</span>
             </div>
           </div>
           <div class="field-row">
-            <label class="field-label">איפוס לבן</label>
-            <button class="action-btn secondary" style="padding:10px; font-size:13px;" onclick="resetPageBg()">↺ איפוס</button>
+            <label class="field-label">איפוס</label>
+            <button class="action-btn secondary" style="padding:10px; font-size:13px;" onclick="resetPageBg()">↺ לבן</button>
           </div>
-        </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
-          <div class="color-swatch" style="background:#ffffff; border:2px solid #ccc;" onclick="applyPageBgPreset('#ffffff')" title="לבן"></div>
-          <div class="color-swatch" style="background:#f0f4fc;" onclick="applyPageBgPreset('#f0f4fc')" title="כחול בהיר"></div>
-          <div class="color-swatch" style="background:#f8fafc;" onclick="applyPageBgPreset('#f8fafc')" title="אפור בהיר"></div>
-          <div class="color-swatch" style="background:#0f172a;" onclick="applyPageBgPreset('#0f172a')" title="כהה"></div>
-          <div class="color-swatch" style="background:#1e1e2e;" onclick="applyPageBgPreset('#1e1e2e')" title="כהה-סגול"></div>
-          <div class="color-swatch" style="background:#fdf6ec;" onclick="applyPageBgPreset('#fdf6ec')" title="שמנת"></div>
         </div>
       </div>
       <button class="action-btn" onclick="switchTab('paste')">המשך להזנת תוצרים ←</button>
@@ -463,7 +455,6 @@ function handleFixedLogoUpload(input) {
     const logoEl = document.getElementById('companyLogoFixed');
     logoEl.src = fixedLogoBase64;
     logoEl.style.display = 'block';
-    document.getElementById('logoPlaceholder').style.display = 'none';
     document.getElementById('logoThumb').src = fixedLogoBase64;
     document.getElementById('logoThumb').style.display = 'block';
     extractDominantColors(fixedLogoBase64, 'logo');
@@ -985,7 +976,6 @@ async function fetchBgFromMovieLink(movieIndex) {
 function updatePageBgColor() {
   const color = document.getElementById('colorPageBg').value;
   document.querySelector('.app').style.background = color;
-  // also update the exported bg
   pageBgColor = color;
 }
 
@@ -993,12 +983,6 @@ function resetPageBg() {
   document.getElementById('colorPageBg').value = '#ffffff';
   document.querySelector('.app').style.background = '#ffffff';
   pageBgColor = '#ffffff';
-}
-
-function applyPageBgPreset(color) {
-  document.getElementById('colorPageBg').value = color;
-  document.querySelector('.app').style.background = color;
-  pageBgColor = color;
 }
 
 
@@ -1059,9 +1043,7 @@ function exportFinishedHTML() {
         : `background-image: url('${bgBase64}'); background-size: cover; background-position: center;`)
     : `background: linear-gradient(135deg, ${primaryColor} 0%, ${darkenHex(primaryColor,40)} 100%);`;
 
-  const fixedLogoHtml = fixedLogoBase64 
-    ? `<img src="${fixedLogoBase64}" class="company-logo-fixed" alt="לוגו">` 
-    : '';
+  const fixedLogoHtml = `<img src="FPP_LOGO.png" class="company-logo-fixed" alt="לוגו">`;
   const centerLogoHtml = centerLogoBase64 
     ? `<img src="${centerLogoBase64}" class="center-logo">` 
     : '';
@@ -1080,7 +1062,7 @@ body { font-family: 'Heebo', sans-serif; background: ${exportPageBg}; color: #1e
 .header { padding: 40px 20px 36px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; color: #ffffff; position: relative; border-radius: 0 0 24px 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); ${bgStyle} }
 .header::before { content:""; position:absolute; inset:0; background:rgba(0,0,0,0.25); border-radius:0 0 24px 24px; z-index:1; display:${bgBase64 ? 'block' : 'none'}; }
 .header-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.company-logo-fixed { position: absolute; top: 14px; right: 18px; max-height: 46px; max-width: 140px; object-fit: contain; z-index: 10; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
+.company-logo-fixed { position: absolute; top: 14px; right: 18px; max-height: 46px; max-width: 140px; object-fit: contain; z-index: 10; display: block; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
 .center-logo { max-height: 65px; max-width: 180px; object-fit: contain; margin-bottom: 8px; }
 .header-title { font-size: 24px; font-weight: 900; }
 .header-sub { color: rgba(255,255,255,0.8); font-size: 13px; }
