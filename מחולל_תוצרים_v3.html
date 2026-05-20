@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מחולל טבלת תוצרים דינמי v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<!-- SheetJS for Excel/CSV import -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primary: #003595; --primary-dark: #001f6e; --accent: #F47920; --accent-light: #fff3e8;
+  --bg-app: #f0f4fc; --white: #ffffff; --gray-50: #f8fafc; --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0; --gray-400: #94a3b8; --gray-500: #64748b; --gray-600: #475569;
+  --gray-800: #1e293b; --success: #059669; --danger: #dc2626;
+  --r: 16px; --r-sm: 10px; --shadow: 0 4px 12px rgba(0,0,0,0.05);
+  --dominant-bg: #003595;
+}
+
+body { font-family: 'Heebo', sans-serif; background: #0f172a; color: var(--gray-800); min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding: 20px 10px 60px; }
+.app { width: 100%; max-width: 660px; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
+
+/* ===== DYNAMIC HEADER ===== */
+.header-container { position: relative; background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%); padding: 44px 20px 36px; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; color: #fff; background-size: cover; background-position: center; transition: all 0.4s ease; min-height: 160px; }
+.header-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.28); z-index: 1; display: none; }
+.header-content { position: relative; z-index: 2; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+/* Fixed company logo always visible */
+.company-logo-fixed { position: absolute; top: 12px; right: 16px; z-index: 10; max-height: 44px; max-width: 140px; object-fit: contain; display: none; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); border-radius: 4px; }
+.company-logo-placeholder { position: absolute; top: 12px; right: 16px; z-index: 10; background: rgba(255,255,255,0.15); border: 1.5px dashed rgba(255,255,255,0.4); border-radius: 8px; padding: 6px 10px; font-size: 11px; color: rgba(255,255,255,0.7); cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s; }
+.company-logo-placeholder:hover { background: rgba(255,255,255,0.25); }
+
+.uploaded-logo { max-height: 70px; max-width: 200px; object-fit: contain; display: none; margin-bottom: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
+.header-title { font-size: 26px; font-weight: 900; line-height: 1.2; text-shadow: 0 2px 4px rgba(0,0,0,0.2); outline: none; }
+.header-sub { color: rgba(255,255,255,0.75); font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,0.2); outline: none; }
+
+/* Fetching bg indicator */
+.bg-fetch-indicator { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 10; background: rgba(0,0,0,0.5); color: #fff; font-size: 11px; padding: 4px 12px; border-radius: 20px; display: none; }
+
+/* ===== TABS NAVBAR ===== */
+.tabs-bar { display: grid; grid-template-columns: repeat(5, 1fr); background: rgba(0,0,0,0.04); padding: 6px; gap: 4px; border-bottom: 1px solid var(--gray-200); }
+.tab-btn { border: none; border-radius: 12px; padding: 10px 2px; font-family: 'Heebo', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; background: transparent; color: var(--gray-600); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.tab-btn svg { width: 17px; height: 17px; }
+.tab-btn.active { background: var(--white); color: var(--primary); box-shadow: var(--shadow); }
+
+/* ===== PANELS CONTENT ===== */
+.panels { padding: 20px 16px; flex: 1; }
+.panel { display: none; flex-direction: column; gap: 16px; }
+.panel.active { display: flex; }
+
+/* ===== GENERAL FORM STYLES ===== */
+.section-card { background: var(--white); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 14px; }
+.card-title { font-size: 15px; font-weight: 700; color: var(--gray-800); display: flex; align-items: center; gap: 6px; border-bottom: 2px solid var(--gray-100); padding-bottom: 8px; }
+.card-title svg { width: 18px; height: 18px; color: var(--primary); }
+.field-row { display: flex; flex-direction: column; gap: 6px; }
+.field-label { font-size: 13px; font-weight: 700; color: var(--gray-600); }
+.field-input { background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--r-sm); padding: 12px; font-family: 'Heebo', sans-serif; font-size: 14px; color: var(--gray-800); outline: none; transition: all 0.2s; width: 100%; }
+.field-input:focus { border-color: var(--primary); background: #fff; }
+.color-pickers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.color-picker-wrapper { display: flex; align-items: center; gap: 10px; background: var(--gray-50); padding: 10px; border-radius: var(--r-sm); border: 1.5px solid var(--gray-200); }
+.color-input { width: 40px; height: 40px; border: none; border-radius: 6px; cursor: pointer; background: none; }
+.file-upload-btn { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--gray-50); border: 2px dashed var(--gray-400); border-radius: var(--r-sm); padding: 16px; cursor: pointer; transition: all 0.2s; font-size: 14px; font-weight: 500; color: var(--gray-600); }
+.file-upload-btn:hover { background: #fff; border-color: var(--primary); color: var(--primary); }
+.file-upload-btn input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.preview-thumbnail { width: 50px; height: 35px; object-fit: contain; background: #eee; border-radius: 4px; display: none; }
+
+/* ===== PASTE & IMPORT PANEL ===== */
+.paste-textarea { width: 100%; min-height: 170px; background: var(--white); border: 2px dashed var(--gray-200); border-radius: var(--r); padding: 16px; font-family: 'Heebo', sans-serif; font-size: 14px; resize: vertical; outline: none; line-height: 1.6; }
+.paste-textarea:focus { border-color: var(--primary); border-style: solid; }
+
+/* Tabs inside paste panel */
+.input-mode-tabs { display: flex; gap: 0; border-radius: var(--r-sm); overflow: hidden; border: 1.5px solid var(--gray-200); }
+.mode-tab { flex: 1; padding: 10px; font-family: 'Heebo', sans-serif; font-size: 13px; font-weight: 700; border: none; cursor: pointer; background: var(--gray-50); color: var(--gray-500); transition: all 0.2s; }
+.mode-tab.active { background: var(--primary); color: #fff; }
+
+/* Import zone */
+.import-zone { border: 2px dashed var(--gray-300); border-radius: var(--r); padding: 30px 20px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; background: var(--gray-50); }
+.import-zone:hover, .import-zone.drag-over { border-color: var(--primary); background: rgba(0,53,149,0.04); }
+.import-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.import-zone-icon { font-size: 36px; margin-bottom: 8px; }
+.import-zone-title { font-size: 15px; font-weight: 700; color: var(--gray-700); margin-bottom: 4px; }
+.import-zone-sub { font-size: 12px; color: var(--gray-400); }
+
+/* Column mapper */
+.col-mapper { display: flex; flex-direction: column; gap: 10px; }
+.col-mapper-row { display: flex; align-items: center; gap: 10px; background: var(--gray-50); padding: 10px 12px; border-radius: var(--r-sm); }
+.col-mapper-label { font-size: 13px; font-weight: 600; color: var(--gray-600); flex: 1; }
+.col-mapper-select { background: #fff; border: 1.5px solid var(--gray-200); border-radius: 6px; padding: 6px 10px; font-family: 'Heebo', sans-serif; font-size: 13px; outline: none; flex: 1.5; }
+.col-mapper-select:focus { border-color: var(--primary); }
+
+.preview-table-wrapper { overflow-x: auto; border-radius: var(--r-sm); border: 1px solid var(--gray-200); max-height: 200px; overflow-y: auto; }
+.preview-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.preview-table th { background: var(--primary); color: #fff; padding: 6px 10px; text-align: right; position: sticky; top: 0; }
+.preview-table td { padding: 5px 10px; border-bottom: 1px solid var(--gray-100); }
+.preview-table tr:last-child td { border-bottom: none; }
+.preview-table tr:nth-child(even) td { background: var(--gray-50); }
+
+/* Action buttons */
+.action-btn { width: 100%; background: var(--primary); color: #fff; border: none; border-radius: var(--r); padding: 16px; font-family: 'Heebo', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.2s; }
+.action-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+.action-btn.secondary { background: transparent; color: var(--primary); border: 2px solid var(--primary); box-shadow: none; }
+.action-btn.secondary:hover { background: rgba(0,53,149,0.05); }
+.action-btn.export { background: linear-gradient(135deg, #059669 0%, #047857 100%); font-size: 16px; padding: 18px; margin-top: 10px; }
+.action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ===== DYNAMIC GRIDS ===== */
+.dynamic-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+
+/* ===== MANUAL INPUT CARD ===== */
+.manual-card { background: var(--white); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow); border-right: 5px solid var(--accent); display: flex; flex-direction: column; gap: 12px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; }
+.delete-btn { background: transparent; border: none; color: var(--gray-400); cursor: pointer; padding: 4px; border-radius: 50%; transition: all 0.2s; font-size: 16px; }
+.delete-btn:hover { color: var(--danger); background: #fef2f2; }
+
+/* ===== VIEW / EDIT DELIVERABLES ===== */
+.editable-movie-card { background: var(--white); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow); border-right: 5px solid var(--primary); display: flex; flex-direction: column; gap: 14px; transition: border-color 0.3s; }
+.movie-title-input { font-size: 17px; font-weight: 800; color: var(--gray-800); border: 1px solid transparent; background: transparent; padding: 4px 8px; border-radius: 4px; width: 100%; font-family: 'Heebo', sans-serif; }
+.movie-title-input:hover { border-color: var(--gray-200); background: var(--gray-50); }
+.movie-title-input:focus { border-color: var(--primary); background: #fff; outline: none; }
+.link-edit-box { display: flex; flex-direction: column; gap: 4px; }
+.link-type-label { font-size: 11px; font-weight: 700; color: var(--gray-500); text-align: center; background: var(--gray-100); padding: 4px 6px; border-radius: 4px; }
+.link-url-input { width: 100%; padding: 8px; font-size: 12px; border: 1.5px solid var(--gray-200); border-radius: 6px; outline: none; font-family: monospace; }
+.link-url-input:focus { border-color: var(--primary); }
+.link-url-input::placeholder { font-family: 'Heebo', sans-serif; color: var(--gray-400); }
+
+/* Fetch bg from link button per card */
+.fetch-bg-btn { font-size: 11px; padding: 5px 10px; border: 1px solid var(--primary); background: transparent; color: var(--primary); border-radius: 20px; cursor: pointer; font-family: 'Heebo', sans-serif; font-weight: 600; transition: all 0.2s; white-space: nowrap; }
+.fetch-bg-btn:hover { background: var(--primary); color: #fff; }
+.fetch-bg-btn.loading { opacity: 0.6; cursor: wait; }
+
+/* ===== BADGE chip ===== */
+.badge { display: inline-flex; align-items: center; gap: 4px; background: rgba(0,53,149,0.08); color: var(--primary); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+
+/* ===== TOAST ===== */
+.toast { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--gray-800); color: #fff; padding: 12px 24px; border-radius: 50px; font-size: 14px; font-weight: 500; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2000; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { background: var(--success); }
+.toast.error { background: var(--danger); }
+
+#viewEmpty { text-align: center; padding: 40px 20px; color: var(--gray-400); }
+
+/* ===== DOMINANT COLOR SWATCH ===== */
+.color-swatches { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.color-swatch { width: 32px; height: 32px; border-radius: 6px; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+.color-swatch:hover, .color-swatch.selected { border-color: var(--gray-800); transform: scale(1.15); }
+.auto-color-hint { font-size: 12px; color: var(--gray-400); font-style: italic; }
+
+/* Progress bar */
+.progress-bar { height: 4px; background: var(--gray-100); border-radius: 2px; overflow: hidden; margin-top: 8px; display: none; }
+.progress-fill { height: 100%; background: var(--primary); border-radius: 2px; transition: width 0.3s; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ===== HEADER ===== -->
+  <div class="header-container" id="mainHeader">
+    <div class="header-overlay" id="headerOverlay"></div>
+    
+    <!-- Fixed company logo top-right -->
+    <img src="" id="companyLogoFixed" class="company-logo-fixed" alt="לוגו חברה">
+    <div class="company-logo-placeholder" id="logoPlaceholder" onclick="document.getElementById('logoUploadFixed').click()" title="העלה לוגו חברה קבוע">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      לוגו
+    </div>
+    <input type="file" id="logoUploadFixed" accept="image/*" style="display:none" onchange="handleFixedLogoUpload(this)">
+    
+    <div class="header-content">
+      <img src="" id="logoPreview" class="uploaded-logo" alt="לוגו">
+      <div class="header-title" id="textHeaderTitle" contenteditable="true">טבלת תוצרים</div>
+      <div class="header-sub" id="textHeaderSub" contenteditable="true">לחץ לעריכת כותרת המשנה</div>
+    </div>
+    <div class="bg-fetch-indicator" id="bgFetchIndicator">⏳ טוען תמונת רקע...</div>
+  </div>
+
+  <!-- ===== TABS ===== -->
+  <div class="tabs-bar">
+    <button class="tab-btn active" onclick="switchTab('design')" id="tab-design">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="4"/><path d="M13.5 10.5V21"/><path d="M9.5 14.5h8"/></svg>
+      עיצוב
+    </button>
+    <button class="tab-btn" onclick="switchTab('paste')" id="tab-paste">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M14 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+      הזנה
+    </button>
+    <button class="tab-btn" onclick="switchTab('manual')" id="tab-manual">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      ידני
+    </button>
+    <button class="tab-btn" onclick="switchTab('view')" id="tab-view">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+      תצוגה
+    </button>
+    <button class="tab-btn" onclick="switchTab('settings')" id="tab-settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      הגדרות
+    </button>
+  </div>
+
+  <div class="panels">
+
+    <!-- ===== DESIGN PANEL ===== -->
+    <div class="panel active" id="panel-design">
+      <div class="section-card">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          לוגו חברה (מקובע בכותרת)
+        </div>
+        <div class="field-row">
+          <label class="field-label">לוגו קבוע (מוצג תמיד בפינה העליונה)</label>
+          <div class="file-upload-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>בחר קובץ לוגו חברה...</span>
+            <input type="file" accept="image/*" onchange="handleFixedLogoUpload(this)">
+          </div>
+          <img id="logoThumb" class="preview-thumbnail">
+        </div>
+        <div class="field-row">
+          <label class="field-label">לוגו מרכזי בכותרת (אופציונלי)</label>
+          <div class="file-upload-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>לוגו מרכזי גדול...</span>
+            <input type="file" accept="image/*" onchange="handleCenterLogoUpload(this)">
+          </div>
+          <img id="centerLogoThumb" class="preview-thumbnail">
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          תמונת רקע לכותרת
+        </div>
+        <div class="field-row">
+          <label class="field-label">העלאת תמונת רקע</label>
+          <div class="file-upload-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>בחר תמונת רקע...</span>
+            <input type="file" accept="image/*" onchange="handleBgUpload(this)">
+          </div>
+          <img id="bgThumb" class="preview-thumbnail">
+        </div>
+        <div class="field-row">
+          <label class="field-label">צבע דומיננטי (מתעדכן אוטומטית עם הלוגו)</label>
+          <div class="color-swatches" id="dominantSwatches"></div>
+          <p class="auto-color-hint" id="autoColorHint">העלה לוגו או תמונה לחילוץ צבעים אוטומטי</p>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="card-title">צבעי מותג ידניים</div>
+        <div class="color-pickers-grid">
+          <div class="field-row">
+            <label class="field-label">צבע רקע כותרת</label>
+            <input type="color" id="colorHeader" class="color-input" value="#003595" onchange="updateColors()">
+          </div>
+          <div class="field-row">
+            <label class="field-label">צבע כפתורים</label>
+            <input type="color" id="colorAccent" class="color-input" value="#F47920" onchange="updateColors()">
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="12" cy="12" r="3"/></svg>
+          צבע רקע דף
+        </div>
+        <div class="color-pickers-grid">
+          <div class="field-row">
+            <label class="field-label">צבע רקע הדף</label>
+            <div class="color-picker-wrapper">
+              <input type="color" id="colorPageBg" class="color-input" value="#ffffff" onchange="updatePageBgColor()">
+              <span style="font-size:13px; color:var(--gray-600);">ברירת מחדל: לבן</span>
+            </div>
+          </div>
+          <div class="field-row">
+            <label class="field-label">איפוס לבן</label>
+            <button class="action-btn secondary" style="padding:10px; font-size:13px;" onclick="resetPageBg()">↺ איפוס</button>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
+          <div class="color-swatch" style="background:#ffffff; border:2px solid #ccc;" onclick="applyPageBgPreset('#ffffff')" title="לבן"></div>
+          <div class="color-swatch" style="background:#f0f4fc;" onclick="applyPageBgPreset('#f0f4fc')" title="כחול בהיר"></div>
+          <div class="color-swatch" style="background:#f8fafc;" onclick="applyPageBgPreset('#f8fafc')" title="אפור בהיר"></div>
+          <div class="color-swatch" style="background:#0f172a;" onclick="applyPageBgPreset('#0f172a')" title="כהה"></div>
+          <div class="color-swatch" style="background:#1e1e2e;" onclick="applyPageBgPreset('#1e1e2e')" title="כהה-סגול"></div>
+          <div class="color-swatch" style="background:#fdf6ec;" onclick="applyPageBgPreset('#fdf6ec')" title="שמנת"></div>
+        </div>
+      </div>
+      <button class="action-btn" onclick="switchTab('paste')">המשך להזנת תוצרים ←</button>
+    </div>
+
+    <!-- ===== PASTE & IMPORT PANEL ===== -->
+    <div class="panel" id="panel-paste">
+      <div class="input-mode-tabs">
+        <button class="mode-tab active" id="modeTabPaste" onclick="switchInputMode('paste')">📋 הדבקה חכמה</button>
+        <button class="mode-tab" id="modeTabImport" onclick="switchInputMode('import')">📊 יבוא Excel / CSV</button>
+      </div>
+
+      <!-- Paste mode -->
+      <div id="pasteMode">
+        <div class="section-card" style="background:var(--accent-light); border:1px solid rgba(244,121,32,0.2);">
+          <div style="font-size:13px; color:#7c3800; line-height:1.6;"><strong>מנוע דינמי:</strong> הדבק לינקים (גם דבוקים מאקסל). המערכת תזהה אוטומטית כמה לינקים יש לכל סרט ותבנה עמודות בהתאם.</div>
+        </div>
+        <div class="field-row">
+          <textarea class="paste-textarea" id="smartPasteInput" placeholder="הדבק כאן את הטקסט עם הלינקים..."></textarea>
+        </div>
+        <button class="action-btn" onclick="parseSmartText()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          נתח טקסט והוסף לתצוגה
+        </button>
+      </div>
+
+      <!-- Import mode -->
+      <div id="importMode" style="display:none; display:flex; flex-direction:column; gap:14px;">
+        <div class="import-zone" id="importDropZone">
+          <input type="file" accept=".xlsx,.xls,.csv" onchange="handleFileImport(this.files[0])" id="importFileInput">
+          <div class="import-zone-icon">📊</div>
+          <div class="import-zone-title">גרור קובץ Excel או CSV לכאן</div>
+          <div class="import-zone-sub">תומך ב- .xlsx / .xls / .csv · לחץ לבחירת קובץ</div>
+        </div>
+        <div class="progress-bar" id="importProgress"><div class="progress-fill" id="importProgressFill" style="width:0%"></div></div>
+
+        <!-- Column mapper – shown after file is loaded -->
+        <div id="colMapperSection" style="display:none;">
+          <div class="section-card">
+            <div class="card-title">מיפוי עמודות</div>
+            <div class="col-mapper" id="colMapperContainer"></div>
+          </div>
+          <div id="previewTableSection" style="display:none;">
+            <div class="card-title" style="padding:8px 0; font-size:14px; font-weight:700; color:var(--gray-600);">תצוגה מקדימה (5 שורות ראשונות)</div>
+            <div class="preview-table-wrapper"><table class="preview-table" id="previewTable"></table></div>
+          </div>
+          <button class="action-btn" style="margin-top:10px;" onclick="importFromFile()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            יבא נתונים לתצוגה
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MANUAL PANEL ===== -->
+    <div class="panel" id="panel-manual">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:13px; font-weight:700; color:var(--gray-600)">עמודות: <span id="colCountText">3</span></span>
+        <button class="action-btn secondary" style="width:auto; padding:8px 16px; font-size:13px;" onclick="addGlobalColumn()">+ הוסף עמודת פורמט</button>
+      </div>
+      <div id="manualCardsContainer" style="display:flex; flex-direction:column; gap:14px;"></div>
+      <button class="action-btn secondary" onclick="addManualCardRow()">+ הוסף סרט חדש</button>
+      <button class="action-btn" onclick="saveManualData()">עדכן ועבור לתצוגה</button>
+    </div>
+
+    <!-- ===== VIEW PANEL ===== -->
+    <div class="panel" id="panel-view">
+      <div id="viewEmpty"><div style="font-size:15px; font-weight:700;">אין תוצרים להצגה</div><div style="font-size:13px; margin-top:8px; color:var(--gray-400)">הוסף תוצרים דרך לשוניות ההזנה</div></div>
+      
+      <!-- Fetch bg from first link -->
+      <div id="fetchBgBar" style="display:none;">
+        <div class="section-card" style="background:linear-gradient(135deg,rgba(0,53,149,0.06),rgba(0,53,149,0.02)); border:1px solid rgba(0,53,149,0.15); flex-direction:row; align-items:center; gap:10px; padding:12px 14px;">
+          <div style="flex:1; font-size:13px; font-weight:600; color:var(--primary);">🎬 משוך תמונת רקע מלינק הסרט הראשון</div>
+          <button class="fetch-bg-btn" id="fetchFirstLinkBtn" onclick="fetchBgFromFirstLink()">משוך רקע</button>
+        </div>
+      </div>
+
+      <div id="deliverablesContainer" style="display:flex; flex-direction:column; gap:14px;"></div>
+      <div id="exportActionWrapper" style="display:none; margin-top:10px; border-top:1px solid var(--gray-200); padding-top:16px;">
+        <button class="action-btn export" onclick="exportFinishedHTML()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          ייצא קובץ HTML נקי לשליחה ללקוח
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== SETTINGS PANEL ===== -->
+    <div class="panel" id="panel-settings">
+      <div class="section-card">
+        <div class="card-title">הגדרות עמודות</div>
+        <div class="field-row">
+          <label class="field-label">שמות עמודות (פורמטים)</label>
+          <div id="colLabelSettings" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="card-title">ניהול נתונים</div>
+        <button class="action-btn secondary" onclick="clearAllData()" style="border-color:var(--danger); color:var(--danger);">
+          🗑️ נקה את כל הנתונים
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast">פעולה בוצעה</div>
+
+<script>
+// ===== STATE =====
+let moviesData = [];
+let numColumns = 6;
+const maxColumns = 6;
+let colLabels = ["טלוויזיה HD", "16:9 יוטיוב", "9:16 סטורי", "9:16 טיקטוק", "4:5 פייסבוק", "1:1 אינסטגרם"];
+let colSpecs  = ["1920×1080", "1920×1080", "1080×1920", "1080×1920", "1080×1350", "1080×1080"];
+
+let fixedLogoBase64 = "";
+let centerLogoBase64 = "";
+let bgBase64 = "";
+let pageBgColor = "#ffffff";
+
+// For file import
+let importedSheetData = [];
+let importedHeaders = [];
+
+window.addEventListener('DOMContentLoaded', () => {
+  renderViewTab();
+  renderSettingsTab();
+  setupDragDrop();
+});
+
+// ===== TABS =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+  if(tab === 'manual') renderManualTab();
+  else if(tab === 'view') renderViewTab();
+  else if(tab === 'settings') renderSettingsTab();
+}
+
+// ===== TOAST =====
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ===== INPUT MODE SWITCH (paste vs import) =====
+function switchInputMode(mode) {
+  document.getElementById('modeTabPaste').classList.toggle('active', mode === 'paste');
+  document.getElementById('modeTabImport').classList.toggle('active', mode === 'import');
+  document.getElementById('pasteMode').style.display = mode === 'paste' ? 'flex' : 'none';
+  document.getElementById('pasteMode').style.flexDirection = 'column';
+  document.getElementById('pasteMode').style.gap = '14px';
+  document.getElementById('importMode').style.display = mode === 'import' ? 'flex' : 'none';
+  document.getElementById('importMode').style.flexDirection = 'column';
+  document.getElementById('importMode').style.gap = '14px';
+}
+// Init import mode hidden
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('importMode').style.display = 'none';
+});
+
+// ===== FIXED LOGO UPLOAD =====
+function handleFixedLogoUpload(input) {
+  if(!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    fixedLogoBase64 = e.target.result;
+    const logoEl = document.getElementById('companyLogoFixed');
+    logoEl.src = fixedLogoBase64;
+    logoEl.style.display = 'block';
+    document.getElementById('logoPlaceholder').style.display = 'none';
+    document.getElementById('logoThumb').src = fixedLogoBase64;
+    document.getElementById('logoThumb').style.display = 'block';
+    extractDominantColors(fixedLogoBase64, 'logo');
+    showToast('לוגו חברה הועלה!', 'success');
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function handleCenterLogoUpload(input) {
+  if(!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    centerLogoBase64 = e.target.result;
+    const previewEl = document.getElementById('logoPreview');
+    previewEl.src = centerLogoBase64;
+    previewEl.style.display = 'block';
+    document.getElementById('centerLogoThumb').src = centerLogoBase64;
+    document.getElementById('centerLogoThumb').style.display = 'block';
+    showToast('לוגו מרכזי הועלה!', 'success');
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+// ===== BG UPLOAD =====
+function handleBgUpload(input) {
+  if(!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    bgBase64 = e.target.result;
+    applyBgToHeader(bgBase64);
+    document.getElementById('bgThumb').src = bgBase64;
+    document.getElementById('bgThumb').style.display = 'block';
+    extractDominantColors(bgBase64, 'bg');
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function applyBgToHeader(src) {
+  const header = document.getElementById('mainHeader');
+  header.style.backgroundImage = `url('${src}')`;
+  document.getElementById('headerOverlay').style.display = 'block';
+}
+
+// ===== DOMINANT COLOR EXTRACTION =====
+function extractDominantColors(src, sourceType) {
+  const img = new Image();
+  img.crossOrigin = 'Anonymous';
+  img.onload = function() {
+    const canvas = document.createElement('canvas');
+    const size = 80;
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, size, size);
+    const data = ctx.getImageData(0, 0, size, size).data;
+
+    // Sample pixels and build color buckets
+    const colorMap = {};
+    for(let i = 0; i < data.length; i += 16) {
+      const r = Math.round(data[i] / 32) * 32;
+      const g = Math.round(data[i+1] / 32) * 32;
+      const b = Math.round(data[i+2] / 32) * 32;
+      const a = data[i+3];
+      if(a < 128) continue; // skip transparent
+      // skip very bright (white) or very dark
+      const brightness = (r + g + b) / 3;
+      if(brightness > 230 || brightness < 15) continue;
+      const key = `${r},${g},${b}`;
+      colorMap[key] = (colorMap[key] || 0) + 1;
+    }
+
+    // Sort by frequency
+    const sorted = Object.entries(colorMap).sort((a,b) => b[1]-a[1]).slice(0,6);
+    const swatchContainer = document.getElementById('dominantSwatches');
+    swatchContainer.innerHTML = '';
+    document.getElementById('autoColorHint').textContent = 'לחץ על צבע להחלה על הרקע:';
+
+    sorted.forEach(([key], idx) => {
+      const [r,g,b] = key.split(',').map(Number);
+      const hex = rgbToHex(r,g,b);
+      const swatch = document.createElement('div');
+      swatch.className = 'color-swatch' + (idx===0 ? ' selected' : '');
+      swatch.style.background = hex;
+      swatch.title = hex;
+      swatch.onclick = () => {
+        document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+        swatch.classList.add('selected');
+        applyDominantColor(hex);
+      };
+      swatchContainer.appendChild(swatch);
+    });
+
+    // Auto-apply the most dominant color
+    if(sorted.length > 0) {
+      const [r,g,b] = sorted[0][0].split(',').map(Number);
+      applyDominantColor(rgbToHex(r,g,b));
+    }
+  };
+  img.src = src;
+}
+
+function applyDominantColor(hex) {
+  if(!bgBase64) {
+    // Set header background color
+    document.getElementById('mainHeader').style.background = `linear-gradient(135deg, ${hex} 0%, ${darkenHex(hex, 40)} 100%)`;
+  }
+  document.getElementById('colorHeader').value = hex;
+  document.documentElement.style.setProperty('--primary', hex);
+  document.documentElement.style.setProperty('--primary-dark', darkenHex(hex, 40));
+}
+
+function rgbToHex(r,g,b) {
+  return '#' + [r,g,b].map(v => Math.min(255,v).toString(16).padStart(2,'0')).join('');
+}
+function darkenHex(hex, amount) {
+  const num = parseInt(hex.slice(1), 16);
+  const r = Math.max(0, (num >> 16) - amount);
+  const g = Math.max(0, ((num >> 8) & 0xff) - amount);
+  const b = Math.max(0, (num & 0xff) - amount);
+  return rgbToHex(r,g,b);
+}
+
+// ===== COLORS =====
+function updateColors() {
+  const hc = document.getElementById('colorHeader').value;
+  document.documentElement.style.setProperty('--primary', hc);
+  document.documentElement.style.setProperty('--accent', document.getElementById('colorAccent').value);
+  if(!bgBase64) document.getElementById('mainHeader').style.background = `linear-gradient(135deg, ${hc} 0%, ${darkenHex(hc,40)} 100%)`;
+}
+
+// ===== SMART PASTE =====
+function parseSmartText() {
+  const text = document.getElementById('smartPasteInput').value.trim();
+  if(!text) { showToast('אנא הכנס טקסט'); return; }
+  
+  const linkRegex = /https?:\/\/[^\s<>"']+/gi;
+  const tokens = [];
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = linkRegex.exec(text)) !== null) {
+    const strBefore = text.substring(lastIndex, match.index).trim();
+    if (strBefore) tokens.push({ type: 'text', value: strBefore });
+    tokens.push({ type: 'link', value: match[0] });
+    lastIndex = linkRegex.lastIndex;
+  }
+  const tail = text.substring(lastIndex).trim();
+  if (tail) tokens.push({ type: 'text', value: tail });
+  
+  const parsedMovies = [];
+  let currentMovie = null;
+  
+  tokens.forEach(token => {
+    if (token.type === 'text') {
+      let cleanName = token.value
+        .replace(/16:9 רוחבי9:16 רילס4:5 דיגיטלמהות העבודה1:1/g, '')
+        .replace(/^(16:9|0?9:16|4:5|1:1|-|\s)+/g, '')
+        .trim();
+      if (cleanName) {
+        if (currentMovie && currentMovie.links.length > 0) {
+          parsedMovies.push(currentMovie);
+          if(currentMovie.links.length > numColumns) numColumns = Math.min(currentMovie.links.length, maxColumns);
+        }
+        currentMovie = { name: cleanName, links: [] };
+      }
+    } else if (token.type === 'link') {
+      if (!currentMovie) currentMovie = { name: 'סרט ' + (parsedMovies.length + 1), links: [] };
+      if (currentMovie.links.length < maxColumns) currentMovie.links.push(token.value);
+    }
+  });
+  
+  if (currentMovie && currentMovie.links.length > 0) {
+    parsedMovies.push(currentMovie);
+    if(currentMovie.links.length > numColumns) numColumns = Math.min(currentMovie.links.length, maxColumns);
+  }
+  
+  if(parsedMovies.length > 0) {
+    moviesData = [...moviesData, ...parsedMovies];
+    showToast(`זוהו ${parsedMovies.length} סרטים!`, 'success');
+    switchTab('view');
+  } else {
+    showToast('לא זוהו לינקים.', 'error');
+  }
+}
+
+// ===== FILE IMPORT (Excel / CSV) =====
+function setupDragDrop() {
+  const zone = document.getElementById('importDropZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if(file) handleFileImport(file);
+  });
+}
+
+function handleFileImport(file) {
+  if(!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if(!['xlsx','xls','csv'].includes(ext)) { showToast('קובץ לא נתמך. יש להשתמש ב- xlsx/xls/csv', 'error'); return; }
+  
+  showProgress(20);
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    showProgress(60);
+    try {
+      let wb;
+      if(ext === 'csv') {
+        wb = XLSX.read(e.target.result, { type: 'string' });
+      } else {
+        wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      }
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      showProgress(90);
+
+      if(json.length < 2) { showToast('הקובץ ריק או חסרות שורות', 'error'); return; }
+      
+      importedHeaders = json[0].map(String);
+      importedSheetData = json.slice(1).filter(row => row.some(cell => cell !== ''));
+      
+      renderColumnMapper();
+      renderPreviewTable();
+      document.getElementById('colMapperSection').style.display = 'block';
+      showProgress(100);
+      setTimeout(() => document.getElementById('importProgress').style.display = 'none', 500);
+      showToast(`נטען: ${importedSheetData.length} שורות, ${importedHeaders.length} עמודות`, 'success');
+    } catch(err) {
+      showToast('שגיאה בקריאת הקובץ: ' + err.message, 'error');
+      document.getElementById('importProgress').style.display = 'none';
+    }
+  };
+  if(ext === 'csv') reader.readAsText(file, 'UTF-8');
+  else reader.readAsArrayBuffer(file);
+}
+
+function showProgress(pct) {
+  const bar = document.getElementById('importProgress');
+  bar.style.display = 'block';
+  document.getElementById('importProgressFill').style.width = pct + '%';
+}
+
+function renderColumnMapper() {
+  const container = document.getElementById('colMapperContainer');
+  const fields = [
+    { key: 'name', label: 'שם הסרט / תוצר' },
+    ...colLabels.slice(0, numColumns).map((l, i) => ({ key: 'link_' + i, label: l }))
+  ];
+  
+  container.innerHTML = fields.map(f => `
+    <div class="col-mapper-row">
+      <span class="col-mapper-label">${f.label}</span>
+      <select class="col-mapper-select" id="map_${f.key}">
+        <option value="">-- לא למפות --</option>
+        ${importedHeaders.map((h,i) => `<option value="${i}" ${autoMatch(h,f.key) ? 'selected' : ''}>${h}</option>`).join('')}
+      </select>
+    </div>
+  `).join('');
+}
+
+function autoMatch(header, fieldKey) {
+  const h = header.toLowerCase();
+  if(fieldKey === 'name') return h.includes('שם') || h.includes('name') || h.includes('title') || h.includes('כותרת');
+  if(fieldKey === 'link_0') return h.includes('16:9') || h.includes('רחב') || h.includes('wide');
+  if(fieldKey === 'link_1') return h.includes('09:16') || h.includes('9:16') || h.includes('אנכי') || h.includes('vertical') || h.includes('רילס');
+  if(fieldKey === 'link_2') return h.includes('4:5') || h.includes('ריבוע') || h.includes('square');
+  if(fieldKey === 'link_3') return h.includes('1:1') || h.includes('פיד') || h.includes('feed');
+  return false;
+}
+
+function renderPreviewTable() {
+  const section = document.getElementById('previewTableSection');
+  section.style.display = 'block';
+  const table = document.getElementById('previewTable');
+  const previewRows = importedSheetData.slice(0, 5);
+  table.innerHTML = `
+    <thead><tr>${importedHeaders.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>${previewRows.map(row => `<tr>${importedHeaders.map((_,i) => `<td>${row[i] || ''}</td>`).join('')}</tr>`).join('')}</tbody>
+  `;
+}
+
+function importFromFile() {
+  const nameIdx = parseInt(document.getElementById('map_name')?.value);
+  const linkIdxs = [];
+  for(let i=0; i<numColumns; i++) {
+    const sel = document.getElementById('map_link_'+i);
+    linkIdxs.push(sel && sel.value !== '' ? parseInt(sel.value) : null);
+  }
+  
+  if(isNaN(nameIdx)) { showToast('יש למפות לפחות את עמודת השם', 'error'); return; }
+  
+  const imported = [];
+  importedSheetData.forEach(row => {
+    const name = String(row[nameIdx] || '').trim();
+    if(!name) return;
+    const links = linkIdxs.map(idx => idx !== null ? String(row[idx] || '').trim() : '');
+    imported.push({ name, links });
+    // auto update numColumns based on actual links
+    const actualLinks = links.filter(l => l).length;
+    if(actualLinks > numColumns) numColumns = Math.min(actualLinks, maxColumns);
+  });
+  
+  if(imported.length > 0) {
+    moviesData = [...moviesData, ...imported];
+    showToast(`יובאו ${imported.length} פריטים בהצלחה!`, 'success');
+    switchTab('view');
+  } else {
+    showToast('לא נמצאו נתונים לייבוא', 'error');
+  }
+}
+
+// ===== FETCH BG FROM LINK =====
+async function fetchBgFromFirstLink() {
+  const firstWithLink = moviesData.find(m => m.links && m.links.some(l => l && l.startsWith('http')));
+  if(!firstWithLink) { showToast('אין לינקים זמינים', 'error'); return; }
+  
+  const url = firstWithLink.links.find(l => l && l.startsWith('http'));
+  const btn = document.getElementById('fetchFirstLinkBtn');
+  btn.classList.add('loading');
+  btn.textContent = 'טוען...';
+  
+  document.getElementById('bgFetchIndicator').style.display = 'block';
+
+  try {
+    // Try to extract OG image from URL via a proxy-free approach using our API
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 500,
+        messages: [{
+          role: "user",
+          content: `Given this URL: ${url}\n\nThis is likely a Vimeo or video platform link. Based on the URL pattern, construct the direct thumbnail URL if possible. For Vimeo URLs like https://vimeo.com/VIDEO_ID/HASH, the thumbnail would be at https://vimeo.com/VIDEO_ID/HASH\n\nRespond ONLY with a JSON object: {"thumbnailUrl": "url_here_or_null", "platform": "vimeo|youtube|other", "videoId": "id_if_found"}`
+        }]
+      })
+    });
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '{}';
+    
+    let parsed = {};
+    try { parsed = JSON.parse(text.replace(/```json|```/g,'').trim()); } catch(e) {}
+    
+    // For Vimeo, try to get thumbnail via their oEmbed API (no auth needed)
+    if(url.includes('vimeo.com')) {
+      const videoIdMatch = url.match(/vimeo\.com\/(\d+)/);
+      if(videoIdMatch) {
+        const videoId = videoIdMatch[1];
+        const thumbUrl = `https://vumbnail.com/${videoId}.jpg`;
+        // Use Vimeo's own CDN format
+        applyExternalBgToHeader(thumbUrl);
+        showToast('תמונת רקע נטענה מ-Vimeo!', 'success');
+      } else {
+        fallbackBgColor();
+      }
+    } else if(url.includes('youtube.com') || url.includes('youtu.be')) {
+      const ytMatch = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+      if(ytMatch) {
+        const thumbUrl = `https://img.youtube.com/vi/${ytMatch[1]}/maxresdefault.jpg`;
+        applyExternalBgToHeader(thumbUrl);
+        showToast('תמונת רקע נטענה מ-YouTube!', 'success');
+      } else {
+        fallbackBgColor();
+      }
+    } else {
+      fallbackBgColor();
+    }
+  } catch(err) {
+    fallbackBgColor();
+  } finally {
+    btn.classList.remove('loading');
+    btn.textContent = 'משוך רקע';
+    document.getElementById('bgFetchIndicator').style.display = 'none';
+  }
+}
+
+function applyExternalBgToHeader(imgUrl) {
+  bgBase64 = imgUrl; // store as URL (not base64 in this case)
+  const header = document.getElementById('mainHeader');
+  header.style.backgroundImage = `url('${imgUrl}')`;
+  header.style.backgroundSize = 'cover';
+  header.style.backgroundPosition = 'center';
+  document.getElementById('headerOverlay').style.display = 'block';
+  
+  // Also try to extract colors
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 50; canvas.height = 50;
+    const ctx = canvas.getContext('2d');
+    try {
+      ctx.drawImage(img, 0, 0, 50, 50);
+      const dataUrl = canvas.toDataURL();
+      bgBase64 = dataUrl;
+      extractDominantColors(dataUrl, 'bg');
+    } catch(e) { /* CORS fallback */ }
+  };
+  img.src = imgUrl;
+}
+
+function fallbackBgColor() {
+  showToast('לא ניתן למשוך תמונה. ניתן להעלות ידנית בלשונית עיצוב.', '');
+}
+
+// ===== MANUAL =====
+function addGlobalColumn() {
+  if(numColumns < maxColumns) { numColumns++; saveManualData(); renderManualTab(); showToast(`עמודה ${numColumns} נוספה!`, 'success'); }
+  else showToast('מקסימום 6 עמודות');
+}
+
+function renderManualTab() {
+  document.getElementById('colCountText').textContent = numColumns;
+  const container = document.getElementById('manualCardsContainer');
+  container.innerHTML = '';
+  moviesData.forEach((movie, index) => {
+    let inputsHtml = '';
+    for(let i=0; i<numColumns; i++) {
+      inputsHtml += `<div class="field-row"><label class="field-label">${colLabels[i]}</label><input type="text" class="field-input manual-link" value="${movie.links[i] || ''}" placeholder="קישור"></div>`;
+    }
+    const card = document.createElement('div');
+    card.className = 'manual-card';
+    card.innerHTML = `
+      <div class="card-header">
+        <span style="font-weight:700; color:var(--primary);">סרט #${index + 1}</span>
+        <button class="delete-btn" onclick="removeManualRow(${index})">✕</button>
+      </div>
+      <input type="text" class="field-input manual-name" value="${movie.name || ''}" placeholder="שם הסרט">
+      <div class="dynamic-grid">${inputsHtml}</div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function addManualCardRow() { moviesData.push({ name: '', links: [] }); renderManualTab(); }
+function removeManualRow(index) { moviesData.splice(index, 1); renderManualTab(); }
+
+function saveManualData() {
+  const cards = document.querySelectorAll('.manual-card');
+  const updatedData = [];
+  cards.forEach(card => {
+    const name = card.querySelector('.manual-name').value.trim();
+    const links = Array.from(card.querySelectorAll('.manual-link')).map(inp => inp.value.trim());
+    if(name || links.some(l => l !== '')) updatedData.push({ name: name || "סרט ללא שם", links });
+  });
+  moviesData = updatedData;
+  showToast('נשמר!', 'success');
+  switchTab('view');
+}
+
+// ===== VIEW =====
+function renderViewTab() {
+  const container = document.getElementById('deliverablesContainer');
+  const fetchBar = document.getElementById('fetchBgBar');
+  
+  if(moviesData.length === 0) {
+    document.getElementById('viewEmpty').style.display = 'block';
+    document.getElementById('exportActionWrapper').style.display = 'none';
+    fetchBar.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+  document.getElementById('viewEmpty').style.display = 'none';
+  document.getElementById('exportActionWrapper').style.display = 'block';
+  
+  // Show fetch-bg bar if there are links
+  const hasLinks = moviesData.some(m => m.links && m.links.some(l => l && l.startsWith('http')));
+  fetchBar.style.display = hasLinks && !bgBase64 ? 'block' : 'none';
+  
+  container.innerHTML = '';
+  moviesData.forEach((movie, index) => {
+    let inputsHtml = '';
+    for(let i=0; i<numColumns; i++) {
+      inputsHtml += `
+        <div class="link-edit-box">
+          <span class="link-type-label">${colLabels[i]}</span>
+          <input type="text" class="link-url-input" value="${movie.links[i] || ''}" onchange="updateMovieLink(${index}, ${i}, this.value)" placeholder="ריק">
+        </div>`;
+    }
+    const card = document.createElement('div');
+    card.className = 'editable-movie-card';
+    card.innerHTML = `
+      <div style="display:flex; align-items:center; gap:8px; justify-content:space-between;">
+        <input type="text" class="movie-title-input" value="${movie.name}" onchange="updateMovieName(${index}, this.value)">
+        ${movie.links[0] ? `<button class="fetch-bg-btn" onclick="fetchBgFromMovieLink(${index})" title="משוך רקע מלינק זה">🖼 רקע</button>` : ''}
+      </div>
+      <div class="dynamic-grid">${inputsHtml}</div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+async function fetchBgFromMovieLink(movieIndex) {
+  const movie = moviesData[movieIndex];
+  const url = movie.links.find(l => l && l.startsWith('http'));
+  if(!url) return;
+  
+  const btn = document.querySelector(`.editable-movie-card:nth-child(${movieIndex+1}) .fetch-bg-btn`);
+  if(btn) { btn.classList.add('loading'); btn.textContent = '⏳ טוען...'; }
+  document.getElementById('bgFetchIndicator').style.display = 'block';
+  
+  if(url.includes('vimeo.com')) {
+    const m = url.match(/vimeo\.com\/(\d+)/);
+    if(m) applyExternalBgToHeader(`https://vumbnail.com/${m[1]}.jpg`), showToast('רקע נטען מ-Vimeo!','success');
+    else fallbackBgColor();
+  } else if(url.includes('youtube.com') || url.includes('youtu.be')) {
+    const m = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if(m) applyExternalBgToHeader(`https://img.youtube.com/vi/${m[1]}/maxresdefault.jpg`), showToast('רקע נטען מ-YouTube!','success');
+    else fallbackBgColor();
+  } else {
+    fallbackBgColor();
+  }
+  
+  if(btn) { btn.classList.remove('loading'); btn.textContent = '🖼 רקע'; }
+  document.getElementById('bgFetchIndicator').style.display = 'none';
+}
+
+function updatePageBgColor() {
+  const color = document.getElementById('colorPageBg').value;
+  document.querySelector('.app').style.background = color;
+  // also update the exported bg
+  pageBgColor = color;
+}
+
+function resetPageBg() {
+  document.getElementById('colorPageBg').value = '#ffffff';
+  document.querySelector('.app').style.background = '#ffffff';
+  pageBgColor = '#ffffff';
+}
+
+function applyPageBgPreset(color) {
+  document.getElementById('colorPageBg').value = color;
+  document.querySelector('.app').style.background = color;
+  pageBgColor = color;
+}
+
+
+function updateMovieLink(mIndex, lIndex, val) { moviesData[mIndex].links[lIndex] = val.trim(); }
+
+// ===== SETTINGS =====
+function renderSettingsTab() {
+  const container = document.getElementById('colLabelSettings');
+  container.innerHTML = '';
+  const presetLabels = ["טלוויזיה HD", "16:9 יוטיוב", "9:16 סטורי", "9:16 טיקטוק", "4:5 פייסבוק", "1:1 אינסטגרם"];
+  for(let i=0; i<maxColumns; i++) {
+    const isPreset = i < presetLabels.length;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; gap:8px; align-items:center;';
+    row.innerHTML = `
+      <span style="font-size:12px; font-weight:600; color:var(--gray-500); min-width:60px;">עמודה ${i+1}</span>
+      <input type="text" class="field-input" value="${colLabels[i]}" style="flex:1; padding:8px;" 
+        oninput="colLabels[${i}] = this.value" placeholder="${isPreset ? presetLabels[i] : 'פורמט נוסף'}">
+      ${!isPreset ? `<span style="font-size:11px; color:var(--accent); font-weight:600;">נוסף</span>` : ''}
+    `;
+    container.appendChild(row);
+  }
+}
+
+function clearAllData() {
+  if(confirm('בטוח שרוצה לנקות את כל הנתונים?')) {
+    moviesData = [];
+    renderViewTab();
+    showToast('הנתונים נוקו', 'success');
+  }
+}
+
+// ===== EXPORT =====
+function exportFinishedHTML() {
+  const title = document.getElementById('textHeaderTitle').textContent.trim();
+  const subtitle = document.getElementById('textHeaderSub').textContent.trim();
+  const primaryColor = document.getElementById('colorHeader').value;
+  const exportPageBg = pageBgColor || '#ffffff';
+  
+  let gridCardsHtml = "";
+  moviesData.forEach(m => {
+    let buttonsHtml = '';
+    for(let i=0; i<numColumns; i++) {
+      const url = m.links[i] || '';
+      buttonsHtml += `
+        <a href="${url || '#'}" target="_blank" class="vimeo-btn ${url ? '' : 'disabled'}">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M10 9l5 3-5 3V9z"/></svg>
+          <span class="btn-label">${colLabels[i]}</span>
+          <span class="btn-spec">${colSpecs[i]}</span>
+        </a>`;
+    }
+    gridCardsHtml += `<div class="movie-card"><div class="movie-name">${m.name}</div><div class="dynamic-grid">${buttonsHtml}</div></div>\n`;
+  });
+
+  const bgStyle = bgBase64
+    ? (bgBase64.startsWith('data:') 
+        ? `background-image: url('${bgBase64}'); background-size: cover; background-position: center;`
+        : `background-image: url('${bgBase64}'); background-size: cover; background-position: center;`)
+    : `background: linear-gradient(135deg, ${primaryColor} 0%, ${darkenHex(primaryColor,40)} 100%);`;
+
+  const fixedLogoHtml = fixedLogoBase64 
+    ? `<img src="${fixedLogoBase64}" class="company-logo-fixed" alt="לוגו">` 
+    : '';
+  const centerLogoHtml = centerLogoBase64 
+    ? `<img src="${centerLogoBase64}" class="center-logo">` 
+    : '';
+
+  const finalHtml = `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title}</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Heebo', sans-serif; background: ${exportPageBg}; color: #1e293b; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding-bottom: 60px; }
+.app { width: 100%; max-width: 600px; display: flex; flex-direction: column; }
+.header { padding: 40px 20px 36px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; color: #ffffff; position: relative; border-radius: 0 0 24px 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); ${bgStyle} }
+.header::before { content:""; position:absolute; inset:0; background:rgba(0,0,0,0.25); border-radius:0 0 24px 24px; z-index:1; display:${bgBase64 ? 'block' : 'none'}; }
+.header-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.company-logo-fixed { position: absolute; top: 14px; right: 18px; max-height: 46px; max-width: 140px; object-fit: contain; z-index: 10; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
+.center-logo { max-height: 65px; max-width: 180px; object-fit: contain; margin-bottom: 8px; }
+.header-title { font-size: 24px; font-weight: 900; }
+.header-sub { color: rgba(255,255,255,0.8); font-size: 13px; }
+.container { padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; }
+.movie-card { background: #ffffff; border-radius: 16px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-right: 5px solid ${primaryColor}; }
+.movie-name { font-size: 16px; font-weight: 900; margin-bottom: 14px; }
+.dynamic-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+.vimeo-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f0f4fc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 6px; text-decoration: none; color: #1e293b; transition: all 0.2s; min-height: 68px; gap: 4px; }
+.vimeo-btn:hover { background: ${primaryColor}; color: #ffffff; border-color: ${primaryColor}; transform: translateY(-2px); }
+.btn-icon { width: 22px; height: 22px; }
+.btn-label { font-size: 12px; font-weight: 700; }
+.btn-spec { font-size: 10px; color: #64748b; font-weight: 500; }
+.vimeo-btn.disabled { opacity: 0.3; pointer-events: none; border-style: dashed; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    ${fixedLogoHtml}
+    <div class="header-content">${centerLogoHtml}<div class="header-title">${title}</div><div class="header-sub">${subtitle}</div></div>
+  </div>
+  <div class="container">${gridCardsHtml}</div>
+</div>
+</body>
+</html>`;
+
+  const blob = new Blob([finalHtml], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `תוצרים.html`;
+  a.click();
+  showToast('קובץ יוצא בהצלחה!', 'success');
+}
+</script>
+</body>
+</html>
