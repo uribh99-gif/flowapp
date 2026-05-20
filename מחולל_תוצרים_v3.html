@@ -358,10 +358,14 @@ body { font-family: 'Heebo', sans-serif; background: #0f172a; color: var(--gray-
       </div>
 
       <div id="deliverablesContainer" style="display:flex; flex-direction:column; gap:14px;"></div>
-      <div id="exportActionWrapper" style="display:none; margin-top:10px; border-top:1px solid var(--gray-200); padding-top:16px;">
+      <div id="exportActionWrapper" style="display:none; margin-top:10px; border-top:1px solid var(--gray-200); padding-top:16px; display:flex; flex-direction:column; gap:10px;">
         <button class="action-btn export" onclick="exportFinishedHTML()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           ייצא קובץ HTML נקי לשליחה ללקוח
+        </button>
+        <button class="action-btn export" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);" onclick="exportPDF()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          ייצא PDF עם לינקים לחיצים
         </button>
       </div>
     </div>
@@ -919,7 +923,7 @@ function renderViewTab() {
     return;
   }
   document.getElementById('viewEmpty').style.display = 'none';
-  document.getElementById('exportActionWrapper').style.display = 'block';
+  document.getElementById('exportActionWrapper').style.display = 'flex';
   
   // Show fetch-bg bar if there are links
   const hasLinks = moviesData.some(m => m.links && m.links.some(l => l && l.startsWith('http')));
@@ -1016,46 +1020,28 @@ function clearAllData() {
 }
 
 // ===== EXPORT =====
-function exportFinishedHTML() {
-  const title = document.getElementById('textHeaderTitle').textContent.trim();
-  const subtitle = document.getElementById('textHeaderSub').textContent.trim();
-  const primaryColor = document.getElementById('colorHeader').value;
-  const exportPageBg = pageBgColor || '#ffffff';
-  
+function buildGridCardsHtml(primaryColor) {
   let gridCardsHtml = "";
   moviesData.forEach(m => {
     let buttonsHtml = '';
     for(let i=0; i<numColumns; i++) {
       const url = m.links[i] || '';
+      if(!url) continue; // skip empty columns
       buttonsHtml += `
-        <a href="${url || '#'}" target="_blank" class="vimeo-btn ${url ? '' : 'disabled'}">
+        <a href="${url}" target="_blank" class="vimeo-btn">
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M10 9l5 3-5 3V9z"/></svg>
           <span class="btn-label">${colLabels[i]}</span>
           <span class="btn-spec">${colSpecs[i]}</span>
         </a>`;
     }
+    if(!buttonsHtml) return; // skip cards with no links at all
     gridCardsHtml += `<div class="movie-card"><div class="movie-name">${m.name}</div><div class="dynamic-grid">${buttonsHtml}</div></div>\n`;
   });
+  return gridCardsHtml;
+}
 
-  const bgStyle = bgBase64
-    ? (bgBase64.startsWith('data:') 
-        ? `background-image: url('${bgBase64}'); background-size: cover; background-position: center;`
-        : `background-image: url('${bgBase64}'); background-size: cover; background-position: center;`)
-    : `background: linear-gradient(135deg, ${primaryColor} 0%, ${darkenHex(primaryColor,40)} 100%);`;
-
-  const fixedLogoHtml = `<img src="FPP_LOGO.png" class="company-logo-fixed" alt="לוגו">`;
-  const centerLogoHtml = centerLogoBase64 
-    ? `<img src="${centerLogoBase64}" class="center-logo">` 
-    : '';
-
-  const finalHtml = `<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${title}</title>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-<style>
+function buildExportStyles(primaryColor, exportPageBg, bgStyle) {
+  return `
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Heebo', sans-serif; background: ${exportPageBg}; color: #1e293b; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding-bottom: 60px; }
 .app { width: 100%; max-width: 600px; display: flex; flex-direction: column; }
@@ -1074,8 +1060,31 @@ body { font-family: 'Heebo', sans-serif; background: ${exportPageBg}; color: #1e
 .vimeo-btn:hover { background: ${primaryColor}; color: #ffffff; border-color: ${primaryColor}; transform: translateY(-2px); }
 .btn-icon { width: 22px; height: 22px; }
 .btn-label { font-size: 12px; font-weight: 700; }
-.btn-spec { font-size: 10px; color: #64748b; font-weight: 500; }
-.vimeo-btn.disabled { opacity: 0.3; pointer-events: none; border-style: dashed; }
+.btn-spec { font-size: 10px; color: #64748b; font-weight: 500; }`;
+}
+
+function exportFinishedHTML() {
+  const title = document.getElementById('textHeaderTitle').textContent.trim();
+  const subtitle = document.getElementById('textHeaderSub').textContent.trim();
+  const primaryColor = document.getElementById('colorHeader').value;
+  const exportPageBg = pageBgColor || '#ffffff';
+
+  const bgStyle = bgBase64
+    ? `background-image: url('${bgBase64}'); background-size: cover; background-position: center;`
+    : `background: linear-gradient(135deg, ${primaryColor} 0%, ${darkenHex(primaryColor,40)} 100%);`;
+
+  const fixedLogoHtml = `<img src="FPP_LOGO.png" class="company-logo-fixed" alt="לוגו">`;
+  const centerLogoHtml = centerLogoBase64 ? `<img src="${centerLogoBase64}" class="center-logo">` : '';
+  const gridCardsHtml = buildGridCardsHtml(primaryColor);
+
+  const finalHtml = `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title}</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>${buildExportStyles(primaryColor, exportPageBg, bgStyle)}
 </style>
 </head>
 <body>
@@ -1094,7 +1103,77 @@ body { font-family: 'Heebo', sans-serif; background: ${exportPageBg}; color: #1e
   a.href = URL.createObjectURL(blob);
   a.download = `תוצרים.html`;
   a.click();
-  showToast('קובץ יוצא בהצלחה!', 'success');
+  showToast('קובץ HTML יוצא בהצלחה!', 'success');
+}
+
+function exportPDF() {
+  const title = document.getElementById('textHeaderTitle').textContent.trim();
+  const subtitle = document.getElementById('textHeaderSub').textContent.trim();
+  const primaryColor = document.getElementById('colorHeader').value;
+  const exportPageBg = pageBgColor || '#ffffff';
+
+  const bgStyle = bgBase64
+    ? `background-image: url('${bgBase64}'); background-size: cover; background-position: center;`
+    : `background: linear-gradient(135deg, ${primaryColor} 0%, ${darkenHex(primaryColor,40)} 100%);`;
+
+  const centerLogoHtml = centerLogoBase64 ? `<img src="${centerLogoBase64}" class="center-logo">` : '';
+  const gridCardsHtml = buildGridCardsHtml(primaryColor);
+
+  // Build PDF-optimised HTML (opens in new tab → user prints to PDF)
+  const pdfHtml = `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>${title}</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+@media print {
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .no-print { display: none !important; }
+  .app { box-shadow: none !important; }
+  .movie-card { break-inside: avoid; }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Heebo', sans-serif; background: ${exportPageBg}; color: #1e293b; }
+.app { width: 100%; max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; }
+.header { padding: 36px 20px 30px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; color: #ffffff; position: relative; border-radius: 0 0 20px 20px; ${bgStyle} }
+.header::before { content:""; position:absolute; inset:0; background:rgba(0,0,0,0.25); border-radius:0 0 20px 20px; z-index:1; display:${bgBase64 ? 'block' : 'none'}; }
+.header-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.company-logo-fixed { position: absolute; top: 12px; right: 16px; max-height: 42px; max-width: 130px; object-fit: contain; z-index: 10; display: block; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
+.center-logo { max-height: 60px; max-width: 170px; object-fit: contain; margin-bottom: 6px; }
+.header-title { font-size: 22px; font-weight: 900; }
+.header-sub { color: rgba(255,255,255,0.85); font-size: 13px; }
+.container { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.movie-card { background: #ffffff; border-radius: 14px; padding: 16px; border-right: 5px solid ${primaryColor}; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.movie-name { font-size: 15px; font-weight: 900; margin-bottom: 12px; color: #1e293b; }
+.dynamic-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
+.vimeo-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f0f4fc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 6px; text-decoration: none; color: #1e293b; min-height: 62px; gap: 3px; }
+.btn-icon { width: 20px; height: 20px; }
+.btn-label { font-size: 11px; font-weight: 700; text-align: center; }
+.btn-spec { font-size: 9px; color: #64748b; font-weight: 500; }
+.print-btn { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: ${primaryColor}; color: #fff; border: none; border-radius: 50px; padding: 14px 32px; font-family: 'Heebo', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.2); z-index: 999; display: flex; align-items: center; gap: 8px; }
+.print-btn:hover { opacity: 0.9; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <img src="FPP_LOGO.png" class="company-logo-fixed" alt="לוגו">
+    <div class="header-content">${centerLogoHtml}<div class="header-title">${title}</div><div class="header-sub">${subtitle}</div></div>
+  </div>
+  <div class="container">${gridCardsHtml}</div>
+</div>
+<button class="print-btn no-print" onclick="window.print()">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+  הדפס / שמור כ-PDF
+</button>
+</body>
+</html>`;
+
+  const blob = new Blob([pdfHtml], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  showToast('נפתחה חלון הדפסה — בחר "שמור כ-PDF"', 'success');
 }
 </script>
 </body>
