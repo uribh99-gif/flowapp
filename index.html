@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow v30</title>
+<title>PostFlow v31</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -2097,374 +2097,262 @@ function Login({
 }
 
 // ══════════════════════════════════════════
-// DASHBOARD
+// DASHBOARD — redesigned layout
 // ══════════════════════════════════════════
-function Dashboard({
-  projects,
-  user,
-  logoUrl,
-  onSelect,
-  onGoto
-}) {
-  const myP = user.role === "worker" ? projects.filter(p => (p.shifts || []).some(s => s.person === user.id) || (p.hours || []).some(h => h.worker === user.id)) : projects;
-  const active = myP.filter(p => p.status === "active").length;
-  const totalH = myP.reduce((s, p) => s + (p.hours || []).reduce((a, h) => a + h.hours, 0), 0);
-  const upcoming = myP.filter(p => p.onlineScreening && p.onlineScreening >= todayStr()).sort((a, b) => a.onlineScreening.localeCompare(b.onlineScreening)).slice(0, 5);
-  const todayShifts = projects.flatMap(p => (p.shifts || []).filter(s => s.date === todayStr() && (user.role !== "worker" || s.person === user.id)).map(s => ({
-    ...s,
-    projName: p.name
-  })));
-  // Finance KPIs for admin — based on quotes
-  const finData = null;
-  const finPaid = 0;
-  const finOpen = 0;
-  const NAV = [{
-    id: "calendar",
-    icon: "📅",
-    label: "לוח שבועי",
-    color: "#4fc3f7",
-    roles: ["admin", "producer", "worker", "guest"]
-  }, {
-    id: "projects",
-    icon: "🎬",
-    label: "פרויקטים",
-    color: "var(--accent)",
-    roles: ["admin", "producer"]
-  }, {
-    id: "hours",
-    icon: "⏱",
-    label: "שעות",
-    color: "#6ee7b7",
-    roles: ["admin", "producer", "worker"]
-  }, {
-    id: "reports",
-    icon: "📊",
-    label: "דוחות",
-    color: "#fb923c",
-    roles: ["admin", "producer"]
-  }, {
-    id: "finance",
-    icon: "💰",
-    label: "Finance",
-    color: "#6ee7b7",
-    roles: ["admin"]
-  }, {
-    id: "vault",
-    icon: "🔐",
-    label: "סיסמאות",
-    color: "#f07070",
-    roles: ["admin", "producer", "worker"],
-    external: "https://uribh99-gif.github.io/flowPASS/"
-  }, {
-    id: "clients",
-    icon: "🏢",
-    label: "לקוחות",
-    color: "#60a5fa",
-    roles: ["admin", "producer"]
-  }, {
-    id: "users",
-    icon: "👥",
-    label: "משתמשים",
-    color: "#4fc3f7",
-    roles: ["admin"]
-  }, {
-    id: "sheets",
-    icon: "☁️",
-    label: "Sheets",
-    color: "#6ee7b7",
-    roles: ["admin"]
-  }, {
-    id: "backup",
-    icon: "💾",
-    label: "גיבוי",
-    color: "#94a3b8",
-    roles: ["admin"]
-  }, {
-    id: "settings",
-    icon: "⚙️",
-    label: "הגדרות",
-    color: "var(--accent)",
-    roles: ["admin"]
-  }].filter(n => n.roles.includes(user.role));
-  return /*#__PURE__*/React.createElement("div", {
-    className: "fade"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "linear-gradient(135deg, #00bac4 0%, #0ea5e9 100%)",
-      borderRadius: 22,
-      padding: "24px 22px 20px",
-      marginBottom: 20,
-      color: "#fff",
-      position: "relative",
-      overflow: "hidden"
-    }
-  },
-    /*#__PURE__*/React.createElement("div", { style: { position: "absolute", top: -25, left: -25, width: 140, height: 140, borderRadius: "50%", background: "rgba(255,255,255,0.09)", pointerEvents: "none" } }),
-    /*#__PURE__*/React.createElement("div", { style: { position: "absolute", bottom: -35, right: 30, width: 100, height: 100, borderRadius: "50%", background: "rgba(255,255,255,0.07)", pointerEvents: "none" } }),
-    logoUrl ? /*#__PURE__*/React.createElement("img", { src: logoUrl, id: "appLogo", style: { height: 36, objectFit: "contain", borderRadius: 6, marginBottom: 10, display: "block" }, alt: "logo" }) :
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, opacity: 0.8, marginBottom: 6, letterSpacing: 1, textTransform: "uppercase" } }, "PostFlow"),
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, opacity: 0.85, marginBottom: 4, fontWeight: 500 } }, "\u05E9\u05DC\u05D5\u05DD! \u05D1\u05E8\u05D5\u05DA \u05D4\u05D1\u05D0 \u05DC-PostFlow"),
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 22, fontWeight: 900, lineHeight: 1.2 } }, "\u05D4\u05DB\u05DC \u05D1\u05DE\u05E7\u05D5\u05DD \u05D0\u05D7\u05D3.")
-  ), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))",
-      gap: 12,
-      marginBottom: 24
-    }
-  }, [{
-    icon: "🎬",
-    label: "פרויקטים פעילים",
-    val: active,
-    color: "var(--green)"
-  }, {
-    icon: "⏱",
-    label: 'סה״כ שעות',
-    val: totalH.toFixed(0) + "h",
-    color: "var(--accent)"
-  }, {
-    icon: "📽",
-    label: "הקרנות קרובות",
-    val: upcoming.length,
-    color: "var(--red)"
-  }, {
-    icon: "✅",
-    label: "הושלמו",
-    val: myP.filter(p => p.status === "completed").length,
-    color: "var(--blue)"
-  }].map(s => /*#__PURE__*/React.createElement("div", {
-    key: s.label,
-    className: "card"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 44, height: 44, borderRadius: 12, background: s.color + "18",
-      display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, marginBottom: 12
-    }
-  }, s.icon), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 28,
-      fontWeight: 900,
-      color: s.color,
-      lineHeight: 1
-    }
-  }, s.val), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "var(--muted)",
-      marginTop: 5,
-      fontWeight: 600
-    }
-  }, s.label)))), user.role === "admin" && finData && (finPaid > 0 || finOpen > 0) && /*#__PURE__*/React.createElement("div", {
-    style: { marginBottom: 20 }
-  }, /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 13, marginBottom: 10, color: "var(--muted2)" } }, "💰 Finance — סיכום מהיר"),
-    /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } },
-      /*#__PURE__*/React.createElement("div", { className: "card2", style: { flex: 1, minWidth: 130, cursor: "pointer" }, onClick: () => onGoto("finance") },
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", marginBottom: 2 } }, "שולם"),
-        /*#__PURE__*/React.createElement("div", { style: { fontWeight: 900, fontSize: 16, color: "var(--green)" } }, fmtMoney(finPaid))
-      ),
-      /*#__PURE__*/React.createElement("div", { className: "card2", style: { flex: 1, minWidth: 130, cursor: "pointer" }, onClick: () => onGoto("finance") },
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", marginBottom: 2 } }, "פתוח לגבייה"),
-        /*#__PURE__*/React.createElement("div", { style: { fontWeight: 900, fontSize: 16, color: "var(--orange)" } }, fmtMoney(finOpen))
-      )
-    )
-  ), todayShifts.length > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 20
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 13,
-      color: "var(--muted2)",
-      marginBottom: 10
-    }
-  }, "\uD83D\uDCC5 \u05D4\u05D9\u05D5\u05DD \u2014 ", new Date().toLocaleDateString("he-IL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long"
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 10,
-      flexWrap: "wrap"
-    }
-  }, todayShifts.map(s => /*#__PURE__*/React.createElement("div", {
-    key: s.id,
-    className: "card2",
-    style: {
-      borderRight: "3px solid var(--accent)",
-      minWidth: 150
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 12
-    }
-  }, s.projName || "ללא פרויקט"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "var(--muted)",
-      marginTop: 2
-    }
-  }, (s.tasks || []).join(", ") || "—"))))), upcoming.length > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 20
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 13,
-      color: "var(--muted2)",
-      marginBottom: 10
-    }
-  }, "\u26A1 \u05D4\u05E7\u05E8\u05E0\u05D5\u05EA \u05E7\u05E8\u05D5\u05D1\u05D5\u05EA"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 10,
-      flexWrap: "wrap"
-    }
-  }, upcoming.map(p => /*#__PURE__*/React.createElement("div", {
-    key: p.id,
-    className: "card2",
-    style: {
-      cursor: "pointer",
-      borderRight: "3px solid var(--red)",
-      minWidth: 155
-    },
-    onClick: () => onSelect(p.id)
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 13
-    }
-  }, p.name), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "var(--red)",
-      marginTop: 4
-    }
-  }, "\uD83D\uDCFD ", p.onlineScreening), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "var(--muted)"
-    }
-  }, p.client))))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 13,
-      color: "var(--muted2)",
-      marginBottom: 10
-    }
-  }, "\u05E0\u05D9\u05D5\u05D5\u05D8 \u05DE\u05D4\u05D9\u05E8"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fill,minmax(105px,1fr))",
-      gap: 10,
-      marginBottom: 24
-    }
-  }, NAV.map(n => /*#__PURE__*/React.createElement("div", {
-    key: n.id,
-    onClick: () => n.external ? window.open(n.external, "_blank") : onGoto(n.id),
-    style: {
-      background: "var(--card)",
-      border: "1.5px solid var(--border)",
-      borderRadius: 14,
-      padding: "14px 8px",
-      cursor: "pointer",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      gap: 6,
-      transition: "all .18s",
-      textAlign: "center",
-      boxShadow: "var(--shadow)"
-    },
-    onMouseEnter: e => {
-      e.currentTarget.style.borderColor = n.color;
-      e.currentTarget.style.background = n.color + "12";
-      e.currentTarget.style.transform = "translateY(-2px)";
-      e.currentTarget.style.boxShadow = "var(--shadow2)";
-    },
-    onMouseLeave: e => {
-      e.currentTarget.style.borderColor = "var(--border)";
-      e.currentTarget.style.background = "var(--card)";
-      e.currentTarget.style.transform = "none";
-      e.currentTarget.style.boxShadow = "var(--shadow)";
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      width: 42, height: 42, borderRadius: 12,
-      background: n.color + "18",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 18
-    }
-  }, n.icon), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      fontWeight: 700,
-      color: "var(--text)"
-    }
-  }, n.label)))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 13,
-      color: "var(--muted2)",
-      marginBottom: 10
-    }
-  }, "\u05E4\u05E8\u05D5\u05D9\u05E7\u05D8\u05D9\u05DD \u05E4\u05E2\u05D9\u05DC\u05D9\u05DD"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))",
-      gap: 12
-    }
-  }, myP.filter(p => p.status === "active").map(p => /*#__PURE__*/React.createElement("div", {
-    key: p.id,
-    className: "proj-card",
-    onClick: () => onSelect(p.id)
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      color: "var(--accent)",
-      fontWeight: 800
-    }
-  }, "#", p.projectNumber || "—"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 13
-    }
-  }, p.name), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "var(--muted)",
-      marginTop: 2
-    }
-  }, p.client)), /*#__PURE__*/React.createElement(StatusBadge, {
-    s: p.status
-  })), /*#__PURE__*/React.createElement(PBar, {
-    v: p.progress
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 10,
-      marginTop: 8,
-      fontSize: 11,
-      color: "var(--muted)",
-      flexWrap: "wrap"
-    }
-  }, p.onlineScreening && /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "var(--red)"
-    }
-  }, "\uD83D\uDCFD ", p.onlineScreening), p.producer && /*#__PURE__*/React.createElement("span", null, "\uD83D\uDC64 ", p.producer))))));
+
+const PROJ_PALETTE = [
+  "#00bac4","#6366f1","#f97316","#10b981","#ec4899","#8b5cf6",
+  "#14b8a6","#f59e0b","#3b82f6","#ef4444","#84cc16","#06b6d4",
+  "#a855f7","#e11d48","#0ea5e9","#16a34a"
+];
+function projColor(projId, projects) {
+  const idx = projects.findIndex(p => p.id === projId);
+  return PROJ_PALETTE[idx >= 0 ? idx % PROJ_PALETTE.length : 0];
 }
 
-// ══════════════════════════════════════════
+function Dashboard({ projects, user, logoUrl, onSelect, onGoto, events, globalShifts, shiftTypes,
+  users, onSaveShift, onDeleteShift, calEditModal, setCalEditModal }) {
+
+  const myP = user.role === "worker"
+    ? projects.filter(p => (p.shifts||[]).some(s => s.person===user.id) || (p.hours||[]).some(h => h.worker===user.id))
+    : projects;
+
+  const [projSearch, setProjSearch] = useState("");
+  const [projStatus, setProjStatus] = useState("all");
+  const [projSort,   setProjSort]   = useState("updated");
+
+  const filteredProjs = useMemo(() => {
+    let list = myP;
+    if (projStatus !== "all") list = list.filter(p => p.status === projStatus);
+    if (projSearch.trim()) {
+      const q = projSearch.toLowerCase();
+      list = list.filter(p =>
+        (p.name||"").toLowerCase().includes(q) ||
+        (p.client||"").toLowerCase().includes(q) ||
+        String(p.projectNumber||"").includes(q)
+      );
+    }
+    if (projSort === "updated") list = [...list].sort((a,b) => (b.updatedAt||b.id||"").localeCompare(a.updatedAt||a.id||""));
+    else if (projSort === "name")   list = [...list].sort((a,b) => (a.name||"").localeCompare(b.name||""));
+    else if (projSort === "num")    list = [...list].sort((a,b) => Number(a.projectNumber||0) - Number(b.projectNumber||0));
+    else if (projSort === "screen") list = [...list].sort((a,b) => (b.onlineScreening||"").localeCompare(a.onlineScreening||""));
+    return list;
+  }, [myP, projSearch, projStatus, projSort]);
+
+  const today = todayStr();
+  const isAdmin = user.role === "admin";
+  const isProd  = user.role === "producer";
+
+  const QUICKNAV = [
+    { id:"calendar", icon:"📅", label:"לוח שבועי",  color:"#4fc3f7" },
+    ...(isAdmin||isProd ? [{ id:"projects", icon:"🎬", label:"פרויקטים", color:"var(--accent)" }] : []),
+    { id:"hours", icon:"⏱", label:"שעות", color:"#6ee7b7" },
+    ...(isAdmin||isProd ? [{ id:"diary", icon:"🗓", label:"יומן", color:"#c084fc" }] : []),
+    ...(isAdmin||isProd ? [{ id:"reports", icon:"📊", label:"דוחות", color:"#fb923c" }] : []),
+    ...(isAdmin ? [{ id:"finance", icon:"💰", label:"Finance", color:"#6ee7b7" }] : []),
+    { id:"vault", icon:"🔐", label:"סיסמאות", color:"#94a3b8" },
+    ...(isAdmin ? [{ id:"clients", icon:"🏢", label:"לקוחות", color:"#60a5fa" }] : []),
+    ...(isAdmin ? [{ id:"users", icon:"👥", label:"משתמשים", color:"#f472b6" }] : []),
+    ...(isAdmin ? [{ id:"settings", icon:"⚙️", label:"הגדרות", color:"#94a3b8" }] : []),
+  ];
+
+  const STATUS_OPTS = [
+    { v:"all",l:"הכל" },{ v:"active",l:"פעיל" },{ v:"review",l:"בסקירה" },
+    { v:"paused",l:"מושהה" },{ v:"completed",l:"הושלם" },{ v:"cancelled",l:"בוטל" }
+  ];
+  const SORT_OPTS = [
+    { v:"updated",l:"עדכני" },{ v:"num",l:"מספר" },{ v:"name",l:"שם" },{ v:"screen",l:"הקרנה" }
+  ];
+
+  // Upcoming events + screenings
+  const in30 = new Date(); in30.setDate(in30.getDate() + 30);
+  const in30s = isoDate(in30);
+  const upcomingEvents = useMemo(() =>
+    (events||[]).filter(ev => ev.date && ev.date >= today && ev.date <= in30s)
+      .sort((a,b) => a.date.localeCompare(b.date)).slice(0, 15),
+    [events, today]
+  );
+  const upcomingScreenings = useMemo(() =>
+    myP.filter(p => p.onlineScreening && p.onlineScreening >= today)
+       .sort((a,b) => a.onlineScreening.localeCompare(b.onlineScreening)).slice(0, 8),
+    [myP, today]
+  );
+
+  return React.createElement("div", {
+    style: { display: "flex", flexDirection: "column", height: "100%", gap: 0, overflow: "hidden" }
+  },
+
+    // ── Quick-nav ─────────────────────────────────────────────
+    React.createElement("div", {
+      style: { display: "flex", gap: 8, paddingBottom: 12, flexShrink: 0, overflowX: "auto" }
+    }, QUICKNAV.map(n =>
+      React.createElement("div", {
+        key: n.id, onClick: () => onGoto(n.id),
+        style: {
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          gap: 5, padding: "9px 14px", background: "var(--surf)",
+          border: "1.5px solid var(--border)", borderRadius: 12, cursor: "pointer",
+          minWidth: 68, flexShrink: 0, transition: "all .18s", userSelect: "none",
+          boxShadow: "var(--shadow)"
+        },
+        onMouseEnter: e => { e.currentTarget.style.borderColor = n.color; e.currentTarget.style.background = n.color + "15"; e.currentTarget.style.transform = "translateY(-2px)"; },
+        onMouseLeave: e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "var(--surf)"; e.currentTarget.style.transform = "none"; }
+      },
+        React.createElement("span", { style: { fontSize: 19, lineHeight: 1 } }, n.icon),
+        React.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap" } }, n.label)
+      )
+    )),
+
+    // ── Two-panel ──────────────────────────────────────────────
+    React.createElement("div", {
+      style: { display: "flex", gap: 14, flex: 1, minHeight: 0, overflow: "hidden" }
+    },
+
+      // ── LEFT: Projects panel ─────────────────────────────
+      React.createElement("div", {
+        style: {
+          width: 292, flexShrink: 0, display: "flex", flexDirection: "column",
+          background: "var(--surf)", border: "1px solid var(--border)",
+          borderRadius: 16, overflow: "hidden", boxShadow: "var(--shadow)"
+        }
+      },
+        React.createElement("div", {
+          style: { padding: "13px 13px 9px", borderBottom: "1px solid var(--border)", flexShrink: 0 }
+        },
+          React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 9 } },
+            React.createElement("div", { style: { fontWeight: 800, fontSize: 14 } }, "🎬 פרויקטים"),
+            React.createElement("span", { style: { fontSize: 11, color: "var(--muted)", background: "var(--accentbg)", padding: "2px 8px", borderRadius: 20, fontWeight: 700 } }, filteredProjs.length)
+          ),
+          React.createElement("div", { style: { position: "relative", marginBottom: 7 } },
+            React.createElement("input", {
+              value: projSearch, onChange: e => setProjSearch(e.target.value),
+              placeholder: "חיפוש...",
+              style: { paddingRight: 28, fontSize: 12, padding: "7px 26px 7px 9px", borderRadius: 9, width: "100%" }
+            }),
+            React.createElement("span", { style: { position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "var(--muted)", fontSize: 12, pointerEvents: "none" } }, "🔍")
+          ),
+          React.createElement("div", { style: { display: "flex", gap: 5 } },
+            React.createElement("select", { value: projStatus, onChange: e => setProjStatus(e.target.value), style: { fontSize: 11, padding: "4px 5px", flex: 1, borderRadius: 7 } },
+              STATUS_OPTS.map(o => React.createElement("option", { key: o.v, value: o.v }, o.l))
+            ),
+            React.createElement("select", { value: projSort, onChange: e => setProjSort(e.target.value), style: { fontSize: 11, padding: "4px 5px", flex: 1, borderRadius: 7 } },
+              SORT_OPTS.map(o => React.createElement("option", { key: o.v, value: o.v }, o.l))
+            )
+          )
+        ),
+        React.createElement("div", { style: { overflowY: "auto", flex: 1, padding: "7px 9px" } },
+          filteredProjs.length === 0
+            ? React.createElement("div", { style: { textAlign: "center", color: "var(--muted)", padding: "28px 12px", fontSize: 13 } }, "לא נמצאו פרויקטים")
+            : filteredProjs.map(p => {
+                const pc = projColor(p.id, projects);
+                const sc = STATUS_CFG[p.status] || STATUS_CFG.active;
+                return React.createElement("div", {
+                  key: p.id, onClick: () => onSelect(p.id),
+                  style: {
+                    padding: "10px 11px", borderRadius: 11, marginBottom: 5, cursor: "pointer",
+                    border: "1.5px solid var(--border)", background: "var(--card)",
+                    borderRight: "4px solid " + pc, transition: "all .15s"
+                  },
+                  onMouseEnter: e => { e.currentTarget.style.background = pc + "0d"; e.currentTarget.style.borderColor = pc; e.currentTarget.style.borderRightColor = pc; },
+                  onMouseLeave: e => { e.currentTarget.style.background = "var(--card)"; e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.borderRightColor = pc; }
+                },
+                  React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 3 } },
+                    React.createElement("div", { style: { minWidth: 0, flex: 1 } },
+                      React.createElement("span", { style: { fontSize: 10, fontWeight: 800, color: pc, marginLeft: 5 } }, "#" + (p.projectNumber||"—")),
+                      React.createElement("span", { style: { fontWeight: 700, fontSize: 12 } }, p.name)
+                    ),
+                    React.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: sc.color, background: sc.color + "20", padding: "1px 6px", borderRadius: 9, flexShrink: 0, marginRight: 4 } }, sc.label)
+                  ),
+                  p.client && React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", marginBottom: 2 } }, "🏢 " + p.client),
+                  p.onlineScreening && React.createElement("div", { style: { fontSize: 11, color: "#ef4444" } }, "📡 " + p.onlineScreening),
+                  React.createElement(PBar, { v: p.progress, color: pc })
+                );
+              })
+        )
+      ),
+
+      // ── RIGHT: WeeklyCalendar + upcoming events ─────────────
+      React.createElement("div", {
+        style: {
+          flex: 1, display: "flex", flexDirection: "column",
+          overflow: "hidden", minWidth: 0
+        }
+      },
+        // WeeklyCalendar — full component, initialNumWeeks=2, scrollable
+        React.createElement("div", {
+          style: { flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", minHeight: 0 }
+        },
+          React.createElement(WeeklyCalendar, {
+            projects: projects,
+            user: user,
+            users: users,
+            shiftTypes: shiftTypes,
+            globalShifts: globalShifts,
+            onSaveShift: onSaveShift,
+            onDeleteShift: onDeleteShift,
+            editModal: calEditModal,
+            setEditModal: setCalEditModal,
+            onGoToProject: onSelect,
+            initialNumWeeks: 2
+          })
+        ),
+
+        // Upcoming events strip below calendar
+        (upcomingEvents.length > 0 || upcomingScreenings.length > 0) &&
+          React.createElement("div", {
+            style: {
+              flexShrink: 0, background: "var(--surf)", border: "1px solid var(--border)",
+              borderRadius: 16, padding: "12px 14px", boxShadow: "var(--shadow)",
+              marginTop: 10, maxHeight: 180, overflow: "hidden"
+            }
+          },
+            React.createElement("div", { style: { fontWeight: 800, fontSize: 13, marginBottom: 8, color: "var(--text)" } },
+              "⚡ אירועים קרובים"
+            ),
+            React.createElement("div", { style: { display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 } },
+              upcomingScreenings.map(p =>
+                React.createElement("div", {
+                  key: "sc-"+p.id, onClick: () => onSelect(p.id),
+                  style: {
+                    flexShrink: 0, minWidth: 140, padding: "8px 11px",
+                    background: "var(--card)", border: "1px solid var(--border)",
+                    borderTop: "3px solid " + projColor(p.id, projects),
+                    borderRadius: 10, cursor: "pointer", transition: "all .15s"
+                  },
+                  onMouseEnter: e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "var(--shadow2)"; },
+                  onMouseLeave: e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }
+                },
+                  React.createElement("div", { style: { fontSize: 9, color: "var(--muted)", marginBottom: 2 } }, "📡 הקרנת אונליין"),
+                  React.createElement("div", { style: { fontWeight: 700, fontSize: 12, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.name),
+                  React.createElement("div", { style: { fontSize: 11, color: "#ef4444", fontWeight: 700 } }, p.onlineScreening)
+                )
+              ),
+              upcomingEvents.map(ev => {
+                const evType = EVENT_TYPES.find(t => t.id === ev.type);
+                const evCol = evType ? evType.color : "#94a3b8";
+                return React.createElement("div", {
+                  key: "ev-"+ev.id,
+                  style: {
+                    flexShrink: 0, minWidth: 140, padding: "8px 11px",
+                    background: "var(--card)", border: "1px solid var(--border)",
+                    borderTop: "3px solid " + evCol, borderRadius: 10
+                  }
+                },
+                  React.createElement("div", { style: { fontSize: 9, color: evCol, marginBottom: 2, fontWeight: 700 } },
+                    (evType?.icon||"📌") + " " + (evType?.label||ev.type||"אירוע")
+                  ),
+                  React.createElement("div", { style: { fontWeight: 700, fontSize: 12, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, ev.title),
+                  React.createElement("div", { style: { fontSize: 11, color: "var(--muted)" } }, ev.date)
+                );
+              })
+            )
+          )
+      )
+    )
+  );
+}
+
+
 // WEEKLY CALENDAR — day-based, task chips, edit-in-place, Fri/Sat allowed
 // ══════════════════════════════════════════
 const calcHoursDisplay = (ts, te) => {
@@ -2484,7 +2372,8 @@ function WeeklyCalendar({
   onDeleteShift,
   editModal,
   setEditModal,
-  onGoToProject
+  onGoToProject,
+  initialNumWeeks
 }) {
   var _editModal$shift, _editModal$shift2, _users$find;
   const [viewMode, setViewMode] = useState("week"); // "day" | "week" | "month"
@@ -2494,7 +2383,7 @@ function WeeklyCalendar({
     return d;
   });
   const [selectedDay, setSelectedDay] = useState(() => new Date());
-  const [numWeeks, setNumWeeks] = useState(2);
+  const [numWeeks, setNumWeeks] = useState(initialNumWeeks || 2);
   const [colW, setColW] = useState(160); // px per day column
   const [rowH, setRowH] = useState(90); // px per shift card area
   const [detailModal, setDetailModal] = useState(null);
@@ -8587,7 +8476,7 @@ function App({
       color: "var(--muted)",
       marginTop: 2
     }
-  }, "v30 ", /*#__PURE__*/React.createElement("span", {
+  }, "v31 ", /*#__PURE__*/React.createElement("span", {
     style: {
       background: "var(--accent)",
       color: "#ffffff",
@@ -8901,13 +8790,21 @@ view === n.id && !selProjId ? " active" : ""}`,
       )
     )
   );
-})() : view === "dashboard" ? /*#__PURE__*/React.createElement(Dashboard, {
+})() : view === "dashboard" ? /*#__PURE__*/React.createElement("div", {style:{flex:1,overflow:"hidden",display:"flex",flexDirection:"column",minHeight:0}}, /*#__PURE__*/React.createElement(Dashboard, {
     projects: projects,
     user: currentUser,
+    users: users,
     logoUrl: logoUrl,
     onSelect: gotoProj,
-    onGoto: goto
-  }) : view === "calendar" ? /*#__PURE__*/React.createElement(WeeklyCalendar, {
+    onGoto: goto,
+    events: events || [],
+    globalShifts: data.globalShifts || [],
+    shiftTypes: sts,
+    onSaveShift: onSaveShift,
+    onDeleteShift: onDeleteShift,
+    calEditModal: calEditModal,
+    setCalEditModal: setCalEditModal
+  })) : view === "calendar" ? /*#__PURE__*/React.createElement(WeeklyCalendar, {
     projects: projects,
     user: currentUser,
     users: users,
