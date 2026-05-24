@@ -2763,7 +2763,8 @@ function WeeklyCalendar({
   };
 
   return /*#__PURE__*/React.createElement("div", {
-    className: "fade"
+    className: "fade",
+    style: { display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
@@ -2809,7 +2810,7 @@ function WeeklyCalendar({
     ),
     /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", onClick: goBack }, "← קודם"),
     /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", onClick: goForward }, "הבא →")
-  )), /*#__PURE__*/React.createElement("div", {
+  )), /*#__PURE__*/React.createElement("div", { style: { flex: 1, overflowY: "auto", minHeight: 0 } }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,
@@ -2840,7 +2841,7 @@ function WeeklyCalendar({
     const weekDays = allDays.slice(wi * 7, (wi + 1) * 7);
     const weekLabel = wi === 0 ? "שבוע נוכחי" : wi === 1 ? "שבוע הבא" : `שבוע ${wi + 1}`;
     return renderWeek(weekDays, weekLabel, wi);
-  }), editModal && /*#__PURE__*/React.createElement(ShiftModal, {
+  })), editModal && /*#__PURE__*/React.createElement(ShiftModal, {
     key: ((_editModal$shift = editModal.shift) === null || _editModal$shift === void 0 ? void 0 : _editModal$shift.id) || ((_editModal$shift2 = editModal.shift) === null || _editModal$shift2 === void 0 ? void 0 : _editModal$shift2.date) || "new",
     mode: editModal.mode,
     initialShift: editModal.shift,
