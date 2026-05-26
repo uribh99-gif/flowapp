@@ -2388,6 +2388,7 @@ function WeeklyCalendar({
   const [colW, setColW] = useState(160); // px per day column
   const [rowH, setRowH] = useState(90); // px per shift card area
   const [detailModal, setDetailModal] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const canEdit = user.role === "admin" || user.role === "producer";
   const canSeeAll = user.role === "admin" || user.role === "producer" || user.role === "guest";
   const sts = shiftTypes || DEF_SHIFT_TYPES;
@@ -2749,16 +2750,12 @@ function WeeklyCalendar({
     }
   };
   const goForward = () => {
-    const yearEnd = new Date(new Date().getFullYear(), 11, 31);
     if (viewMode === "day") {
-      const d = new Date(selectedDay); d.setDate(d.getDate() + 1);
-      if (d <= yearEnd) setSelectedDay(d);
+      const d = new Date(selectedDay); d.setDate(d.getDate() + 1); setSelectedDay(d);
     } else if (viewMode === "week") {
-      const d = new Date(weekStart); d.setDate(d.getDate() + 7 * numWeeks);
-      if (d <= yearEnd) setWeekStart(d);
+      const d = new Date(weekStart); d.setDate(d.getDate() + 7 * numWeeks); setWeekStart(d);
     } else {
-      const d = new Date(weekStart); d.setMonth(d.getMonth() + 1);
-      if (d <= yearEnd) setWeekStart(d);
+      const d = new Date(weekStart); d.setMonth(d.getMonth() + 1); setWeekStart(d);
     }
   };
   const goToday = () => {
@@ -2769,7 +2766,7 @@ function WeeklyCalendar({
 
   return /*#__PURE__*/React.createElement("div", {
     className: "fade",
-    style: { display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }
+    style: isFullscreen ? { display: "flex", flexDirection: "column", position: "fixed", inset: 0, zIndex: 9990, background: "var(--bg)", padding: 16 } : { display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }
   }, /*#__PURE__*/React.createElement("div", {
     style: { display: "flex", alignItems: "center", gap: 8, padding: "0 0 10px 0", flexShrink: 0, flexWrap: "wrap" }
   },
@@ -2798,7 +2795,13 @@ function WeeklyCalendar({
     ),
     canEdit && /*#__PURE__*/React.createElement("button", {
       className: "btn-gold btn-sm", style: { marginRight: "auto" }, onClick: () => openNew(null)
-    }, "+ הוסף שיבוץ")
+    }, "+ הוסף שיבוץ"),
+    /*#__PURE__*/React.createElement("button", {
+      className: "btn-ghost btn-sm",
+      onClick: () => setIsFullscreen(f => !f),
+      title: isFullscreen ? "צא ממסך מלא" : "מסך מלא",
+      style: { fontSize: 14, padding: "4px 8px" }
+    }, isFullscreen ? "⊠" : "⛶")
   ) , /*#__PURE__*/React.createElement("div", { style: { flex: 1, overflowY: "auto", minHeight: 0 } }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
@@ -3422,6 +3425,14 @@ function ProjectsList({
               });
             }
           }, "✏️ עריכה מהירה"),
+          /*#__PURE__*/React.createElement("select", {
+            value: p.status,
+            onClick: e => e.stopPropagation(),
+            onChange: e => { e.stopPropagation(); onUpdate({ ...p, status: e.target.value }); },
+            style: { fontSize: 10, padding: "2px 5px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surf)", color: "var(--text)", cursor: "pointer" }
+          },
+            Object.entries(STATUS_CFG).map(([k, v]) => /*#__PURE__*/React.createElement("option", { key: k, value: k }, v.label))
+          ),
           onDelete && isAdmin && /*#__PURE__*/React.createElement("button", {
             className: "btn-red",
             style: { fontSize: 10, padding: "2px 8px" },
@@ -4287,8 +4298,7 @@ function HoursLog({
       }),
       all.length === 0 && React.createElement("div", { className: "card", style: { textAlign: "center", padding: 32, color: "var(--muted)" } }, "אין דיווחים לחודש זה")
     );
-  })(),
-  "  "));
+  })()));
 }
 
 // ══════════════════════════════════════════
@@ -8694,7 +8704,13 @@ view === n.id && !selProjId ? " active" : ""}`,
       textOverflow: "ellipsis",
       whiteSpace: "nowrap"
     }
-  }, p.name)))), /*#__PURE__*/React.createElement("div", {
+  }, p.name)))), /*#__PURE__*/React.createElement("a", {
+    href: "#",
+    className: "nav-item",
+    onClick: e => { e.preventDefault(); window.open("https://app.fppstudio.co.il/outputs", "_blank"); },
+    style: { textDecoration: "none", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, cursor: "pointer" }
+  }, /*#__PURE__*/React.createElement("span", null, "🎥"), "דף תוצרים ↗"),
+  /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: "auto",
       paddingTop: 12,
