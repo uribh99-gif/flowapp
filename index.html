@@ -9,13 +9,13 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <style>
-body{background:#f0f7ff;margin:0;padding:0;font-family:'Heebo',sans-serif;height:100vh;overflow:hidden}
-#splash{position:fixed;inset:0;z-index:9999;background:#f0f7ff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .6s,visibility .6s}
+body{background:#f6f7fb;margin:0;padding:0;font-family:'Heebo',sans-serif;height:100vh;overflow:hidden}
+#splash{position:fixed;inset:0;z-index:9999;background:#f6f7fb;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .6s,visibility .6s}
 #splash.hidden{opacity:0;visibility:hidden;pointer-events:none}
-.sp-logo{font-size:40px;font-weight:900;color:#00c2cb;letter-spacing:-2px}
+.sp-logo{font-size:40px;font-weight:900;color:#0073ea;letter-spacing:-2px}
 .sp-sub{font-size:11px;color:#7a9abf;letter-spacing:3px;text-transform:uppercase}
 .sp-bar-wrap{width:220px;height:3px;background:#d0e8f5;border-radius:99px;overflow:hidden}
-.sp-bar{height:100%;background:linear-gradient(90deg,#00c2cb,#0ea5e9);border-radius:99px;width:0%;transition:width .35s}
+.sp-bar{height:100%;background:linear-gradient(90deg,#0073ea,#1f76c2);border-radius:99px;width:0%;transition:width .35s}
 .sp-msg{font-size:11px;color:#aac8e0;min-height:14px;text-align:center}
 #root{opacity:0;transition:opacity .5s;height:100vh;overflow:hidden}
 #root.visible{opacity:1}
@@ -56,93 +56,162 @@ const GS = () => /*#__PURE__*/React.createElement("style", null, `
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f0f7ff;--surf:#ffffff;--card:#ffffff;--card2:#f5faff;
-  --border:#daeaf7;--border2:#c5dff0;
-  --accent:#00bac4;--accent2:#0ea5e9;--accentbg:#e0f7f9;
-  --gold:#00bac4;--blue:#0ea5e9;--green:#10b981;
-  --red:#ef4444;--purple:#8b5cf6;--orange:#f97316;
-  --text:#1a2e45;--muted:#6b8fa8;--muted2:#8aaec8;
-  --shadow:0 2px 16px rgba(0,130,160,0.09);
-  --shadow2:0 4px 24px rgba(0,130,160,0.14);
+  --bg:#f6f7fb;
+  --surf:#ffffff;
+  --card:#ffffff;
+  --card2:#f8f9fc;
+  --border:#e6e9ef;
+  --border2:#d4d8e2;
+  --accent:#0073ea;
+  --accent2:#1f76c2;
+  --accentbg:#e8f0fe;
+  --gold:#0073ea;
+  --blue:#0073ea;
+  --green:#00c875;
+  --red:#e44258;
+  --purple:#a25ddc;
+  --orange:#fdab3d;
+  --text:#1f2d3d;
+  --muted:#676879;
+  --muted2:#9699a6;
+  --shadow:0 1px 6px rgba(0,0,0,0.06);
+  --shadow2:0 4px 16px rgba(0,0,0,0.10);
+  --radius:8px;
+  --radius-lg:12px;
 }
 [data-dark="true"]{
-  --bg:#0f1923;--surf:#1a2535;--card:#1e2d3d;--card2:#1a2535;
-  --border:#2a3f55;--border2:#344d65;--accentbg:#0a3040;
-  --text:#e2eaf3;--muted:#7a9abf;--muted2:#557a9a;
-  --shadow:0 2px 16px rgba(0,0,0,0.35);--shadow2:0 4px 24px rgba(0,0,0,0.5);
+  --bg:#1b1d2e;
+  --surf:#22243a;
+  --card:#2b2d45;
+  --card2:#22243a;
+  --border:#393b5a;
+  --border2:#4a4d70;
+  --accentbg:#1a2a4a;
+  --text:#d5d8e8;
+  --muted:#8b8faa;
+  --muted2:#6b6f88;
+  --shadow:0 1px 8px rgba(0,0,0,0.4);
+  --shadow2:0 4px 20px rgba(0,0,0,0.5);
 }
-body{background:var(--bg);color:var(--text);font-family:'Heebo',sans-serif;direction:rtl;min-height:100vh;overflow-x:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Heebo',sans-serif;direction:rtl;min-height:100vh;overflow-x:hidden;font-size:14px}
 ::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-input,select,textarea{background:var(--surf);border:1.5px solid var(--border);color:var(--text);border-radius:10px;padding:8px 11px;font-family:'Heebo',sans-serif;font-size:13px;width:100%;outline:none;transition:border-color .2s;box-shadow:0 1px 4px rgba(0,130,160,0.06)}
-input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+*{scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+
+/* Inputs */
+input,select,textarea{
+  background:var(--surf);border:1px solid var(--border);color:var(--text);
+  border-radius:var(--radius);padding:7px 10px;
+  font-family:'Heebo',sans-serif;font-size:13px;width:100%;
+  outline:none;transition:border-color .15s,box-shadow .15s;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,115,234,0.10)}
 input[type=checkbox]{width:auto;accent-color:var(--accent);cursor:pointer}
 input[type=range]{width:100%;accent-color:var(--accent)}
+input::placeholder,textarea::placeholder{color:var(--muted2)}
 textarea{resize:vertical;min-height:60px}
-button{font-family:'Heebo',sans-serif;cursor:pointer;border:none;border-radius:10px;font-size:13px;font-weight:600;transition:all .18s}
-.btn-gold{background:var(--accent);color:#fff;padding:8px 18px;box-shadow:0 2px 8px rgba(0,186,196,0.25)}
-.btn-gold:hover{background:#00a8b1;transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,186,196,0.35)}
-.btn-ghost{background:transparent;color:var(--muted2);padding:7px 14px;border:1.5px solid var(--border)}
+select{appearance:auto}
+
+/* Buttons */
+button{font-family:'Heebo',sans-serif;cursor:pointer;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;transition:all .15s}
+.btn-gold{background:var(--accent);color:#fff;padding:7px 16px;box-shadow:0 1px 4px rgba(0,115,234,0.25)}
+.btn-gold:hover{background:#0060c7;box-shadow:0 2px 8px rgba(0,115,234,0.35)}
+.btn-ghost{background:transparent;color:var(--muted);padding:6px 13px;border:1px solid var(--border)}
 .btn-ghost:hover{border-color:var(--border2);color:var(--text);background:var(--card2)}
-.btn-blue{background:#0ea5e920;color:var(--blue);padding:7px 14px;border:1px solid #0ea5e940}
-.btn-blue:hover{background:#0ea5e930}
-.btn-red{background:transparent;color:var(--red);padding:5px 10px;border:1px solid #ef444440;font-size:11px}
-.btn-red:hover{background:#ef444410}
-.btn-green{background:#10b98120;color:var(--green);padding:7px 14px;border:1px solid #10b98140}
-.btn-green:hover{background:#10b98130}
-.btn-orange{background:#fb923c20;color:#fb923c;padding:7px 14px;border:1px solid #fb923c40}
-.btn-sm{padding:5px 12px!important;font-size:12px!important}
-.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
-.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
-.card2{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px}
-.fade{animation:fi .25s ease}
-@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.modal-bg{position:fixed;inset:0;background:rgba(14,40,70,.45);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:1000}
-.modal{background:var(--surf);border:1px solid var(--border2);border-radius:20px;padding:28px;width:min(680px,96vw);max-height:92vh;overflow-y:auto;box-shadow:var(--shadow2)}
-.pbar{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
-.pfill{height:100%;border-radius:3px;transition:width .5s}
+.btn-blue{background:var(--accentbg);color:var(--accent);padding:6px 13px;border:1px solid rgba(0,115,234,0.2)}
+.btn-blue:hover{background:#d4e4fd}
+.btn-red{background:transparent;color:var(--red);padding:4px 9px;border:1px solid rgba(228,66,88,0.3);font-size:11px}
+.btn-red:hover{background:rgba(228,66,88,0.07)}
+.btn-green{background:rgba(0,200,117,0.12);color:#00a36b;padding:6px 13px;border:1px solid rgba(0,200,117,0.25)}
+.btn-green:hover{background:rgba(0,200,117,0.2)}
+.btn-orange{background:rgba(253,171,61,0.12);color:#c97f00;padding:6px 13px;border:1px solid rgba(253,171,61,0.3)}
+.btn-sm{padding:4px 10px!important;font-size:12px!important}
+
+/* Tags & chips */
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;cursor:pointer;font-size:11px;font-weight:600;border:1px solid var(--border);transition:all .15s;user-select:none}
+.chip.sel{border-color:currentColor}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow)}
+.card:hover{box-shadow:var(--shadow2)}
+.card2{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:12px}
+
+/* Animations */
+.fade{animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.35);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:1000}
+.modal{background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:24px;width:min(680px,96vw);max-height:92vh;overflow-y:auto;box-shadow:var(--shadow2)}
+
+/* Progress bar */
+.pbar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.pfill{height:100%;border-radius:2px;transition:width .5s}
+
+/* Forms */
 .pulse{animation:pl 1.8s ease-in-out infinite}
 @keyframes pl{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
-.lbl{font-size:11px;color:var(--muted);display:block;margin-bottom:5px;font-weight:600}
+.lbl{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px}
 .frow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
 .fcol{flex:1;min-width:110px}
-.divider{height:1px;background:var(--border);margin:18px 0}
-.section-title{font-size:20px;font-weight:800;margin-bottom:20px;color:var(--text)}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted2);transition:all .15s;user-select:none}
-.nav-item:hover{background:var(--accentbg);color:var(--text)}
+.divider{height:1px;background:var(--border);margin:16px 0}
+.section-title{font-size:18px;font-weight:800;margin-bottom:18px;color:var(--text)}
+h2,.section-title{color:var(--text)}
+
+/* Sidebar nav */
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:var(--radius);cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);transition:all .12s;user-select:none}
+.nav-item:hover{background:var(--card2);color:var(--text)}
 .nav-item.active{background:var(--accentbg);color:var(--accent);font-weight:700}
-.tab-btn{background:none;border:none;color:var(--muted2);padding:10px 14px;font-family:'Heebo',sans-serif;font-weight:700;font-size:13px;border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px;white-space:nowrap;transition:color .15s}
+.nav-icon-wrap{width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:13px}
+
+/* Tabs */
+.tab-btn{background:none;border:none;color:var(--muted);padding:8px 13px;font-family:'Heebo',sans-serif;font-weight:600;font-size:13px;border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px;white-space:nowrap;transition:color .12s}
 .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
-.proj-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 20px;cursor:pointer;transition:all .2s;box-shadow:var(--shadow)}
-.proj-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow2)}
-.cal-day{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:8px 6px;min-height:110px;transition:all .15s;cursor:pointer}
+
+/* Project cards */
+.proj-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow)}
+.proj-card:hover{border-color:var(--accent);box-shadow:var(--shadow2);transform:translateY(-1px)}
+
+/* Calendar days */
+.cal-day{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);padding:6px 5px;min-height:100px;transition:all .12s;cursor:pointer}
 .cal-day:hover{border-color:var(--accent);background:var(--accentbg)}
-.cal-day.today{border-color:var(--accent);border-top:2px solid var(--accent);background:#e0f7f9}
-.cal-day.weekend{background:var(--card2);border-color:#e8f3fb;opacity:.9}
+.cal-day.today{border-color:var(--accent);border-top:2px solid var(--accent);background:var(--accentbg)}
+.cal-day.weekend{background:var(--card2);opacity:.9}
 .cal-day.weekend:hover{border-color:var(--accent);background:var(--accentbg)}
-.cal-ev{border-radius:8px;padding:4px 7px;font-size:10px;font-weight:600;margin-bottom:3px;cursor:pointer;transition:opacity .15s,transform .1s;line-height:1.4;border-right:3px solid transparent}
-.cal-ev:hover{opacity:.85;transform:translateX(-2px)}
+.cal-ev{border-radius:6px;padding:3px 6px;font-size:10px;font-weight:600;margin-bottom:2px;cursor:pointer;transition:opacity .12s;line-height:1.4;border-right:3px solid transparent}
+.cal-ev:hover{opacity:.8}
+
 /* Search */
 .srch-wrap{position:relative}
-.srch-wrap input{padding-right:34px}
+.srch-wrap input{padding-right:32px}
 .srch-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
-.srch-drop{position:absolute;top:calc(100% + 4px);right:0;left:0;background:var(--surf);border:1px solid var(--border2);border-radius:12px;z-index:300;max-height:280px;overflow-y:auto;box-shadow:var(--shadow2)}
-.srch-item{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)}
+.srch-drop{position:absolute;top:calc(100%+4px);right:0;left:0;background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);z-index:300;max-height:260px;overflow-y:auto;box-shadow:var(--shadow2)}
+.srch-item{padding:9px 13px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)}
 .srch-item:last-child{border-bottom:none}
 .srch-item:hover{background:var(--accentbg)}
-/* Chips */
-.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;cursor:pointer;font-size:11px;font-weight:600;border:1.5px solid var(--border);transition:all .15s;user-select:none}
-.chip.sel{border-color:currentColor}
+
+/* Table */
+th{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
+
+/* App header (top bar) */
+.app-header{background:var(--surf);border-radius:var(--radius-lg);padding:9px 16px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:16px}
+.sidebar-logo-wrap{padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.cal-header-row{background:var(--surf);border-radius:var(--radius);border:1px solid var(--border);padding:7px;margin-bottom:7px}
+.today-badge{background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:11px}
+.proj-num-badge{background:var(--accentbg);color:var(--accent);font-weight:800;font-size:10px;padding:2px 7px;border-radius:5px}
+.stat-card-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
+.deadline-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 14px;box-shadow:var(--shadow);border-right:3px solid var(--red)}
+
 /* Mobile */
 @media(max-width:768px){
   .desktop-sidebar{display:none!important}
   .mob-bar{display:flex!important}
 }
-.mob-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1px solid var(--border);padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:800;justify-content:space-around;box-shadow:0 -4px 20px rgba(0,130,160,0.1)}
-.mob-btn{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--muted2);font-size:9px;font-family:'Heebo',sans-serif;cursor:pointer;padding:5px 10px;border-radius:10px;transition:all .15s;font-weight:600}
+.mob-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1px solid var(--border);padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:800;justify-content:space-around;box-shadow:0 -2px 10px rgba(0,0,0,0.08)}
+.mob-btn{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--muted2);font-size:9px;font-family:'Heebo',sans-serif;cursor:pointer;padding:4px 10px;border-radius:var(--radius);transition:all .12s;font-weight:600}
 .mob-btn.active{color:var(--accent)}
-/* ── Mobile improvements ── */
 @media(max-width:768px){
   main{padding:12px 10px 80px!important}
   .card{padding:12px!important}
@@ -158,34 +227,6 @@ button{font-family:'Heebo',sans-serif;cursor:pointer;border:none;border-radius:1
   .users-grid{grid-template-columns:repeat(2,1fr)!important}
 }
 select option{background:var(--surf)}
-
-/* ── Light theme enhancements ── */
-.app-header{background:var(--surf);border-radius:16px;padding:10px 16px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:20px}
-.sidebar-logo-wrap{padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:6px}
-.cal-header-row{background:var(--surf);border-radius:12px;border:1px solid var(--border);padding:8px;margin-bottom:8px}
-.today-badge{background:var(--accent);color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
-.proj-num-badge{background:var(--accentbg);color:var(--accent);font-weight:800;font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid #00bac420}
-.stat-card-icon{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px}
-/* Smooth scrollbar */
-*{scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
-/* Input enhancements */
-input::placeholder,textarea::placeholder{color:var(--border2)}
-/* Better select arrow */
-select{appearance:auto}
-/* Card hover effects */
-.card:hover{box-shadow:var(--shadow2)}
-/* Nav item icon wrap */
-.nav-icon-wrap{width:28px;height:28px;border-radius:8px;background:var(--accentbg);display:inline-flex;align-items:center;justify-content:center;font-size:14px}
-.nav-item.active .nav-icon-wrap{background:var(--accent)20}
-/* Section titles */
-h2,.section-title{color:var(--text)}
-/* Tag improvements */
-.tag{font-size:11px;letter-spacing:0.2px}
-/* Table headers */
-th{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
-/* Upcoming deadlines */
-.deadline-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 16px;box-shadow:var(--shadow);border-right:3px solid var(--red)}
-
 `);
 
 // ══════════════════════════════════════════
@@ -2118,13 +2159,13 @@ function Login({
 }
 
 // ══════════════════════════════════════════
-// DASHBOARD — redesigned layout v2
+// DASHBOARD — redesigned layout v3
 // ══════════════════════════════════════════
 
 const PROJ_PALETTE = [
-  "#00bac4","#6366f1","#f97316","#10b981","#ec4899","#8b5cf6",
-  "#14b8a6","#f59e0b","#3b82f6","#ef4444","#84cc16","#06b6d4",
-  "#a855f7","#e11d48","#0ea5e9","#16a34a"
+  "#0073ea","#00c875","#e2445c","#ff642e","#9d50dd","#0086c0",
+  "#fdab3d","#333333","#00cec9","#6c5ce7","#fd79a8","#a29bfe",
+  "#55efc4","#e17055","#74b9ff","#fd63a0"
 ];
 function projColor(projId, projects) {
   const idx = projects.findIndex(p => p.id === projId);
@@ -2161,17 +2202,18 @@ function Dashboard({ projects, user, logoUrl, onSelect, onGoto, globalSearch,
 
   const today = todayStr();
 
+  // Upcoming: next 60 days
   const upcoming = useMemo(() => {
     const in60 = new Date(); in60.setDate(in60.getDate()+60);
     const s60 = isoDate(in60);
     const screenings = myP
       .filter(p => p.onlineScreening && p.onlineScreening >= today && p.onlineScreening <= s60)
-      .map(p => ({ type:"screening", date:p.onlineScreening, label:"📡 "+p.name, id:"s-"+p.id, projId:p.id, color:projColor(p.id,projects) }));
+      .map(p => ({ date:p.onlineScreening, label:"📡 "+p.name, id:"s-"+p.id, projId:p.id, color:projColor(p.id,projects) }));
     const evs = (events||[])
-      .filter(ev => ev.date && ev.date >= today && ev.date <= s60)
+      .filter(ev => ev.date >= today && ev.date <= s60)
       .map(ev => {
         const et = EVENT_TYPES.find(t=>t.id===ev.type);
-        return { type:"event", date:ev.date, label:(et?.icon||"📌")+" "+ev.title, id:"e-"+ev.id, color:et?.color||"#94a3b8" };
+        return { date:ev.date, label:(et?.icon||"📌")+" "+ev.title, id:"e-"+ev.id, color:et?.color||"#9699a6" };
       });
     return [...screenings, ...evs].sort((a,b)=>a.date.localeCompare(b.date)).slice(0,20);
   }, [myP, events, today]);
@@ -2185,14 +2227,19 @@ function Dashboard({ projects, user, logoUrl, onSelect, onGoto, globalSearch,
   ];
 
   return /*#__PURE__*/React.createElement("div", {
-    style: { display:"flex", flexDirection:"column", height:"100%", gap:0, overflow:"hidden" }
+    style: { display:"flex", flexDirection:"column", height:"100%", overflow:"hidden", gap:0 }
   },
 
+    // ── TOP: upcoming events strip ─────────────────────────
     upcoming.length > 0 && /*#__PURE__*/React.createElement("div", {
-      style: { flexShrink:0, display:"flex", alignItems:"center", gap:8, paddingBottom:10, overflowX:"auto" }
+      style: {
+        flexShrink:0, display:"flex", alignItems:"center", gap:8,
+        padding:"0 0 10px 0", overflowX:"auto",
+        borderBottom:"1px solid var(--border)", marginBottom:10
+      }
     },
       /*#__PURE__*/React.createElement("span", {
-        style:{ fontSize:11, fontWeight:800, color:"var(--muted)", whiteSpace:"nowrap", flexShrink:0 }
+        style:{ fontSize:11, fontWeight:700, color:"var(--muted)", whiteSpace:"nowrap", flexShrink:0 }
       }, "⚡ קרוב:"),
       upcoming.map(item =>
         /*#__PURE__*/React.createElement("div", {
@@ -2200,11 +2247,14 @@ function Dashboard({ projects, user, logoUrl, onSelect, onGoto, globalSearch,
           onClick: () => item.projId ? onSelect(item.projId) : null,
           style: {
             flexShrink:0, display:"flex", alignItems:"center", gap:5,
-            padding:"4px 10px", borderRadius:20,
-            background:item.color+"15", border:"1px solid "+item.color+"40",
-            cursor:item.projId?"pointer":"default", fontSize:11, fontWeight:600,
-            color:"var(--text)", whiteSpace:"nowrap"
-          }
+            padding:"3px 10px", borderRadius:20,
+            background:item.color+"18", border:"1px solid "+item.color+"35",
+            cursor:item.projId?"pointer":"default",
+            fontSize:11, fontWeight:600, color:"var(--text)", whiteSpace:"nowrap",
+            transition:"all .12s"
+          },
+          onMouseEnter: e => { if(item.projId) e.currentTarget.style.opacity="0.8"; },
+          onMouseLeave: e => { e.currentTarget.style.opacity="1"; }
         },
           /*#__PURE__*/React.createElement("span", {style:{fontSize:10,color:item.color,fontWeight:700}}, item.date),
           " ", item.label
@@ -2212,16 +2262,18 @@ function Dashboard({ projects, user, logoUrl, onSelect, onGoto, globalSearch,
       )
     ),
 
+    // ── MAIN: two-panel ───────────────────────────────────
     /*#__PURE__*/React.createElement("div", {
       className:"dash-panels",
-      style:{ display:"flex", gap:12, flex:1, minHeight:0, overflow:"hidden" }
+      style:{ display:"flex", gap:10, flex:1, minHeight:0, overflow:"hidden" }
     },
 
+      // ── LEFT: projects ──────────────────────────────────
       /*#__PURE__*/React.createElement("div", {
         style:{
-          width:230, flexShrink:0, display:"flex", flexDirection:"column",
+          width:224, flexShrink:0, display:"flex", flexDirection:"column",
           background:"var(--surf)", border:"1px solid var(--border)",
-          borderRadius:14, overflow:"hidden", boxShadow:"var(--shadow)"
+          borderRadius:"var(--radius-lg)", overflow:"hidden", boxShadow:"var(--shadow)"
         }
       },
         /*#__PURE__*/React.createElement("div", {
@@ -2230,36 +2282,38 @@ function Dashboard({ projects, user, logoUrl, onSelect, onGoto, globalSearch,
           /*#__PURE__*/React.createElement("div", {
             style:{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:7}
           },
-            /*#__PURE__*/React.createElement("div", {style:{fontWeight:800,fontSize:13}}, "🎬 פרויקטים"),
+            /*#__PURE__*/React.createElement("span", {style:{fontWeight:700,fontSize:13,color:"var(--text)"}}, "פרויקטים"),
             /*#__PURE__*/React.createElement("span", {
-              style:{fontSize:10,color:"var(--muted)",background:"var(--accentbg)",padding:"1px 7px",borderRadius:20,fontWeight:700}
+              style:{fontSize:10,color:"var(--muted)",background:"var(--accentbg)",
+                color:"var(--accent)",padding:"1px 7px",borderRadius:20,fontWeight:700}
             }, filteredProjs.length)
           ),
           /*#__PURE__*/React.createElement("div", {style:{position:"relative",marginBottom:6}},
             /*#__PURE__*/React.createElement("input", {
               value:projSearch, onChange:e=>setProjSearch(e.target.value),
-              placeholder:"חיפוש...",
-              style:{paddingRight:24,fontSize:11,padding:"5px 22px 5px 8px",borderRadius:8,width:"100%"}
+              placeholder:"חיפוש פרויקט...",
+              style:{paddingRight:26,fontSize:12,padding:"5px 24px 5px 8px",borderRadius:6,width:"100%"}
             }),
             /*#__PURE__*/React.createElement("span", {
-              style:{position:"absolute",right:7,top:"50%",transform:"translateY(-50%)",color:"var(--muted)",fontSize:11,pointerEvents:"none"}
+              style:{position:"absolute",right:7,top:"50%",transform:"translateY(-50%)",
+                color:"var(--muted2)",fontSize:11,pointerEvents:"none"}
             }, "🔍")
           ),
           /*#__PURE__*/React.createElement("div", {style:{display:"flex",gap:4}},
             /*#__PURE__*/React.createElement("select", {
               value:projStatus, onChange:e=>setProjStatus(e.target.value),
-              style:{fontSize:10,padding:"3px 4px",flex:1,borderRadius:6}
+              style:{fontSize:10,padding:"3px 4px",flex:1,borderRadius:5}
             }, STATUS_OPTS.map(o=>/*#__PURE__*/React.createElement("option",{key:o.v,value:o.v},o.l))),
             /*#__PURE__*/React.createElement("select", {
               value:projSort, onChange:e=>setProjSort(e.target.value),
-              style:{fontSize:10,padding:"3px 4px",flex:1,borderRadius:6}
+              style:{fontSize:10,padding:"3px 4px",flex:1,borderRadius:5}
             }, SORT_OPTS.map(o=>/*#__PURE__*/React.createElement("option",{key:o.v,value:o.v},o.l)))
           )
         ),
-        /*#__PURE__*/React.createElement("div", {style:{overflowY:"auto",flex:1,padding:"6px 8px"}},
+        /*#__PURE__*/React.createElement("div", {style:{overflowY:"auto",flex:1,padding:"5px 7px"}},
           filteredProjs.length === 0
             ? /*#__PURE__*/React.createElement("div", {
-                style:{textAlign:"center",color:"var(--muted)",padding:"24px 8px",fontSize:12}
+                style:{textAlign:"center",color:"var(--muted2)",padding:"20px 8px",fontSize:12}
               }, "לא נמצאו פרויקטים")
             : filteredProjs.map(p => {
                 const pc = projColor(p.id, projects);
@@ -2267,39 +2321,41 @@ function Dashboard({ projects, user, logoUrl, onSelect, onGoto, globalSearch,
                 return /*#__PURE__*/React.createElement("div", {
                   key:p.id, onClick:()=>onSelect(p.id),
                   style:{
-                    padding:"8px 9px",borderRadius:9,marginBottom:4,cursor:"pointer",
-                    border:"1.5px solid var(--border)",background:"var(--card)",
-                    borderRight:"4px solid "+pc,transition:"all .15s"
+                    padding:"7px 8px",borderRadius:7,marginBottom:3,cursor:"pointer",
+                    border:"1px solid var(--border)",background:"var(--surf)",
+                    borderRight:"3px solid "+pc,transition:"all .12s"
                   },
-                  onMouseEnter:e=>{e.currentTarget.style.background=pc+"0d";e.currentTarget.style.borderColor=pc;e.currentTarget.style.borderRightColor=pc;},
-                  onMouseLeave:e=>{e.currentTarget.style.background="var(--card)";e.currentTarget.style.borderColor="var(--border)";e.currentTarget.style.borderRightColor=pc;}
+                  onMouseEnter:e=>{e.currentTarget.style.background="var(--card2)";e.currentTarget.style.borderColor="var(--border2)";},
+                  onMouseLeave:e=>{e.currentTarget.style.background="var(--surf)";e.currentTarget.style.borderColor="var(--border)";}
                 },
-                  /*#__PURE__*/React.createElement("div", {style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:2}},
-                    /*#__PURE__*/React.createElement("div", {style:{minWidth:0,flex:1}},
-                      /*#__PURE__*/React.createElement("span", {style:{fontSize:9,fontWeight:800,color:pc,marginLeft:4}}, "#"+(p.projectNumber||"—")),
-                      /*#__PURE__*/React.createElement("span", {style:{fontWeight:700,fontSize:11}}, p.name)
+                  /*#__PURE__*/React.createElement("div", {style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:1}},
+                    /*#__PURE__*/React.createElement("div", {style:{minWidth:0,flex:1,display:"flex",alignItems:"center",gap:4}},
+                      /*#__PURE__*/React.createElement("span", {style:{fontSize:9,fontWeight:700,color:pc}}, "#"+(p.projectNumber||"—")),
+                      /*#__PURE__*/React.createElement("span", {style:{fontWeight:600,fontSize:11,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}, p.name)
                     ),
                     /*#__PURE__*/React.createElement("span", {
-                      style:{fontSize:9,fontWeight:700,color:sc.color,background:sc.color+"20",padding:"1px 5px",borderRadius:8,flexShrink:0,marginRight:3}
+                      style:{fontSize:9,fontWeight:600,color:sc.color,background:sc.color+"18",
+                        padding:"1px 5px",borderRadius:6,flexShrink:0,marginRight:3}
                     }, sc.label)
                   ),
-                  p.client && /*#__PURE__*/React.createElement("div", {style:{fontSize:10,color:"var(--muted)"}}, "🏢 "+p.client),
-                  p.onlineScreening && /*#__PURE__*/React.createElement("div", {style:{fontSize:10,color:"#ef4444"}}, "📡 "+p.onlineScreening),
+                  p.client && /*#__PURE__*/React.createElement("div", {style:{fontSize:10,color:"var(--muted2)",marginBottom:1}}, p.client),
+                  p.onlineScreening && /*#__PURE__*/React.createElement("div", {style:{fontSize:10,color:"var(--red)",fontWeight:600}}, "📡 "+p.onlineScreening),
                   /*#__PURE__*/React.createElement(PBar, {v:p.progress,color:pc})
                 );
               })
         )
       ),
 
+      // ── RIGHT: WeeklyCalendar fills rest ────────────────
       /*#__PURE__*/React.createElement("div", {
-        style:{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}
+        style:{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0,minHeight:0}
       },
         /*#__PURE__*/React.createElement(WeeklyCalendar, {
           projects:projects, user:user, users:users, shiftTypes:shiftTypes,
           globalShifts:globalShifts, onSaveShift:onSaveShift,
           onDeleteShift:onDeleteShift, editModal:calEditModal,
           setEditModal:setCalEditModal, onGoToProject:onSelect,
-          initialNumWeeks:2, initialViewMode:"year"
+          initialNumWeeks:2
         })
       )
     )
@@ -2327,11 +2383,10 @@ function WeeklyCalendar({
   editModal,
   setEditModal,
   onGoToProject,
-  initialNumWeeks,
-  initialViewMode
+  initialNumWeeks
 }) {
   var _editModal$shift, _editModal$shift2, _users$find;
-  const [viewMode, setViewMode] = useState(initialViewMode || "year"); // "day" | "week" | "month" | "year"
+  const [viewMode, setViewMode] = useState("week"); // "day" | "week" | "month"
   const [weekStart, setWeekStart] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - d.getDay());
@@ -2339,154 +2394,14 @@ function WeeklyCalendar({
   });
   const [selectedDay, setSelectedDay] = useState(() => new Date());
   const [numWeeks, setNumWeeks] = useState(initialNumWeeks || 2);
-  const [colW, setColW] = useState(160);
-  const [rowH, setRowH] = useState(90);
+  const [colW, setColW] = useState(160); // px per day column
+  const [rowH, setRowH] = useState(90); // px per shift card area
   const [detailModal, setDetailModal] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const canEdit = user.role === "admin" || user.role === "producer";
   const canSeeAll = user.role === "admin" || user.role === "producer" || user.role === "guest";
   const sts = shiftTypes || DEF_SHIFT_TYPES;
-  const renderMonth = () => {
-    const refDate = weekStart;
-    const year = refDate.getFullYear();
-    const month = refDate.getMonth();
-    const HEB_MONTHS_FULL = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const cells = [];
-    for (let i = 0; i < firstDay; i++) cells.push(null);
-    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-    return /*#__PURE__*/React.createElement("div", { className: "fade" },
-      /*#__PURE__*/React.createElement("div", { style: { fontWeight: 800, fontSize: 18, marginBottom: 16 } }, HEB_MONTHS_FULL[month], " ", year),
-      /*#__PURE__*/React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 4 } },
-        HEB_DAYS.map(d => /*#__PURE__*/React.createElement("div", { key: d, style: { textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--muted)", padding: "4px 0" } }, d))
-      ),
-      /*#__PURE__*/React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 3 } },
-        cells.map((d, i) => {
-          if (!d) return /*#__PURE__*/React.createElement("div", { key: "e" + i });
-          const key = `${year}-${String(month + 1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-          const isToday = key === todayStr();
-          const wknd = (new Date(key)).getDay() === 5 || (new Date(key)).getDay() === 6;
-          const evs = evMap[key] || [];
-          return /*#__PURE__*/React.createElement("div", {
-            key: key,
-            style: {
-              minHeight: 72, background: isToday ? "var(--accentbg)" : wknd ? "#f5f5f8" : "var(--surf)",
-              border: `1.5px solid ${isToday ? "var(--accent)" : "var(--border)"}`,
-              borderRadius: 8, padding: "4px 5px", cursor: "pointer",
-              opacity: wknd ? 0.85 : 1
-            },
-            onClick: () => { setSelectedDay(new Date(key)); setViewMode("day"); }
-          },
-            /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 800, color: isToday ? "var(--accent)" : wknd ? "var(--orange)" : "var(--muted2)", marginBottom: 3 } }, d),
-            evs.slice(0, 3).map(ev => {
-              const tasks = ev.tasks || [];
-              const col = stColor(tasks[0] || "other", sts);
-              return /*#__PURE__*/React.createElement("div", {
-                key: ev.id,
-                style: { background: col + "25", color: col, borderRadius: 4, padding: "2px 4px", fontSize: 9, fontWeight: 600, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-                onClick: e => { e.stopPropagation(); openEdit(ev); }
-              }, tasks.map(t => stLabel(t, sts)).join(",") || "—");
-            }),
-            evs.length > 3 && /*#__PURE__*/React.createElement("div", { style: { fontSize: 8, color: "var(--muted)", marginTop: 1 } }, "+", evs.length - 3, " עוד")
-          );
-        })
-      )
-    );
-  }
-
-  // ── Year view: 12 months grid ──────────────────────────
-  const renderYear = () => {
-    const year = weekStart.getFullYear();
-    const today = new Date();
-    const HEB_MONTHS = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
-    const HEB_DAYS_MIN = ["א","ב","ג","ד","ה","ו","ש"];
-
-    return /*#__PURE__*/React.createElement("div", {
-      style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, padding: "4px 0" }
-    },
-      Array.from({ length: 12 }, (_, mi) => {
-        const monthDate = new Date(year, mi, 1);
-        const daysInMonth = new Date(year, mi + 1, 0).getDate();
-        const firstDow = monthDate.getDay();
-
-        // Collect shifts for this month
-        const monthStr = year + "-" + String(mi + 1).padStart(2, "0");
-
-        return /*#__PURE__*/React.createElement("div", {
-          key: mi,
-          style: {
-            background: "var(--card)", border: "1px solid var(--border)",
-            borderRadius: 12, padding: "10px 8px",
-            borderTop: mi === today.getMonth() && year === today.getFullYear()
-              ? "3px solid var(--accent)" : "3px solid transparent"
-          }
-        },
-          // Month title
-          /*#__PURE__*/React.createElement("div", {
-            style: { fontWeight: 800, fontSize: 12, color: "var(--accent)", marginBottom: 6,
-              display: "flex", justifyContent: "space-between", alignItems: "center" }
-          },
-            HEB_MONTHS[mi],
-            /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, color: "var(--muted)", fontWeight: 400 } }, year)
-          ),
-          // Day headers
-          /*#__PURE__*/React.createElement("div", {
-            style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1, marginBottom: 2 }
-          },
-            HEB_DAYS_MIN.map(d => /*#__PURE__*/React.createElement("div", {
-              key: d, style: { fontSize: 8, color: "var(--muted2)", textAlign: "center", fontWeight: 700 }
-            }, d))
-          ),
-          // Day cells
-          /*#__PURE__*/React.createElement("div", {
-            style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1 }
-          },
-            Array.from({ length: firstDow }, (_, i) =>
-              /*#__PURE__*/React.createElement("div", { key: "e" + i })
-            ),
-            Array.from({ length: daysInMonth }, (_, di) => {
-              const dayNum = di + 1;
-              const ds = year + "-" + String(mi + 1).padStart(2, "0") + "-" + String(dayNum).padStart(2, "0");
-              const dayShifts = evMap[ds] || [];
-              const isToday = today.getFullYear() === year && today.getMonth() === mi && today.getDate() === dayNum;
-              const dow = new Date(year, mi, dayNum).getDay();
-              const isWknd = dow === 5 || dow === 6;
-              const hasShifts = dayShifts.length > 0;
-
-              return /*#__PURE__*/React.createElement("div", {
-                key: dayNum,
-                onClick: () => {
-                  const d = new Date(year, mi, dayNum);
-                  setSelectedDay(d);
-                  setWeekStart(d);
-                  setViewMode("day");
-                },
-                style: {
-                  fontSize: 9, textAlign: "center", borderRadius: 4,
-                  padding: "1px 0", cursor: "pointer", transition: "all .1s",
-                  fontWeight: isToday ? 900 : 400,
-                  color: isToday ? "#fff" : isWknd ? "var(--orange)" : "var(--text)",
-                  background: isToday ? "var(--accent)" : hasShifts ? "var(--accentbg)" : "transparent",
-                  border: hasShifts && !isToday ? "1px solid var(--accent)40" : "1px solid transparent",
-                  position: "relative"
-                },
-                title: hasShifts ? dayShifts.map(s => s.projName || s.label || "").filter(Boolean).join(", ") : ""
-              }, dayNum,
-                hasShifts && !isToday && /*#__PURE__*/React.createElement("div", {
-                  style: {
-                    position: "absolute", bottom: 1, left: "50%", transform: "translateX(-50%)",
-                    width: Math.min(dayShifts.length * 3, 9), height: 2,
-                    borderRadius: 1, background: "var(--accent)"
-                  }
-                })
-              );
-            })
-          )
-        );
-      })
-    );
-  };  const syncSettingsToSheets = async (key, value, label) => {
+  const syncSettingsToSheets = async (key, value, label) => {
     const url = getSheetsUrl();
     if (!url) return {
       ok: true,
@@ -2783,7 +2698,55 @@ function WeeklyCalendar({
     );
   };
 
-  // ─── Month view renderer ─────────────────────────────────────;
+  // ─── Month view renderer ─────────────────────────────────────
+  const renderMonth = () => {
+    const refDate = weekStart;
+    const year = refDate.getFullYear();
+    const month = refDate.getMonth();
+    const HEB_MONTHS_FULL = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells = [];
+    for (let i = 0; i < firstDay; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+    return /*#__PURE__*/React.createElement("div", { className: "fade" },
+      /*#__PURE__*/React.createElement("div", { style: { fontWeight: 800, fontSize: 18, marginBottom: 16 } }, HEB_MONTHS_FULL[month], " ", year),
+      /*#__PURE__*/React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 4 } },
+        HEB_DAYS.map(d => /*#__PURE__*/React.createElement("div", { key: d, style: { textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--muted)", padding: "4px 0" } }, d))
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 3 } },
+        cells.map((d, i) => {
+          if (!d) return /*#__PURE__*/React.createElement("div", { key: "e" + i });
+          const key = `${year}-${String(month + 1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+          const isToday = key === todayStr();
+          const wknd = (new Date(key)).getDay() === 5 || (new Date(key)).getDay() === 6;
+          const evs = evMap[key] || [];
+          return /*#__PURE__*/React.createElement("div", {
+            key: key,
+            style: {
+              minHeight: 72, background: isToday ? "var(--accentbg)" : wknd ? "#f5f5f8" : "var(--surf)",
+              border: `1.5px solid ${isToday ? "var(--accent)" : "var(--border)"}`,
+              borderRadius: 8, padding: "4px 5px", cursor: "pointer",
+              opacity: wknd ? 0.85 : 1
+            },
+            onClick: () => { setSelectedDay(new Date(key)); setViewMode("day"); }
+          },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 800, color: isToday ? "var(--accent)" : wknd ? "var(--orange)" : "var(--muted2)", marginBottom: 3 } }, d),
+            evs.slice(0, 3).map(ev => {
+              const tasks = ev.tasks || [];
+              const col = stColor(tasks[0] || "other", sts);
+              return /*#__PURE__*/React.createElement("div", {
+                key: ev.id,
+                style: { background: col + "25", color: col, borderRadius: 4, padding: "2px 4px", fontSize: 9, fontWeight: 600, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+                onClick: e => { e.stopPropagation(); openEdit(ev); }
+              }, tasks.map(t => stLabel(t, sts)).join(",") || "—");
+            }),
+            evs.length > 3 && /*#__PURE__*/React.createElement("div", { style: { fontSize: 8, color: "var(--muted)", marginTop: 1 } }, "+", evs.length - 3, " עוד")
+          );
+        })
+      )
+    );
+  };
 
   // ─── Navigation helpers ───────────────────────────────────────
   const goBack = () => {
@@ -2791,8 +2754,6 @@ function WeeklyCalendar({
       const d = new Date(selectedDay); d.setDate(d.getDate() - 1); setSelectedDay(d);
     } else if (viewMode === "week") {
       const d = new Date(weekStart); d.setDate(d.getDate() - 7 * numWeeks); setWeekStart(d);
-    } else if (viewMode === "year") {
-      const d = new Date(weekStart); d.setFullYear(d.getFullYear() - 1); setWeekStart(d);
     } else {
       const d = new Date(weekStart); d.setMonth(d.getMonth() - 1); setWeekStart(d);
     }
@@ -2802,8 +2763,6 @@ function WeeklyCalendar({
       const d = new Date(selectedDay); d.setDate(d.getDate() + 1); setSelectedDay(d);
     } else if (viewMode === "week") {
       const d = new Date(weekStart); d.setDate(d.getDate() + 7 * numWeeks); setWeekStart(d);
-    } else if (viewMode === "year") {
-      const d = new Date(weekStart); d.setFullYear(d.getFullYear() + 1); setWeekStart(d);
     } else {
       const d = new Date(weekStart); d.setMonth(d.getMonth() + 1); setWeekStart(d);
     }
@@ -2825,7 +2784,7 @@ function WeeklyCalendar({
     /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", onClick: goForward }, "הבא →"),
     /*#__PURE__*/React.createElement("select", {
       value: viewMode, onChange: e => setViewMode(e.target.value),
-      style: { fontSize: 11, padding: "4px 8px", width: "auto", borderRadius: 8 }
+      style: { fontSize: 11, padding: "4px 8px", width: "auto", borderRadius: 6 }
     },
       /*#__PURE__*/React.createElement("option", { value: "year" }, "שנתי"),
       /*#__PURE__*/React.createElement("option", { value: "month" }, "חודשי"),
@@ -2885,7 +2844,7 @@ function WeeklyCalendar({
     }
   }, "\uD83D\uDFE5 \u05E9\u05D9\u05E9\u05D9/\u05E9\u05D1\u05EA")),
   viewMode === "day" ? renderDay(selectedDay) :
-  viewMode === "year" ? renderYear() : viewMode === "month" ? renderMonth() :
+  viewMode === "month" ? renderMonth() :
   Array.from({
     length: numWeeks
   }, (_, wi) => {
@@ -9578,8 +9537,26 @@ function ClientModal({ client, onSave, onClose }) {
 // ══════════════════════════════════════════
 
 const PRICELIST_LS_KEY = "postflow_v27_pricelists";
+const DEF_PRICE_BASE = [
+  { id:"pb1", desc:"גריסה וסנכרון", unit:"פרויקט", price:4500, cost_price:0, category:"פוסט" },
+  { id:"pb2", desc:"עריכת תמונה — גרסה ראשונה", unit:"פרויקט", price:18000, cost_price:0, category:"פוסט" },
+  { id:"pb3", desc:"תיקונים", unit:"סבב", price:3500, cost_price:0, category:"פוסט" },
+  { id:"pb4", desc:"תיקון צבע", unit:"פרויקט", price:8000, cost_price:0, category:"פוסט" },
+  { id:"pb5", desc:"מיקס קול", unit:"פרויקט", price:6000, cost_price:0, category:"פוסט" },
+  { id:"pb6", desc:"מוסיקה ו-SFX", unit:"פרויקט", price:7000, cost_price:0, category:"פוסט" },
+  { id:"pb7", desc:"יום צילום", unit:"יום", price:12000, cost_price:0, category:"הפקה" },
+  { id:"pb8", desc:"חצי יום צילום", unit:"חצי יום", price:7000, cost_price:0, category:"הפקה" },
+  { id:"pb9", desc:"עריכת אונליין", unit:"פרויקט", price:4000, cost_price:0, category:"פוסט" },
+  { id:"pb10", desc:"הפקת גרפיקה", unit:"שעה", price:350, cost_price:0, category:"גרפיקה" },
+  { id:"pb11", desc:"אנימציה", unit:"שניה", price:400, cost_price:0, category:"גרפיקה" },
+  { id:"pb12", desc:"תרגום ותמלול", unit:"דקה", price:80, cost_price:0, category:"פוסט" },
+];
 function loadPriceLists() {
-  try { const r = localStorage.getItem(PRICELIST_LS_KEY); return r ? JSON.parse(r) : { base: [], byClient: [] }; } catch { return { base: [], byClient: [] }; }
+  try {
+    const r = localStorage.getItem(PRICELIST_LS_KEY);
+    if (r) return JSON.parse(r);
+    return { base: DEF_PRICE_BASE, byClient: [] };
+  } catch { return { base: DEF_PRICE_BASE, byClient: [] }; }
 }
 function savePriceLists(d) { try { localStorage.setItem(PRICELIST_LS_KEY, JSON.stringify(d)); } catch {} }
 
@@ -10486,113 +10463,199 @@ function QuoteBuilderForm({ projects, quoteTemplates, onUpdateTemplates, editing
 // PRICE LIST MODULE
 // ══════════════════════════════════════════
 function PriceListModule({ priceLists, onSave, projects, user }) {
-  const [tab, setTab] = useState("base"); // "base" | "byClient"
-  const [editingItem, setEditingItem] = useState(null);
+  const [tab, setTab] = useState("base");
   const [selClient, setSelClient] = useState("");
-  const [newItem, setNewItem] = useState({ desc: "", unit: "פרויקט", price: 0, cost_price: 0, category: "" });
+  const [editing, setEditing] = useState(null); // { id, field, value }
+  const [newItem, setNewItem] = useState({ desc:"", unit:"פרויקט", price:0, cost_price:0, category:"" });
+  const [clientNew, setClientNew] = useState({ desc:"", unit:"פרויקט", price:0, category:"" });
+  const [filterCat, setFilterCat] = useState("");
+
   const clientList = [...new Set(projects.map(p => p.client).filter(Boolean))].sort();
   const base = priceLists.base || [];
   const byClient = priceLists.byClient || [];
+  const cats = ["", ...new Set(base.map(x => x.category).filter(Boolean))];
 
-  const addBaseItem = () => {
-    if (!newItem.desc) return;
-    const item = { id: uid(), ...newItem, price: parseFloat(newItem.price) || 0, cost_price: parseFloat(newItem.cost_price) || 0 };
-    onSave({ ...priceLists, base: [...base, item] });
-    setNewItem({ desc: "", unit: "פרויקט", price: 0, cost_price: 0, category: "" });
+  const isAdminPL = user && user.role === "admin";
+  const UNITS = ["פרויקט","משמרת","יום","חצי יום","שעה","דקה","שניה","סרט","גרסה","סבב"];
+
+  const saveBase = newBase => onSave({ ...priceLists, base: newBase });
+  const saveByClient = newBC => onSave({ ...priceLists, byClient: newBC });
+
+  const addBase = () => {
+    if (!newItem.desc.trim()) return;
+    saveBase([...base, { id: uid(), ...newItem, price: parseFloat(newItem.price)||0, cost_price: parseFloat(newItem.cost_price)||0 }]);
+    setNewItem({ desc:"", unit:"פרויקט", price:0, cost_price:0, category:"" });
   };
-  const delBase = id => onSave({ ...priceLists, base: base.filter(x => x.id !== id) });
-  const updBase = (id, k, v) => onSave({ ...priceLists, base: base.map(x => x.id === id ? { ...x, [k]: k === "price" ? parseFloat(v)||0 : v } : x) });
+  const delBase = id => { if(confirm("מחק פריט?")) saveBase(base.filter(x=>x.id!==id)); };
+  const updBase = (id, k, v) => saveBase(base.map(x => x.id===id ? {...x,[k]: ["price","cost_price"].includes(k) ? parseFloat(v)||0 : v} : x));
 
   const clientItems = byClient.filter(x => x.client === selClient);
   const addClientItem = () => {
-    if (!selClient || !newItem.desc) return;
-    const item = { id: uid(), client: selClient, ...newItem, price: parseFloat(newItem.price) || 0 };
-    onSave({ ...priceLists, byClient: [...byClient, item] });
-    setNewItem({ desc: "", unit: "פרויקט", price: 0, category: "" });
+    if (!selClient || !clientNew.desc.trim()) return;
+    saveByClient([...byClient, { id:uid(), client:selClient, ...clientNew, price:parseFloat(clientNew.price)||0 }]);
+    setClientNew({ desc:"", unit:"פרויקט", price:0, category:"" });
   };
-  const delClientItem = id => onSave({ ...priceLists, byClient: byClient.filter(x => x.id !== id) });
+  const delClientItem = id => { if(confirm("מחק?")) saveByClient(byClient.filter(x=>x.id!==id)); };
+  const updClientItem = (id, k, v) => saveByClient(byClient.map(x => x.id===id ? {...x,[k]: k==="price"?parseFloat(v)||0:v} : x));
 
-  const NI = k => e => setNewItem(x => ({ ...x, [k]: e.target.value }));
-  const UNITS = ["פרויקט", "משמרת", "יום", "שעה", "סרט"];
-  const cats = [...new Set(base.map(x => x.category).filter(Boolean))];
+  const filteredBase = filterCat ? base.filter(x=>x.category===filterCat) : base;
 
-  const isAdminPL = !!(typeof user !== "undefined" && user && user.role === "admin");
-  const ItemRow = ({ item, onDel, onUpd }) => React.createElement("div", { key: item.id, className: "card2", style: { display: "flex", gap: 8, alignItems: "center", marginBottom: 6, flexWrap: "wrap" } },
-    React.createElement("div", { style: { flex: 2, minWidth: 120, fontWeight: 600, fontSize: 13 } }, item.desc),
-    item.category && React.createElement("span", { className: "tag", style: { color: "var(--purple)", background: "var(--purple)20", fontSize: 10 } }, item.category),
-    React.createElement("span", { style: { fontSize: 12, color: "var(--muted)" } }, item.unit),
-    // מחיר ללקוח
-    React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 2 } },
-      React.createElement("div", { style: { fontSize: 9, color: "var(--muted)", textAlign: "center" } }, "מחיר ללקוח"),
-      onUpd
-        ? React.createElement("input", { type: "number", value: item.price, onChange: e => onUpd(item.id, "price", e.target.value), style: { width: 90, textAlign: "left", fontSize: 13 } })
-        : React.createElement("span", { style: { fontWeight: 800, color: "var(--accent)" } }, fmtMoney(item.price))
-    ),
-    // עלות פנימית — אדמין בלבד
-    isAdminPL && React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 2 } },
-      React.createElement("div", { style: { fontSize: 9, color: "var(--red)", textAlign: "center" } }, "עלות פנימית"),
-      onUpd
-        ? React.createElement("input", { type: "number", value: item.cost_price || 0, onChange: e => onUpd(item.id, "cost_price", e.target.value), style: { width: 90, textAlign: "left", fontSize: 13, borderColor: "var(--red)40" } })
-        : React.createElement("span", { style: { fontWeight: 700, color: "var(--red)", fontSize: 12 } }, fmtMoney(item.cost_price || 0))
-    ),
-    isAdminPL && item.price > 0 && (item.cost_price||0) > 0 && React.createElement("span", { style: { fontSize: 10, color: "var(--green)", fontWeight: 700 } },
-      "+" + Math.round((item.price - (item.cost_price||0)) / item.price * 100) + "%"
-    ),
-    React.createElement("button", { className: "btn-red", onClick: () => onDel(item.id) }, "✕")
-  );
+  const EditCell = ({ item, field, isClient }) => {
+    const [val, setVal] = React.useState(item[field]);
+    const save = () => { isClient ? updClientItem(item.id, field, val) : updBase(item.id, field, val); };
+    const isNum = ["price","cost_price"].includes(field);
+    return React.createElement("input", {
+      type: isNum ? "number" : "text",
+      value: val,
+      onChange: e => setVal(e.target.value),
+      onBlur: save,
+      onKeyDown: e => e.key==="Enter" && save(),
+      style: { width: isNum ? 80 : "100%", fontSize:12, padding:"2px 5px",
+        border:"1px solid var(--accent)", borderRadius:4, background:"var(--accentbg)" }
+    });
+  };
 
-  return React.createElement("div", { className: "fade" },
-    React.createElement("div", { style: { display: "flex", borderBottom: "1px solid var(--border)", marginBottom: 18, gap: 2 } },
-      React.createElement("button", { className: `tab-btn${tab === "base" ? " active" : ""}`, onClick: () => setTab("base") }, "📋 מחירון בסיס"),
-      React.createElement("button", { className: `tab-btn${tab === "byClient" ? " active" : ""}`, onClick: () => setTab("byClient") }, "🏢 לפי לקוח")
+  return React.createElement("div", { className:"fade" },
+    // Tabs
+    React.createElement("div", { style:{display:"flex", borderBottom:"1px solid var(--border)", marginBottom:16, gap:2} },
+      [["base","📋 מחירון בסיס"],["byClient","🏢 לפי לקוח"]].map(([k,l]) =>
+        React.createElement("button", { key:k, className:`tab-btn${tab===k?" active":""}`, onClick:()=>setTab(k) }, l)
+      )
     ),
 
-    tab === "base" && React.createElement("div", { className: "fade" },
-      React.createElement("div", { style: { fontWeight: 700, marginBottom: 14 } }, "מחירון בסיס (", base.length, " פריטים)"),
-      // Add row
-      React.createElement("div", { className: "card2", style: { marginBottom: 14 } },
-        React.createElement("div", { style: { fontWeight: 700, marginBottom: 10, fontSize: 13 } }, "+ פריט חדש"),
-        React.createElement("div", { className: "frow" },
-          React.createElement("div", { className: "fcol", style: { flex: 2 } }, React.createElement(Lbl, null, "תיאור"), React.createElement("input", { value: newItem.desc, onChange: NI("desc"), placeholder: "עריכת תמונה..." })),
-          React.createElement("div", { className: "fcol", style: { flex: 1 } }, React.createElement(Lbl, null, "קטגוריה"), React.createElement("input", { value: newItem.category, onChange: NI("category"), list: "cat-list", placeholder: "עריכה, צבע..." }), React.createElement("datalist", { id: "cat-list" }, cats.map(c => React.createElement("option", { key: c, value: c })))),
-          React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "יחידה"), React.createElement("select", { value: newItem.unit, onChange: NI("unit") }, UNITS.map(u => React.createElement("option", { key: u, value: u }, u)))),
-          React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "מחיר ללקוח (₪)"), React.createElement("input", { type: "number", value: newItem.price, onChange: NI("price") })),
-          isAdminPL && React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "עלות פנימית (₪)"), React.createElement("input", { type: "number", value: newItem.cost_price || 0, onChange: NI("cost_price"), style: { borderColor: "var(--red)40" } }))
-        ),
-        React.createElement("button", { className: "btn-gold btn-sm", onClick: addBaseItem }, "+ הוסף לרשימה")
+    // ── BASE TAB ──────────────────────────────────────────
+    tab === "base" && React.createElement("div", { className:"fade" },
+      // Filters row
+      React.createElement("div", { style:{display:"flex", gap:8, marginBottom:14, alignItems:"center", flexWrap:"wrap"} },
+        React.createElement("div", { style:{fontWeight:700, fontSize:14} }, "מחירון בסיס"),
+        React.createElement("span", { style:{fontSize:11,color:"var(--muted)",background:"var(--accentbg)",color:"var(--accent)",padding:"2px 8px",borderRadius:20,fontWeight:700} }, base.length+" פריטים"),
+        React.createElement("select", {
+          value:filterCat, onChange:e=>setFilterCat(e.target.value),
+          style:{fontSize:11,padding:"3px 7px",borderRadius:6,marginRight:"auto"}
+        }, cats.map(c=>React.createElement("option",{key:c,value:c},c||"כל הקטגוריות")))
       ),
-      base.length === 0
-        ? React.createElement("div", { style: { color: "var(--muted)", textAlign: "center", padding: 32 } }, "מחירון ריק — הוסף פריטים")
-        : React.createElement("div", null, base.map(item => React.createElement(ItemRow, { key: item.id, item, onDel: delBase, onUpd: updBase })))
-    ),
 
-    tab === "byClient" && React.createElement("div", { className: "fade" },
-      React.createElement("div", { style: { marginBottom: 14 } },
-        React.createElement(Lbl, null, "בחר לקוח"),
-        React.createElement("select", { value: selClient, onChange: e => setSelClient(e.target.value), style: { maxWidth: 280 } },
-          React.createElement("option", { value: "" }, "— בחר לקוח —"),
-          clientList.map(c => React.createElement("option", { key: c, value: c }, c))
+      // Table header
+      React.createElement("div", { style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px 90px 50px",gap:4,marginBottom:6,padding:"0 4px"} },
+        ["תיאור","יחידה","קטגוריה","מחיר","עלות",""].map((h,i)=>
+          React.createElement("div",{key:i,style:{fontSize:10,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:"0.4px"}},h)
         )
       ),
-      selClient && React.createElement("div", { className: "fade" },
-        React.createElement("div", { style: { fontWeight: 700, marginBottom: 10 } }, "מחירון עבור: ", React.createElement("span", { style: { color: "var(--accent)" } }, selClient)),
-        React.createElement("div", { className: "card2", style: { marginBottom: 14 } },
-          React.createElement("div", { style: { fontWeight: 700, marginBottom: 10, fontSize: 13 } }, "+ פריט מחיר מיוחד"),
-          React.createElement("div", { className: "frow" },
-            React.createElement("div", { className: "fcol", style: { flex: 2 } }, React.createElement(Lbl, null, "תיאור"), React.createElement("input", { value: newItem.desc, onChange: NI("desc"), placeholder: "עריכת תמונה..." })),
-            React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "יחידה"), React.createElement("select", { value: newItem.unit, onChange: NI("unit") }, UNITS.map(u => React.createElement("option", { key: u, value: u }, u)))),
-            React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "מחיר (₪)"), React.createElement("input", { type: "number", value: newItem.price, onChange: NI("price") }))
-          ),
-          React.createElement("button", { className: "btn-gold btn-sm", onClick: addClientItem }, "+ הוסף"),
-          React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", marginTop: 6 } }, "💡 מחיר לקוח מבטל את מחיר הבסיס עבור פריט זה")
+
+      // Items
+      React.createElement("div", { style:{marginBottom:16} },
+        filteredBase.map(item =>
+          React.createElement("div", {
+            key:item.id,
+            style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px 90px 50px",gap:4,
+              alignItems:"center",padding:"7px 4px",borderBottom:"1px solid var(--border)",
+              transition:"background .1s"},
+            onMouseEnter:e=>e.currentTarget.style.background="var(--card2)",
+            onMouseLeave:e=>e.currentTarget.style.background="transparent"
+          },
+            React.createElement("div", { style:{fontSize:12,fontWeight:600,color:"var(--text)"} }, item.desc),
+            React.createElement(EditCell, {item,field:"unit"}),
+            React.createElement(EditCell, {item,field:"category"}),
+            React.createElement("div", { style:{fontWeight:700,color:"var(--accent)",fontSize:12} },
+              isAdminPL
+                ? React.createElement(EditCell, {item,field:"price"})
+                : "₪"+Number(item.price).toLocaleString()
+            ),
+            React.createElement("div", { style:{fontSize:11,color:"var(--muted)"} },
+              isAdminPL
+                ? React.createElement(EditCell, {item,field:"cost_price"})
+                : "₪"+Number(item.cost_price||0).toLocaleString()
+            ),
+            isAdminPL && React.createElement("button", {
+              className:"btn-red btn-sm", onClick:()=>delBase(item.id)
+            }, "✕")
+          )
+        )
+      ),
+
+      // Add new item (admin only)
+      isAdminPL && React.createElement("div", { className:"card2" },
+        React.createElement("div", { style:{fontWeight:600,fontSize:12,marginBottom:8,color:"var(--muted)"} }, "+ פריט חדש"),
+        React.createElement("div", { style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px 90px auto",gap:6,alignItems:"flex-end"} },
+          React.createElement("input", { placeholder:"תיאור השירות...", value:newItem.desc,
+            onChange:e=>setNewItem(x=>({...x,desc:e.target.value})), style:{fontSize:12} }),
+          React.createElement("select", { value:newItem.unit, onChange:e=>setNewItem(x=>({...x,unit:e.target.value})), style:{fontSize:12} },
+            UNITS.map(u=>React.createElement("option",{key:u,value:u},u))),
+          React.createElement("input", { placeholder:"קטגוריה", value:newItem.category,
+            onChange:e=>setNewItem(x=>({...x,category:e.target.value})), style:{fontSize:12} }),
+          React.createElement("input", { type:"number", placeholder:"מחיר", value:newItem.price||"",
+            onChange:e=>setNewItem(x=>({...x,price:e.target.value})), style:{fontSize:12} }),
+          React.createElement("input", { type:"number", placeholder:"עלות", value:newItem.cost_price||"",
+            onChange:e=>setNewItem(x=>({...x,cost_price:e.target.value})), style:{fontSize:12} }),
+          React.createElement("button", { className:"btn-gold btn-sm", onClick:addBase }, "+ הוסף")
+        )
+      )
+    ),
+
+    // ── BY CLIENT TAB ─────────────────────────────────────
+    tab === "byClient" && React.createElement("div", { className:"fade" },
+      React.createElement("div", { style:{display:"flex",gap:10,marginBottom:16,alignItems:"center",flexWrap:"wrap"} },
+        React.createElement("div", { style:{fontWeight:700,fontSize:14} }, "מחירון לפי לקוח"),
+        React.createElement("select", {
+          value:selClient, onChange:e=>setSelClient(e.target.value),
+          style:{fontSize:12,padding:"5px 10px",borderRadius:7,minWidth:180}
+        },
+          React.createElement("option",{value:""},"בחר לקוח..."),
+          clientList.map(c=>React.createElement("option",{key:c,value:c},c))
+        )
+      ),
+
+      selClient && React.createElement("div", null,
+        // Table header
+        React.createElement("div", { style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px 50px",gap:4,marginBottom:6,padding:"0 4px"} },
+          ["תיאור","יחידה","קטגוריה","מחיר",""].map((h,i)=>
+            React.createElement("div",{key:i,style:{fontSize:10,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:"0.4px"}},h)
+          )
         ),
         clientItems.length === 0
-          ? React.createElement("div", { style: { color: "var(--muted)", textAlign: "center", padding: 24 } }, "אין מחירים מיוחדים ללקוח זה")
-          : clientItems.map(item => React.createElement(ItemRow, { key: item.id, item, onDel: delClientItem }))
-      )
+          ? React.createElement("div", { style:{textAlign:"center",color:"var(--muted2)",padding:"20px",fontSize:12} },
+              "אין פריטי מחיר ספציפיים ל"+selClient+". הפריטים מהמחירון הבסיסי יחולו.")
+          : clientItems.map(item=>
+              React.createElement("div", {
+                key:item.id,
+                style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px 50px",gap:4,
+                  alignItems:"center",padding:"7px 4px",borderBottom:"1px solid var(--border)"},
+                onMouseEnter:e=>e.currentTarget.style.background="var(--card2)",
+                onMouseLeave:e=>e.currentTarget.style.background="transparent"
+              },
+                React.createElement("div",{style:{fontSize:12,fontWeight:600}},item.desc),
+                React.createElement(EditCell,{item,field:"unit",isClient:true}),
+                React.createElement(EditCell,{item,field:"category",isClient:true}),
+                React.createElement("div",{style:{fontWeight:700,color:"var(--accent)",fontSize:12}},
+                  React.createElement(EditCell,{item,field:"price",isClient:true})),
+                React.createElement("button",{className:"btn-red btn-sm",onClick:()=>delClientItem(item.id)},"✕")
+              )
+            ),
+
+        // Add client item
+        React.createElement("div", { className:"card2", style:{marginTop:12} },
+          React.createElement("div", { style:{fontWeight:600,fontSize:12,marginBottom:8,color:"var(--muted)"} }, "+ מחיר מיוחד ל"+selClient),
+          React.createElement("div", { style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px auto",gap:6,alignItems:"flex-end"} },
+            React.createElement("input",{placeholder:"תיאור...",value:clientNew.desc,
+              onChange:e=>setClientNew(x=>({...x,desc:e.target.value})),style:{fontSize:12}}),
+            React.createElement("select",{value:clientNew.unit,onChange:e=>setClientNew(x=>({...x,unit:e.target.value})),style:{fontSize:12}},
+              UNITS.map(u=>React.createElement("option",{key:u,value:u},u))),
+            React.createElement("input",{placeholder:"קטגוריה",value:clientNew.category,
+              onChange:e=>setClientNew(x=>({...x,category:e.target.value})),style:{fontSize:12}}),
+            React.createElement("input",{type:"number",placeholder:"מחיר",value:clientNew.price||"",
+              onChange:e=>setClientNew(x=>({...x,price:e.target.value})),style:{fontSize:12}}),
+            React.createElement("button",{className:"btn-gold btn-sm",onClick:addClientItem},"+ הוסף")
+          )
+        )
+      ),
+
+      !selClient && React.createElement("div", {
+        style:{textAlign:"center",padding:"40px",color:"var(--muted2)",fontSize:13}
+      }, "בחר לקוח כדי לראות ולערוך מחירים מיוחדים")
     )
   );
 }
+
 
 // ══════════════════════════════════════════
 // FINANCE REPORTS
