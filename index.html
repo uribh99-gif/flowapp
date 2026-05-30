@@ -50,370 +50,183 @@ const {
 } = React;
 
 // ══════════════════════════════════════════
-// GLOBAL STYLES (GOOGLE MATERIAL DESIGN 3)
+// GLOBAL STYLES
 // ══════════════════════════════════════════
 const GS = () => /*#__PURE__*/React.createElement("style", null, `
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Roboto:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f6f7fb;
+  --surf:#ffffff;
+  --card:#ffffff;
+  --card2:#f8f9fc;
+  --border:#e6e9ef;
+  --border2:#d4d8e2;
+  --accent:#0073ea;
+  --accent2:#1f76c2;
+  --accentbg:#e8f0fe;
+  --gold:#0073ea;
+  --blue:#0073ea;
+  --green:#00c875;
+  --red:#e44258;
+  --purple:#a25ddc;
+  --orange:#fdab3d;
+  --text:#1f2d3d;
+  --muted:#676879;
+  --muted2:#9699a6;
+  --shadow:0 1px 6px rgba(0,0,0,0.06);
+  --shadow2:0 4px 16px rgba(0,0,0,0.10);
+  --radius:8px;
+  --radius-lg:12px;
+}
+[data-dark="true"]{
+  --bg:#1b1d2e;
+  --surf:#22243a;
+  --card:#2b2d45;
+  --card2:#22243a;
+  --border:#393b5a;
+  --border2:#4a4d70;
+  --accentbg:#1a2a4a;
+  --text:#d5d8e8;
+  --muted:#8b8faa;
+  --muted2:#6b6f88;
+  --shadow:0 1px 8px rgba(0,0,0,0.4);
+  --shadow2:0 4px 20px rgba(0,0,0,0.5);
+}
+body{background:var(--bg);color:var(--text);font-family:'Heebo',sans-serif;direction:rtl;min-height:100vh;overflow-x:hidden;font-size:14px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+*{scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* Inputs */
+input,select,textarea{
+  background:var(--surf);border:1px solid var(--border);color:var(--text);
+  border-radius:var(--radius);padding:7px 10px;
+  font-family:'Heebo',sans-serif;font-size:13px;width:100%;
+  outline:none;transition:border-color .15s,box-shadow .15s;
 }
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,115,234,0.10)}
+input[type=checkbox]{width:auto;accent-color:var(--accent);cursor:pointer}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input::placeholder,textarea::placeholder{color:var(--muted2)}
+textarea{resize:vertical;min-height:60px}
+select{appearance:auto}
 
-:root {
-  /* Google Material Light Palette */
-  --bg: #f8f9fa; /* Google light background */
-  --surf: #ffffff;
-  --card: #ffffff;
-  --card2: #f1f3f4; /* Google gray surface tint */
-  --border: #dadce0; /* Standard Google border */
-  --border2: #bdc1c6;
-  --accent: #1a73e8; /* Google Blue */
-  --accent2: #1557b0; /* Google Dark Blue */
-  --accentbg: #e8f0fe; /* Google blue state hover/active */
-  --gold: #f9ab00; /* Google Yellow */
-  --blue: #1a73e8;
-  --green: #1e8e3e; /* Google Green */
-  --red: #d93025; /* Google Red */
-  --purple: #a142f4;
-  --orange: #e8710a;
-  --text: #202124; /* Google Primary text color */
-  --muted: #5f6368; /* Google Secondary text color */
-  --muted2: #80868b;
-  --shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15); /* Material elevation 1 */
-  --shadow2: 0 4px 8px 3px rgba(60,64,67,0.15), 0 1px 3px 0 rgba(60,64,67,0.3); /* Material elevation 2 */
-  --radius: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 28px; /* Material 3 fully rounded */
-}
+/* Buttons */
+button{font-family:'Heebo',sans-serif;cursor:pointer;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;transition:all .15s}
+.btn-gold{background:var(--accent);color:#fff;padding:7px 16px;box-shadow:0 1px 4px rgba(0,115,234,0.25)}
+.btn-gold:hover{background:#0060c7;box-shadow:0 2px 8px rgba(0,115,234,0.35)}
+.btn-ghost{background:transparent;color:var(--muted);padding:6px 13px;border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text);background:var(--card2)}
+.btn-blue{background:var(--accentbg);color:var(--accent);padding:6px 13px;border:1px solid rgba(0,115,234,0.2)}
+.btn-blue:hover{background:#d4e4fd}
+.btn-red{background:transparent;color:var(--red);padding:4px 9px;border:1px solid rgba(228,66,88,0.3);font-size:11px}
+.btn-red:hover{background:rgba(228,66,88,0.07)}
+.btn-green{background:rgba(0,200,117,0.12);color:#00a36b;padding:6px 13px;border:1px solid rgba(0,200,117,0.25)}
+.btn-green:hover{background:rgba(0,200,117,0.2)}
+.btn-orange{background:rgba(253,171,61,0.12);color:#c97f00;padding:6px 13px;border:1px solid rgba(253,171,61,0.3)}
+.btn-sm{padding:4px 10px!important;font-size:12px!important}
 
-[data-dark="true"] {
-  /* Google Material Dark Palette */
-  --bg: #202124;
-  --surf: #2d2e30;
-  --card: #303134;
-  --card2: #3c4043;
-  --border: #5f6368;
-  --border2: #70757a;
-  --accentbg: #384458;
-  --text: #e8eaed;
-  --muted: #9aa0a6;
-  --muted2: #bdc1c6;
-  --shadow: 0 1px 3px rgba(0,0,0,0.4);
-  --shadow2: 0 4px 12px rgba(0,0,0,0.5);
-}
+/* Tags & chips */
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;cursor:pointer;font-size:11px;font-weight:600;border:1px solid var(--border);transition:all .15s;user-select:none}
+.chip.sel{border-color:currentColor}
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Heebo', -apple-system, BlinkMacSystemFont, sans-serif;
-  direction: rtl;
-  min-height: 100vh;
-  overflow-x: hidden;
-  font-size: 14px;
-  -webkit-font-smoothing: antialiased;
-}
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow)}
+.card:hover{box-shadow:var(--shadow2)}
+.card2{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:12px}
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; border: 2px solid var(--bg); }
+/* Animations */
+.fade{animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
-/* Google Material Inputs & Selects */
-input, select, textarea {
-  background: var(--surf);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: var(--radius);
-  padding: 10px 14px;
-  font-family: inherit;
-  font-size: 14px;
-  width: 100%;
-  outline: none;
-  transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-input:focus, select:focus, textarea:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
-}
-input[type=checkbox] {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--accent);
-  cursor: pointer;
-  border-radius: 4px;
-}
-input[type=range] {
-  accent-color: var(--accent);
-  height: 4px;
-  border-radius: 2px;
-}
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.35);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:1000}
+.modal{background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:24px;width:min(680px,96vw);max-height:92vh;overflow-y:auto;box-shadow:var(--shadow2)}
 
-/* Material 3 Buttons UI */
-button {
-  font-family: inherit;
-  cursor: pointer;
-  border: none;
-  border-radius: var(--radius-xl); /* כפתורים עגולים כסגנון חובה ב-M3 */
-  font-size: 14px;
-  font-weight: 500;
-  padding: 10px 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
-  letter-spacing: .25px;
-}
+/* Progress bar */
+.pbar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.pfill{height:100%;border-radius:2px;transition:width .5s}
 
-/* כפתור זהב/ראשי הופך ל-Filled Button של גוגל */
-.btn-gold {
-  background: var(--accent);
-  color: #ffffff;
-  box-shadow: none;
-}
-.btn-gold:hover {
-  background: var(--accent2);
-  box-shadow: 0 1px 3px 1px rgba(60,64,67,0.2);
-}
+/* Forms */
+.pulse{animation:pl 1.8s ease-in-out infinite}
+@keyframes pl{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
+.lbl{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px}
+.frow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
+.fcol{flex:1;min-width:110px}
+.divider{height:1px;background:var(--border);margin:16px 0}
+.section-title{font-size:18px;font-weight:800;margin-bottom:18px;color:var(--text)}
+h2,.section-title{color:var(--text)}
 
-/* כפתור משני / רפאים - Outlined Button */
-.btn-ghost {
-  background: var(--surf);
-  color: var(--accent);
-  border: 1px solid var(--border);
-  padding: 9px 23px;
-}
-.btn-ghost:hover {
-  background: rgba(26, 115, 232, 0.04);
-  border-color: var(--accent);
-  color: var(--accent2);
-}
-
-/* כפתור כחול/טונאלי - Tonal Button */
-.btn-blue {
-  background: var(--accentbg);
-  color: var(--accent);
-}
-.btn-blue:hover {
-  background: #d2e3fc;
-}
-
-.btn-red {
-  background: transparent;
-  color: var(--red);
-  border: 1px solid var(--border);
-  padding: 6px 14px;
-  border-radius: var(--radius-xl);
-}
-.btn-red:hover {
-  background: rgba(217, 48, 37, 0.04);
-  border-color: var(--red);
-}
-
-.btn-green {
-  background: rgba(30, 142, 62, 0.1);
-  color: var(--green);
-}
-.btn-green:hover { background: rgba(30, 142, 62, 0.16); }
-
-.btn-sm {
-  padding: 6px 16px !important;
-  font-size: 12px !important;
-}
-
-/* Tags & chips (Material 3 Assist Chips) */
-.tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
-}
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  border: 1px solid var(--border);
-  background: var(--surf);
-  color: var(--muted);
-  transition: all .15s ease;
-}
-.chip:hover {
-  background: var(--card2);
-}
-.chip.sel {
-  background: var(--accentbg);
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-/* Material 3 Surface Containers (Cards) */
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-  box-shadow: none; /* Material 3 עובד בעיקר על גווני משטח ופחות על צללים */
-  transition: box-shadow .2s, border-color .2s;
-}
-.card:hover {
-  box-shadow: var(--shadow);
-}
-.card2 {
-  background: var(--card2);
-  border: none;
-  border-radius: var(--radius-md);
-  padding: 14px;
-}
-
-/* Modal UI */
-.modal-bg {
-  position: fixed;
-  inset: 0;
-  background: rgba(32, 33, 36, 0.6); /* רקע כהה מט שקוף של גוגל */
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-.modal {
-  background: var(--surf);
-  border: none;
-  border-radius: var(--radius-xl); /* פינות מעוגלות עמוקות לחלונות קופצים */
-  padding: 24px;
-  width: min(640px, 96vw);
-  max-height: 88vh;
-  box-shadow: var(--shadow2);
-}
-
-/* Sidebar Nav (Google Apps Workspace style) */
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
-  border-radius: var(--radius-xl); /* פריטי תפריט עגולים לחלוטין כמו ב-Gmail החדש */
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--muted);
-  transition: all .15s ease;
-  margin-bottom: 2px;
-}
-.nav-item:hover {
-  background: var(--card2);
-  color: var(--text);
-}
-.nav-item.active {
-  background: var(--accentbg); /* צבע סימון רך ונקי */
-  color: var(--accent);
-  font-weight: 600;
-}
-.nav-icon-wrap {
-  font-size: 16px;
-}
+/* Sidebar nav */
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:var(--radius);cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);transition:all .12s;user-select:none}
+.nav-item:hover{background:var(--card2);color:var(--text)}
+.nav-item.active{background:var(--accentbg);color:var(--accent);font-weight:700}
+.nav-icon-wrap{width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:13px}
 
 /* Tabs */
-.tab-btn {
-  background: none;
-  border: none;
-  color: var(--muted);
-  padding: 12px 20px;
-  font-family: inherit;
-  font-weight: 500;
-  font-size: 14px;
-  border-bottom: 3px solid transparent;
-  cursor: pointer;
-  transition: all .15s ease;
-}
-.tab-btn:hover { color: var(--text); }
-.tab-btn.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-}
+.tab-btn{background:none;border:none;color:var(--muted);padding:8px 13px;font-family:'Heebo',sans-serif;font-weight:600;font-size:13px;border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px;white-space:nowrap;transition:color .12s}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
 
-/* Table Design */
-th {
-  color: var(--muted);
-  font-weight: 500;
-  font-size: 12px;
-  text-transform: none;
-  letter-spacing: 0px;
-  padding: 12px 8px;
-}
-td {
-  padding: 12px 8px;
-  font-size: 13.5px;
-}
+/* Project cards */
+.proj-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow)}
+.proj-card:hover{border-color:var(--accent);box-shadow:var(--shadow2);transform:translateY(-1px)}
 
-/* App top bar header */
-.app-header {
-  background: var(--surf);
-  border-radius: var(--radius-lg);
-  padding: 12px 20px;
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border);
-}
+/* Calendar days */
+.cal-day{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);padding:6px 5px;min-height:100px;transition:all .12s;cursor:pointer}
+.cal-day:hover{border-color:var(--accent);background:var(--accentbg)}
+.cal-day.today{border-color:var(--accent);border-top:2px solid var(--accent);background:var(--accentbg)}
+.cal-day.weekend{background:var(--card2);opacity:.9}
+.cal-day.weekend:hover{border-color:var(--accent);background:var(--accentbg)}
+.cal-ev{border-radius:6px;padding:3px 6px;font-size:10px;font-weight:600;margin-bottom:2px;cursor:pointer;transition:opacity .12s;line-height:1.4;border-right:3px solid transparent}
+.cal-ev:hover{opacity:.8}
 
-.pbar {
-  height: 6px;
-  background: var(--card2);
-  border-radius: 99px;
-  overflow: hidden;
-}
-.pfill {
-  height: 100%;
-  border-radius: 99px;
-}
+/* Search */
+.srch-wrap{position:relative}
+.srch-wrap input{padding-right:32px}
+.srch-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.srch-drop{position:absolute;top:calc(100%+4px);right:0;left:0;background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);z-index:300;max-height:260px;overflow-y:auto;box-shadow:var(--shadow2)}
+.srch-item{padding:9px 13px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)}
+.srch-item:last-child{border-bottom:none}
+.srch-item:hover{background:var(--accentbg)}
 
-/* פאנל שליטה עליון נקי */
-.lbl {
-  font-size: 12px;
-  color: var(--muted);
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0px;
-}
+/* Table */
+th{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
 
-/* התאמות נוספות עבור דף הפרויקטים והקופצים */
-.proj-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 18px;
-  box-shadow: none;
-}
-.proj-card:hover {
-  border-color: var(--border2);
-  box-shadow: var(--shadow);
-  transform: none;
-}
+/* App header (top bar) */
+.app-header{background:var(--surf);border-radius:var(--radius-lg);padding:9px 16px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:16px}
+.sidebar-logo-wrap{padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.cal-header-row{background:var(--surf);border-radius:var(--radius);border:1px solid var(--border);padding:7px;margin-bottom:7px}
+.today-badge{background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:11px}
+.proj-num-badge{background:var(--accentbg);color:var(--accent);font-weight:800;font-size:10px;padding:2px 7px;border-radius:5px}
+.stat-card-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
+.deadline-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 14px;box-shadow:var(--shadow);border-right:3px solid var(--red)}
 
-.cal-day {
-  background: var(--surf);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+/* Mobile */
+@media(max-width:768px){
+  .desktop-sidebar{display:none!important}
+  .mob-bar{display:flex!important}
 }
-.cal-day.today {
-  border-color: var(--accent);
-  background: rgba(26, 115, 232, 0.02);
+.mob-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1px solid var(--border);padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:800;justify-content:space-around;box-shadow:0 -2px 10px rgba(0,0,0,0.08)}
+.mob-btn{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--muted2);font-size:9px;font-family:'Heebo',sans-serif;cursor:pointer;padding:4px 10px;border-radius:var(--radius);transition:all .12s;font-weight:600}
+.mob-btn.active{color:var(--accent)}
+@media(max-width:768px){
+  main{padding:12px 10px 80px!important}
+  .card{padding:12px!important}
+  .card2{padding:10px!important}
+  .section-title{font-size:16px!important}
+  .dash-panels{flex-direction:column!important;overflow-y:auto!important}
+  .users-grid{grid-template-columns:repeat(2,1fr)!important}
+  button{min-height:36px}
+  input,select{font-size:16px!important;min-height:36px}
+  .mob-hide{display:none!important}
 }
-.cal-ev {
-  border-radius: 4px;
-  padding: 4px 8px;
+@media(max-width:480px){
+  .users-grid{grid-template-columns:repeat(2,1fr)!important}
 }
+select option{background:var(--surf)}
 `);
 
 // ══════════════════════════════════════════
@@ -428,8 +241,11 @@ const REMEMBER_KEY = "pf_v24_remember";
 const ADMIN_EMAIL = "uri@fpp.co.il";
 const ADMIN_PASS = "0711";
 // ── Supabase ──────────────────────────────────────────────────
-const SB_URL = "https://jmzigeficvoiuqxtmems.supabase.co";
-const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptemlnZWZpY3ZvaXVxeHRtZW1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0OTkxNjMsImV4cCI6MjA5NDA3NTE2M30.o9-axopjQi3b9GW6NE6t5kE4zmLpCEeKbAcfstRVYN8";
+const SB_URL = "https://vbdpwuuzxlzjzqwlxcxk.supabase.co";
+const GOOGLE_CLIENT_ID = "533069670646-u4b5cbco32bok4e7r816c63i3dlju2v5.apps.googleusercontent.com";
+const CALENDAR_ID = "c_87bb67ed3985df304fd866f902791cfcdc720f1a825c6e8a0e1680941f86fb87@group.calendar.google.com";
+const SHEET_ID = "11N29wHJl7q3aVoTxDK850-Y_ytPyxVothsJJ_JYsIKg";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiZHB3dXV6eGx6anpxd2x4Y3hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTg1NDUsImV4cCI6MjA5NTQ5NDU0NX0.hHIj2yYkS4dThfwSqptpVbjL7c8EC6OvghYvh5Wornw";
 const SB_HEADERS = {
   "Content-Type": "application/json",
   "apikey": SB_KEY,
@@ -1225,11 +1041,77 @@ function dlJSON(obj, fn) {
   a.click();
 }
 // ══════════════════════════════════════════
+// GOOGLE SHEETS — סנכרון נתונים
+// ══════════════════════════════════════════
+const SHEETS_BASE = "https://sheets.googleapis.com/v4/spreadsheets";
+
+async function sheetsGet(range) {
+  const token = await gcalGetToken();
+  const r = await fetch(
+    `${SHEETS_BASE}/${GOOGLE_SHEET_ID}/values/${encodeURIComponent(range)}`,
+    { headers: { "Authorization": `Bearer ${token}` } }
+  );
+  if (!r.ok) return null;
+  const d = await r.json();
+  return d.values || [];
+}
+
+async function sheetsSet(range, values) {
+  const token = await gcalGetToken();
+  const r = await fetch(
+    `${SHEETS_BASE}/${GOOGLE_SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`,
+    { method: "PUT",
+       headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+       body: JSON.stringify({ range, values }) }
+  );
+  return r.ok;
+}
+
+async function syncHoursToSheets(projects, users, month) {
+  // Build נוכחות sheet: שם עובד | תאריך | כניסה | יציאה | שעות | פרויקט
+  const rows = [["עובד","תאריך","כניסה","יציאה","שעות","פרויקט","הערה"]];
+  projects.forEach(p => (p.hours||[]).filter(h => !month || (h.date||"").startsWith(month)).forEach(h => {
+    const u = users.find(u=>u.id===h.worker);
+    rows.push([u?.name||h.workerName||h.worker, h.date||"", h.timeIn||"", h.timeOut||"",
+               h.hours||0, p.name, h.note||""]);
+  }));
+  rows.sort((a,b)=>(a[0]+a[1]).localeCompare(b[0]+b[1]));
+  await sheetsSet("נוכחות!A1", rows);
+
+  // Build פרויקטאלי sheet: פרויקט | עובד | שעות | חודש
+  const projRows = [["פרויקט","לקוח","עובד","תאריך","שעות","הערה"]];
+  projects.forEach(p => (p.hours||[]).filter(h => !month || (h.date||"").startsWith(month)).forEach(h => {
+    const u = users.find(u=>u.id===h.worker);
+    projRows.push([p.name, p.client||"", u?.name||h.workerName||h.worker, h.date||"", h.hours||0, h.note||""]);
+  }));
+  await sheetsSet("פרויקטאלי!A1", projRows);
+
+  return true;
+}
+
+async function importProjectsFromSheets() {
+  const rows = await sheetsGet("פרויקטים!A2:H500");
+  if (!rows || rows.length === 0) return [];
+  return rows.filter(r=>r[1]).map(r => ({
+    id: uid(),
+    projectNumber: r[0]||"",
+    name: r[1]||"",
+    client: r[2]||"",
+    producer: r[3]||"",
+    status: r[4]||"active",
+    onlineScreening: r[5]||"",
+    description: r[6]||"",
+    progress: parseInt(r[7])||0,
+    hours: [], shifts: [], tasks: [], quotes: []
+  }));
+}
+
+// ══════════════════════════════════════════
 // GOOGLE CALENDAR — OAuth 2.0
 // ══════════════════════════════════════════
-const GCAL_CLIENT_ID = "18515309826-kj8ou1t1q85kdhd1o617nrqoqcsq7rov.apps.googleusercontent.com";
+const GCAL_CLIENT_ID = "533069670646-u4b5cbco32bok4e7r816c63i3dlju2v5.apps.googleusercontent.com";
 const GCAL_SCOPES    = "https://www.googleapis.com/auth/calendar.events";
-const GCAL_DEFAULT_ID = "c64c5191fa750e1253efaadcaa029f771fe9dc14a6a53cf63879b55caf388d43@group.calendar.google.com";
+const GCAL_DEFAULT_ID = "c_87bb67ed3985df304fd866f902791cfcdc720f1a825c6e8a0e1680941f86fb87@group.calendar.google.com";
 
 let _gcalToken = null;       // current access token
 let _gcalTokenClient = null; // GIS token client
@@ -2026,6 +1908,32 @@ function Login({
     });
     // eslint-disable-next-line
   }, []);
+  // Google Sign-In init
+  useEffect(() => {
+    if (!window.google || !window.google.accounts) return;
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: (response) => {
+        // Decode JWT from Google
+        const payload = JSON.parse(atob(response.credential.split('.')[1]));
+        const email = payload.email;
+        // Match email to existing user
+        const u = users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+        if (u) {
+          onLogin({ ...u, role: u.role || "worker" });
+        } else {
+          alert("המשתמש " + email + " אינו רשום במערכת. פנה למנהל.");
+        }
+      },
+      auto_select: false,
+      context: "signin"
+    });
+    window.google.accounts.id.renderButton(
+      document.getElementById("google-signin-btn"),
+      { theme: "outline", size: "large", width: 348, text: "signin_with", locale: "he" }
+    );
+  }, [users]);
+
   const doLogin = user => {
     if (remember) localStorage.setItem(REMEMBER_KEY, JSON.stringify({
       name: user.name,
@@ -2342,7 +2250,16 @@ function Login({
       width: "100%"
     },
     onClick: enterGuest
-  }, "\uD83D\uDC41 \u05DB\u05E0\u05D9\u05E1\u05EA \u05D0\u05D5\u05E8\u05D7 (\u05E6\u05E4\u05D9\u05D9\u05D4 \u05D1\u05DC\u05D5\u05D7 \u05D1\u05DC\u05D1\u05D3)"))));
+  }, "\uD83D\uDC41 \u05DB\u05E0\u05D9\u05E1\u05EA \u05D0\u05D5\u05E8\u05D7 (\u05E6\u05E4\u05D9\u05D9\u05D4 \u05D1\u05DC\u05D5\u05D7 \u05D1\u05DC\u05D1\u05D3)"),
+  /*#__PURE__*/React.createElement("div", {
+    style: { display:"flex", alignItems:"center", gap:10, margin:"16px 0 10px" }
+  },
+    /*#__PURE__*/React.createElement("div", { style:{flex:1,height:1,background:"var(--border)"} }),
+    /*#__PURE__*/React.createElement("span", { style:{fontSize:11,color:"var(--muted2)"} }, "או התחבר עם"),
+    /*#__PURE__*/React.createElement("div", { style:{flex:1,height:1,background:"var(--border)"} })
+  ),
+  /*#__PURE__*/React.createElement("div", { id:"google-signin-btn", style:{width:"100%",display:"flex",justifyContent:"center"} })
+  )));
 }
 
 // ══════════════════════════════════════════
@@ -9723,6 +9640,7 @@ function ClientModal({ client, onSave, onClose }) {
 // כולל: הצעות מחיר, מחירון, דוחות
 // ══════════════════════════════════════════
 
+const GOOGLE_SHEET_ID = "11N29wHJl7q3aVoTxDK850-Y_ytPyxVothsJJ_JYsIKg";
 const PRICELIST_LS_KEY = "postflow_v27_pricelists";
 const DEF_PRICE_BASE = [
   { id:"pb1", desc:"גריסה וסנכרון", unit:"פרויקט", price:4500, cost_price:0, category:"פוסט" },
@@ -11119,7 +11037,7 @@ function AppLoader() {
           shiftTypes: settingsMap.shiftTypes || local.shiftTypes || [...DEF_SHIFT_TYPES],
           quoteTemplates: settingsMap.quoteTemplates || local.quoteTemplates || [...DEF_QUOTE_TMPLS],
           logoUrl: settingsMap.logoUrl || local.logoUrl || "",
-          calendarId: settingsMap.calendarId || local.calendarId || "",
+          calendarId: settingsMap.calendarId || local.calendarId || "c_87bb67ed3985df304fd866f902791cfcdc720f1a825c6e8a0e1680941f86fb87@group.calendar.google.com",
           calendarApiKey: settingsMap.calendarApiKey || local.calendarApiKey || "",
           studioLocation: settingsMap.studioLocation || local.studioLocation || "",
           nextProjNum: local.nextProjNum || 1,
