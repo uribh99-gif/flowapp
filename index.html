@@ -447,7 +447,7 @@ const STATUS_CFG = {
     color: "var(--accent)"
   },
   completed: {
-    label: "הושלם",
+    label: "הסתיים",
     color: "#6366f1"
   },
   cancelled: {
@@ -613,6 +613,25 @@ const DEF_SHIFT_TYPES = [{
   label: "עבודה מהבית",
   color: "#67e8f9"
 }];
+// ── עלויות פנימיות מהטבלה — בסיס לתכנון בכל פרויקט ──────────────
+const INTERNAL_COSTS = [
+  { id:"ic1",  role:"ניהול והפקת פוסט",    name:"",        rate:4000, unit:"גלובאלי", qty:1 },
+  { id:"ic2",  role:"עריכת וידאו אופליין",  name:"",        rate:2000, unit:"יום",      qty:1 },
+  { id:"ic3",  role:"אופליין אינהאוס",      name:"ליר",     rate:1000, unit:"יום",      qty:1 },
+  { id:"ic4",  role:"עריכת וידאו אופליין",  name:"",        rate:1800, unit:"יום",      qty:1 },
+  { id:"ic5",  role:"עיצוב",               name:"סהר",     rate:2000, unit:"יום",      qty:1 },
+  { id:"ic6",  role:"אפטר אפקטס",          name:"אריק",    rate:1700, unit:"יום",      qty:1 },
+  { id:"ic7",  role:"אפטר אפקטס אינהאוס",  name:"יואב/גל", rate:1000, unit:"יום",      qty:1 },
+  { id:"ic8",  role:"סטוק",                name:"",        rate:2000, unit:"גלובאלי", qty:1 },
+  { id:"ic9",  role:"צבע",                 name:"",        rate:2500, unit:"יום",      qty:1 },
+  { id:"ic10", role:"מיקס סאונד",          name:"",        rate:1200, unit:"יום",      qty:1 },
+  { id:"ic11", role:"מיקס סאונד אינהאוס",  name:"אור",     rate:1000, unit:"יום",      qty:1 },
+  { id:"ic12", role:"קריין",               name:"",        rate:4000, unit:"גלובאלי", qty:1 },
+  { id:"ic13", role:"מוסיקה ברשיון",       name:"",        rate:1000, unit:"יחידה",    qty:1 },
+  { id:"ic14", role:"קריין נוסף",          name:"",        rate:5000, unit:"שעה",      qty:1 },
+  { id:"ic15", role:"הוצאות לשידור",       name:"",        rate:70,   unit:"יחידה",    qty:1 },
+];
+
 const DEF_QUOTE_TMPLS = [{
   id: "doc",
   name: "דוקומנטרי",
@@ -876,6 +895,7 @@ function projToRow(p) {
     shifts: p.shifts || [],
     hours: p.hours || [],
     quotes: p.quotes || [],
+    deliverables: p.deliverables || [],
     plan: p.plan || {
       crew: [],
       milestones: [],
@@ -905,6 +925,7 @@ function rowToProj(r) {
     hours: r.hours || [],
     quotes: r.quotes || [],
     updatedAt: r.updated_at || "",
+    deliverables: r.deliverables || [],
     plan: r.plan || {
       crew: [],
       milestones: [],
@@ -1168,10 +1189,11 @@ const mapProject = r => ({
   shifts: [],
   hours: [],
   quotes: [],
-  plan: {
-    crew: [],
-    milestones: [],
-    notes: ""
+  deliverables: r.deliverables || [],
+  plan: r.plan || {
+    staffRows: INTERNAL_COSTS.map(ic => ({ ...ic, id: uid(), qty: 0 })),
+    notes: "",
+    plannedShifts: []
   }
 });
 const mapPassword = r => ({
@@ -3590,27 +3612,49 @@ function ProjectsList({
               )
             )
           ),
-          React.createElement("tbody", null,
-            reportProjects.map(p =>
-              React.createElement("tr", { key: p.id, style: { borderBottom: "1px solid var(--border)" } },
-                React.createElement("td", { style: { padding: "8px 6px", fontWeight: 800, color: "var(--accent)" } }, p.projectNumber || "—"),
-                React.createElement("td", { style: { padding: "8px 6px", fontWeight: 700 } }, p.name),
-                React.createElement("td", { style: { padding: "8px 6px", color: "var(--muted)" } }, p.client),
-                React.createElement("td", { style: { padding: "8px 6px", color: "var(--green)" } }, p.producer),
-                React.createElement("td", { style: { padding: "8px 6px" } }, React.createElement(StatusBadge, { s: p.status })),
-                React.createElement("td", { style: { padding: "8px 6px" } },
-                  React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } },
-                    React.createElement("div", { style: { width: 40 } }, React.createElement(PBar, { v: p.progress })),
-                    React.createElement("span", { style: { color: "var(--accent)" } }, p.progress, "%")
-                  )
-                ),
-                React.createElement("td", { style: { padding: "8px 6px", color: "var(--red)" } }, p.onlineScreening || "—"),
-                React.createElement("td", { style: { padding: "8px 6px", color: "var(--blue)" } }, (p.hours||[]).reduce((s,h)=>s+h.hours,0).toFixed(1)+"h"),
-                React.createElement("td", { style: { padding: "8px 6px", color: "var(--muted)", maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.statusNote || "—")
-              )
-            )
-          )
         )
+      ),
+      React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginTop: 8 } },
+        reportProjects.map(p => {
+          const sc = STATUS_CFG[p.status] || {};
+          const hrs = (p.hours||[]).reduce((s,h)=>s+(h.hours||0),0).toFixed(1);
+          const tasks = (p.tasks||[]);
+          const done = tasks.filter(t=>t.done).length;
+          return React.createElement("div", { key: p.id,
+            style: { background: "var(--surf)", border: "1px solid var(--border)",
+              borderRight: "4px solid " + (sc.color || "#cbd5e1"),
+              borderRadius: 10, padding: "12px 14px",
+              display: "flex", flexDirection: "column", gap: 5 }
+          },
+            React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 4 } },
+              React.createElement("div", null,
+                React.createElement("span", { style: { fontSize: 9, fontWeight: 800, color: "var(--accent)", background: "var(--accent)15", borderRadius: 4, padding: "1px 5px", marginLeft: 4 } }, "#" + (p.projectNumber||"—")),
+                React.createElement("div", { style: { fontWeight: 800, fontSize: 13, marginTop: 3, lineHeight: 1.2 } }, p.name)
+              ),
+              React.createElement("span", { style: { fontSize: 9, fontWeight: 700, color: sc.color, background: (sc.color||"#aaa")+"20", border: "1px solid "+(sc.color||"#aaa")+"40", borderRadius: 20, padding: "2px 7px", whiteSpace: "nowrap" } }, sc.label || p.status)
+            ),
+            React.createElement("div", { style: { fontSize: 10, color: "var(--muted2)", display: "flex", gap: 8, flexWrap: "wrap" } },
+              p.client && React.createElement("span", null, "🏢 " + p.client),
+              p.producer && React.createElement("span", null, "👤 " + p.producer)
+            ),
+            React.createElement("div", null,
+              React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 2 } },
+                React.createElement("span", { style: { fontSize: 9, color: "var(--muted)" } }, "התקדמות"),
+                React.createElement("span", { style: { fontSize: 9, fontWeight: 700, color: "var(--accent)" } }, (p.progress||0)+"%")
+              ),
+              React.createElement("div", { style: { background: "var(--border)", borderRadius: 3, height: 4 } },
+                React.createElement("div", { style: { background: sc.color||"var(--accent)", height: 4, borderRadius: 3, width: (p.progress||0)+"%" } })
+              )
+            ),
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, fontSize: 10 } },
+              p.onlineScreening && React.createElement("div", null, React.createElement("span", { style: { color: "var(--muted)", fontSize: 9 } }, "אונליין: "), React.createElement("span", { style: { color: "var(--red)", fontWeight: 600 } }, p.onlineScreening)),
+              p.deliveryDate && React.createElement("div", null, React.createElement("span", { style: { color: "var(--muted)", fontSize: 9 } }, "מסירה: "), React.createElement("span", { style: { fontWeight: 600 } }, p.deliveryDate)),
+              React.createElement("div", null, React.createElement("span", { style: { color: "var(--muted)", fontSize: 9 } }, "שעות: "), React.createElement("span", { style: { color: "var(--blue)", fontWeight: 600 } }, hrs+"h")),
+              tasks.length > 0 && React.createElement("div", null, React.createElement("span", { style: { color: "var(--muted)", fontSize: 9 } }, "משימות: "), React.createElement("span", { style: { fontWeight: 600 } }, done+"/"+tasks.length))
+            ),
+            p.statusNote && React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", borderTop: "1px solid var(--border)", paddingTop: 5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, "📝 " + p.statusNote)
+          );
+        })
       )
     );
   };
@@ -4949,6 +4993,87 @@ function ProjectDetail({
     : /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: "var(--muted2)", lineHeight: 1.7 } }, project.description || "—")
   ));
 }
+// ══════════════════════════════════════════
+// DELIVERABLES TABLE — טבלת תוצרים לפי פורמט
+// ══════════════════════════════════════════
+const DELIVERABLE_RATIOS = ["16:9", "9:16 סטורי", "9:16 טיקטוק", "4:5", "1:1", "אחר"];
+
+function DeliverablesTable({ project, onChange, canEdit }) {
+  const deliverables = project.deliverables || [];
+
+  const addRow = () => {
+    const newRow = { id: uid(), name: "", "16:9": "", "9:16 סטורי": "", "9:16 טיקטוק": "", "4:5": "", "1:1": "", "אחר": "" };
+    onChange({ ...project, deliverables: [...deliverables, newRow] });
+  };
+  const updCell = (id, field, val) => {
+    onChange({ ...project, deliverables: deliverables.map(r => r.id === id ? { ...r, [field]: val } : r) });
+  };
+  const delRow = (id) => {
+    onChange({ ...project, deliverables: deliverables.filter(r => r.id !== id) });
+  };
+
+  const totalByRatio = DELIVERABLE_RATIOS.reduce((acc, ratio) => {
+    acc[ratio] = deliverables.reduce((s, r) => s + (parseInt(r[ratio]) || 0), 0);
+    return acc;
+  }, {});
+
+  return /*#__PURE__*/React.createElement("div", { className: "card", style: { marginBottom: 14 } },
+    /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 } },
+      /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 14 } }, "📦 דף תוצרים"),
+      canEdit && /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", onClick: addRow }, "+ הוסף סרט")
+    ),
+    /*#__PURE__*/React.createElement("div", { style: { overflowX: "auto" } },
+      /*#__PURE__*/React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } },
+        /*#__PURE__*/React.createElement("thead", null,
+          /*#__PURE__*/React.createElement("tr", { style: { background: "var(--card2)", borderBottom: "2px solid var(--border)" } },
+            /*#__PURE__*/React.createElement("th", { style: { padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "var(--muted)", minWidth: 160 } }, "שם הסרט"),
+            ...DELIVERABLE_RATIOS.map(ratio =>
+              /*#__PURE__*/React.createElement("th", { key: ratio, style: { padding: "8px 8px", textAlign: "center", fontWeight: 700, color: "var(--muted)", whiteSpace: "nowrap" } }, ratio)
+            ),
+            canEdit && /*#__PURE__*/React.createElement("th", { style: { width: 36 } })
+          )
+        ),
+        /*#__PURE__*/React.createElement("tbody", null,
+          deliverables.length === 0 && /*#__PURE__*/React.createElement("tr", null,
+            /*#__PURE__*/React.createElement("td", { colSpan: DELIVERABLE_RATIOS.length + (canEdit ? 2 : 1), style: { padding: "24px", textAlign: "center", color: "var(--muted)" } },
+              "לחץ '+ הוסף סרט' כדי להוסיף תוצר לטבלה"
+            )
+          ),
+          deliverables.map((row, idx) =>
+            /*#__PURE__*/React.createElement("tr", { key: row.id, style: { borderBottom: "1px solid var(--border)", background: idx % 2 === 0 ? "transparent" : "var(--card2)" } },
+              /*#__PURE__*/React.createElement("td", { style: { padding: "5px 8px" } },
+                canEdit
+                  ? /*#__PURE__*/React.createElement("input", { value: row.name || "", onChange: e => updCell(row.id, "name", e.target.value), placeholder: "שם הסרט...", style: { fontSize: 12, padding: "3px 7px" } })
+                  : /*#__PURE__*/React.createElement("span", { style: { fontWeight: 600 } }, row.name || "—")
+              ),
+              ...DELIVERABLE_RATIOS.map(ratio =>
+                /*#__PURE__*/React.createElement("td", { key: ratio, style: { padding: "5px 6px", textAlign: "center" } },
+                  canEdit
+                    ? /*#__PURE__*/React.createElement("input", { type: "number", min: 0, value: row[ratio] || "", onChange: e => updCell(row.id, ratio, e.target.value), style: { width: 50, textAlign: "center", fontSize: 12, padding: "3px 5px" } })
+                    : /*#__PURE__*/React.createElement("span", { style: { color: row[ratio] ? "var(--accent)" : "var(--muted)", fontWeight: row[ratio] ? 700 : 400 } }, row[ratio] || "—")
+                )
+              ),
+              canEdit && /*#__PURE__*/React.createElement("td", { style: { padding: "5px 4px" } },
+                /*#__PURE__*/React.createElement("button", { className: "btn-red", style: { padding: "2px 6px", fontSize: 11 }, onClick: () => delRow(row.id) }, "✕")
+              )
+            )
+          ),
+          // Totals row
+          deliverables.length > 0 && /*#__PURE__*/React.createElement("tr", { style: { borderTop: "2px solid var(--border2)", background: "var(--accentbg)", fontWeight: 800 } },
+            /*#__PURE__*/React.createElement("td", { style: { padding: "8px 10px", color: "var(--muted)", fontSize: 11 } }, "סה״כ"),
+            ...DELIVERABLE_RATIOS.map(ratio =>
+              /*#__PURE__*/React.createElement("td", { key: ratio, style: { padding: "8px 6px", textAlign: "center", color: totalByRatio[ratio] > 0 ? "var(--accent)" : "var(--muted)" } },
+                totalByRatio[ratio] > 0 ? totalByRatio[ratio] : "—"
+              )
+            ),
+            canEdit && /*#__PURE__*/React.createElement("td", null)
+          )
+        )
+      )
+    )
+  );
+}
+
 function ProjectPlanning({
   project,
   users,
@@ -4982,6 +5107,10 @@ function ProjectPlanning({
   const addRow = () => upd({ staffRows: [...rows, { id: uid(), role: "", name: "", rate: 0, unit: "משמרת", qty: 1 }] });
   const updRow = (id, patch) => upd({ staffRows: rows.map(r => r.id===id ? {...r,...patch} : r) });
   const delRow = id => upd({ staffRows: rows.filter(r => r.id!==id) });
+  const importInternalCosts = () => {
+    if (rows.length > 0 && !window.confirm("ייבא עלויות פנימיות? השורות הקיימות יוחלפו.")) return;
+    upd({ staffRows: INTERNAL_COSTS.map(ic => ({ ...ic, id: uid() })) });
+  };
 
   return /*#__PURE__*/React.createElement("div", { className: "card", style: { marginBottom: 14 } },
     /* Header */
@@ -4994,7 +5123,10 @@ function ProjectPlanning({
         totalActualShifts > 0 && /*#__PURE__*/React.createElement("span", null, "בוצע: ",
           /*#__PURE__*/React.createElement("b", { style: { color: "var(--green)" } }, totalActualShifts, " משמרות / ", totalActualHours.toFixed(1), "h")
         ),
-        canEdit && /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", onClick: addRow }, "+ הוסף פריט")
+        canEdit && /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 6 } },
+          /*#__PURE__*/React.createElement("button", { className: "btn-blue btn-sm", onClick: importInternalCosts }, "📥 ייבא עלויות פנימיות"),
+          /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", onClick: addRow }, "+ הוסף פריט")
+        )
       )
     ),
 
@@ -6016,34 +6148,68 @@ ${q.note ? `<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(
           /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, background: "var(--card2)", padding: "2px 8px", borderRadius: 10 } }, tmpls.length)
         ),
         /*#__PURE__*/React.createElement("div", {
-          style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 8 }
+          style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 8 }
         },
           tmpls.map(t => /*#__PURE__*/React.createElement("div", {
             key: t.id,
             className: "card2",
-            style: { cursor: "pointer", padding: "12px 14px", transition: "border-color .15s, transform .15s" },
-            onClick: () => {
-              if (!isAdmin) return;
-              // Load template directly and go to pick-project step
-              setTplName(t.name);
-              setLines(t.lines.map(l => ({ ...l, id: uid() })));
-              setQClient(""); setQProjName(""); setQProjDesc(""); setQScope("");
-              setQPayment(t.payment || "שוטף+40");
-              setStep("pick");
-            }
+            style: { position: "relative", padding: "12px 14px", transition: "border-color .15s" }
           },
-            /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, marginBottom: 4 } }, "📋"),
-            /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 12 } }, t.name),
-            /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", marginTop: 2 } }, (t.lines?.length || 0), " שורות · ", fmtMoney(t.lines?.reduce((s, l) => s + l.qty * l.price, 0) || 0)),
-            isAdmin && /*#__PURE__*/React.createElement("div", { style: { fontSize: 9, color: "var(--blue)", marginTop: 4 } }, "לחץ לפתיחה")
+            /*#__PURE__*/React.createElement("div", {
+              style: { cursor: "pointer" },
+              onClick: () => {
+                if (!isAdmin) return;
+                setTplName(t.name);
+                setLines(t.lines.map(l => ({ ...l, id: uid() })));
+                setQClient(""); setQProjName(""); setQProjDesc(""); setQScope("");
+                setQPayment(t.payment || "שוטף+40");
+                setStep("pick");
+              }
+            },
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, marginBottom: 4 } }, "📋"),
+              /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 12 } }, t.name),
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", marginTop: 2 } },
+                (t.lines?.length || 0), " שורות · ", fmtMoney(t.lines?.reduce((s, l) => s + l.qty * l.price, 0) || 0))
+            ),
+            isAdmin && /*#__PURE__*/React.createElement("div", {
+              style: { display: "flex", gap: 4, marginTop: 8 },
+              onClick: e => e.stopPropagation()
+            },
+              /*#__PURE__*/React.createElement("button", {
+                className: "btn-blue btn-sm",
+                style: { fontSize: 10, padding: "2px 7px", flex: 1 },
+                onClick: () => {
+                  // Edit template inline - open a rename prompt
+                  const newName = window.prompt("שם התבנית:", t.name);
+                  if (newName && newName.trim()) {
+                    onUpdateTemplates(tmpls.map(x => x.id === t.id ? { ...x, name: newName.trim() } : x));
+                  }
+                }
+              }, "✏️ ערוך"),
+              /*#__PURE__*/React.createElement("button", {
+                className: "btn-red",
+                style: { fontSize: 10, padding: "2px 6px" },
+                onClick: () => {
+                  if (window.confirm("למחוק תבנית \"" + t.name + "\"?")) {
+                    onUpdateTemplates(tmpls.filter(x => x.id !== t.id));
+                  }
+                }
+              }, "✕")
+            )
           )),
           isAdmin && /*#__PURE__*/React.createElement("div", {
             className: "card2",
             style: { cursor: "pointer", padding: "12px 14px", borderStyle: "dashed", textAlign: "center" },
-            onClick: () => setStep("pick")
+            onClick: () => {
+              setTplName("תבנית חדשה");
+              setLines([{ id: uid(), desc: "", qty: 1, unit: "פרויקט", price: 0 }]);
+              setQClient(""); setQProjName(""); setQProjDesc(""); setQScope("");
+              setQPayment("שוטף+40");
+              setStep("pick");
+            }
           },
-            /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, marginBottom: 4 } }, "✏️"),
-            /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 12 } }, "ריק")
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, marginBottom: 4 } }, "➕"),
+            /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 12 } }, "תבנית חדשה")
           )
         )
       ),
@@ -7563,315 +7729,162 @@ function BackupPanel({
   lastAutoSave,
   onRestore,
   driveFolder,
-  onCloudRestore
+  onCloudRestore,
+  onUpdateDriveFolder
 }) {
-  var _rd$projects, _rd$users, _rd$passwords;
-  const [confirm, setConfirm] = useState(false);
-  const [rd, setRd] = useState(null);
-  const [err, setErr] = useState("");
-  const [driveMsg, setDriveMsg] = useState("");
-  const [cloudMsg, setCloudMsg] = useState("");
-  const handleFile = e => {
+  const [activeTab, setActiveTab] = useState("backup");
+  const [importText, setImportText] = useState("");
+  const [importError, setImportError] = useState("");
+  const [importPreview, setImportPreview] = useState(null);
+  const [backupHistory, setBackupHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("postflow_backup_history") || "[]"); } catch { return []; }
+  });
+
+  // ── Export full backup as JSON ──
+  const exportJSON = () => {
+    const data = { projects, users, passwords, exportedAt: new Date().toISOString(), version: "v41" };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url;
+    a.download = "postflow_backup_" + new Date().toLocaleDateString("he-IL").replace(/\./g,"-") + ".json";
+    a.click(); URL.revokeObjectURL(url);
+    // Save to history
+    const entry = { date: new Date().toISOString(), projects: projects.length, users: users.length, type: "manual" };
+    const hist = [entry, ...backupHistory].slice(0, 20);
+    setBackupHistory(hist);
+    localStorage.setItem("postflow_backup_history", JSON.stringify(hist));
+  };
+
+  const exportCSV = () => {
+    const rows = [["מספר","שם","לקוח","מפיקה","סטטוס","תאריך מסירה","הקרנת אונליין","התקדמות","הערות"]];
+    projects.forEach(p => rows.push([p.projectNumber||"",p.name,p.client||"",p.producer||"",p.status||"",p.deliveryDate||"",p.onlineScreening||"",(p.progress||0)+"%",p.statusNote||""]));
+    dlCSV(rows, "postflow_projects_" + todayStr() + ".csv");
+  };
+
+  // ── Import from JSON ──
+  const handleFileImport = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const r = new FileReader();
-    r.onload = ev => {
+    const reader = new FileReader();
+    reader.onload = ev => {
       try {
-        const d = JSON.parse(ev.target.result);
-        if (d.projects || d.users) {
-          setRd(d);
-          setConfirm(true);
-        } else setErr("קובץ לא תקין");
+        const data = JSON.parse(ev.target.result);
+        setImportPreview(data);
+        setImportError("");
       } catch {
-        setErr("שגיאת קריאה");
+        setImportError("קובץ לא תקין — נא להעלות קובץ JSON תקין");
+        setImportPreview(null);
       }
     };
-    r.readAsText(file);
+    reader.readAsText(file);
   };
-  const backupToDrive = async () => {
-    const url = getSheetsUrl();
-    if (!url) {
-      setDriveMsg("❌ אין URL של Sheets — הגדר ב'Sheets'");
-      return;
-    }
-    setDriveMsg("שומר...");
-    try {
-      const filename = `postflow_backup_v16_${todayStr()}.json`;
-      const allData = {
-        users,
-        projects,
-        passwords,
-        exportDate: todayStr(),
-        version: "v16"
-      };
-      await fetch(url, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "saveBackup",
-          data: JSON.stringify(allData),
-          filename,
-          folderId: driveFolder || ""
-        })
-      });
-      setDriveMsg(`✅ גיבוי נשמר${driveFolder ? " בתיקיה המוגדרת" : ""} — ${filename}`);
-    } catch (e) {
-      setDriveMsg("❌ " + e.message);
-    }
+
+  const confirmImport = () => {
+    if (!importPreview) return;
+    if (!window.confirm("ייבוא יחליף את כל הנתונים הקיימים. להמשיך?")) return;
+    if (onRestore) onRestore(importPreview);
+    setImportPreview(null);
+    setImportText("");
+    alert("✅ הנתונים יובאו בהצלחה");
   };
-  const cloudRestore = async () => {
-    const url = getSheetsUrl();
-    if (!url) {
-      setCloudMsg("❌ אין URL של Sheets — הגדר בהגדרות");
-      return;
-    }
-    setCloudMsg("מושך מענן...");
-    try {
-      const r = await sheetsPost(url, {
-        action: "getCloudBackup"
-      });
-      if (!r || !r.data) {
-        setCloudMsg("❌ לא נמצא גיבוי בענן");
-        return;
-      }
-      const d = r.data;
-      if (d.projects || d.users) {
-        setRd(d);
-        setConfirm(true);
-        setCloudMsg("");
-      } else setCloudMsg("❌ גיבוי לא תקין");
-    } catch (e) {
-      setCloudMsg("❌ " + e.message);
-    }
-  };
-  return /*#__PURE__*/React.createElement("div", {
-    className: "fade"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "section-title"
-  }, "\uD83D\uDCBE \u05D2\u05D9\u05D1\u05D5\u05D9 \u05D5\u05E9\u05D7\u05D6\u05D5\u05E8"), lastAutoSave && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: "var(--green)",
-      marginBottom: 14
-    }
-  }, "\u2705 \u05D2\u05D9\u05D1\u05D5\u05D9 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9 \u05D0\u05D7\u05E8\u05D5\u05DF: ", lastAutoSave), driveFolder && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: "var(--blue)",
-      marginBottom: 14,
-      padding: "8px 12px",
-      background: "var(--blue)15",
-      borderRadius: 8
-    }
-  }, "\uD83D\uDCC1 \u05EA\u05D9\u05E7\u05D9\u05D9\u05EA Drive: ", /*#__PURE__*/React.createElement("code", {
-    style: {
-      fontSize: 11
-    }
-  }, driveFolder)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))",
-      gap: 12,
-      marginBottom: 20
-    }
-  }, [{
-    icon: "🗄️",
-    label: "גיבוי מלא (JSON)",
-    desc: "משתמשים + פרויקטים + סיסמאות",
-    action: () => dlJSON({
-      users,
-      projects,
-      passwords,
-      exportDate: todayStr(),
-      version: "v16"
-    }, `postflow_backup_v16_${todayStr()}.json`),
-    color: "var(--blue)"
-  }, {
-    icon: "🎬",
-    label: "פרויקטים בלבד",
-    desc: "JSON של כל הפרויקטים",
-    action: () => dlJSON({
-      projects
-    }, `postflow_projects_${todayStr()}.json`),
-    color: "var(--accent)"
-  }, {
-    icon: "📝",
-    label: "הצעות מחיר",
-    desc: "CSV לפי עמודות הגיליון",
-    action: () => {
-      const rows = [["id", "projId", "date", "client", "total", "approved", "template", "note"]];
-      projects.forEach(p => (p.quotes || []).forEach(q => rows.push([q.id || "", p.id, q.date || "", q.client || "", q.total || 0, q.approved ? "true" : "false", q.template || "", q.note || ""])));
-      dlCSV(rows, `הצעות_מחיר_${todayStr()}.csv`);
-    },
-    color: "var(--purple)"
-  }, {
-    icon: "⏱",
-    label: "שעות עבודה",
-    desc: "CSV של כל דיווחי השעות",
-    action: () => {
-      const rows = [["עובד", "פרויקט", "תאריך", "כניסה", "יציאה", "שעות", "הערה"]];
-      projects.forEach(p => (p.hours || []).forEach(h => {
-        const u = users.find(u => u.id === h.worker);
-        rows.push([(u === null || u === void 0 ? void 0 : u.name) || h.worker, p.name, h.date, h.timeIn || "", h.timeOut || "", h.hours.toFixed(1), h.note || ""]);
-      }));
-      dlCSV(rows, `שעות_${todayStr()}.csv`);
-    },
-    color: "var(--green)"
-  }].map(b => /*#__PURE__*/React.createElement("div", {
-    key: b.label,
-    className: "card",
-    style: {
-      cursor: "pointer",
-      textAlign: "center",
-      transition: "border-color .2s"
-    },
-    onMouseEnter: e => e.currentTarget.style.borderColor = b.color,
-    onMouseLeave: e => e.currentTarget.style.borderColor = "var(--border)",
-    onClick: b.action
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 30,
-      marginBottom: 8
-    }
-  }, b.icon), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      marginBottom: 4
-    }
-  }, b.label), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "var(--muted)"
-    }
-  }, b.desc))), /*#__PURE__*/React.createElement("div", {
-    className: "card",
-    style: {
-      cursor: "pointer",
-      textAlign: "center",
-      transition: "border-color .2s",
-      borderColor: "var(--green)40"
-    },
-    onMouseEnter: e => e.currentTarget.style.borderColor = "var(--green)",
-    onMouseLeave: e => e.currentTarget.style.borderColor = "var(--green)40",
-    onClick: backupToDrive
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 30,
-      marginBottom: 8
-    }
-  }, "\u2601\uFE0F"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      marginBottom: 4
-    }
-  }, "\u05D2\u05D9\u05D1\u05D5\u05D9 \u05DC-Drive"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "var(--muted)"
-    }
-  }, "\u05E9\u05DE\u05D5\u05E8 \u05D0\u05EA \u05DB\u05DC \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05D1-Google Drive", driveFolder ? " (תיקיה מוגדרת)" : ""), driveMsg && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      marginTop: 8,
-      color: driveMsg.startsWith("✅") ? "var(--green)" : "var(--red)"
-    }
-  }, driveMsg)), /*#__PURE__*/React.createElement("div", {
-    className: "card",
-    style: {
-      cursor: "pointer",
-      textAlign: "center",
-      transition: "border-color .2s",
-      borderColor: "var(--blue)40"
-    },
-    onMouseEnter: e => e.currentTarget.style.borderColor = "var(--blue)",
-    onMouseLeave: e => e.currentTarget.style.borderColor = "var(--blue)40",
-    onClick: cloudRestore
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 30,
-      marginBottom: 8
-    }
-  }, "\u2B07\uFE0F"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      marginBottom: 4
-    }
-  }, "\u05DE\u05E9\u05D5\u05DA \u05D2\u05D9\u05D1\u05D5\u05D9 \u05DE\u05E2\u05E0\u05DF"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "var(--muted)"
-    }
-  }, "\u05E9\u05D7\u05D6\u05E8 \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05DE\u05D2\u05D9\u05D1\u05D5\u05D9 \u05E9\u05DE\u05D5\u05E8 \u05D1-Drive"), cloudMsg && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      marginTop: 8,
-      color: cloudMsg.includes("✅") ? "var(--green)" : "var(--red)"
-    }
-  }, cloudMsg))), /*#__PURE__*/React.createElement("div", {
-    className: "card"
-  }, err && /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: "var(--red)",
-      fontSize: 12,
-      marginBottom: 10
-    }
-  }, err), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      marginBottom: 12
-    }
-  }, "\uD83D\uDCE5 \u05E9\u05D7\u05D6\u05D5\u05E8 \u05DE\u05E7\u05D5\u05D1\u05E5 JSON"), /*#__PURE__*/React.createElement("label", {
-    className: "btn-ghost",
-    style: {
-      cursor: "pointer",
-      display: "inline-block"
-    }
-  }, "\uD83D\uDCC1 \u05D1\u05D7\u05E8 \u05E7\u05D5\u05D1\u05E5 JSON", /*#__PURE__*/React.createElement("input", {
-    type: "file",
-    accept: ".json",
-    style: {
-      display: "none"
-    },
-    onChange: handleFile
-  }))), confirm && rd && /*#__PURE__*/React.createElement("div", {
-    className: "modal-bg",
-    onClick: () => setConfirm(false)
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "modal",
-    style: {
-      maxWidth: 420
-    },
-    onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 800,
-      fontSize: 18,
-      marginBottom: 14
-    }
-  }, "\u26A0\uFE0F \u05D0\u05D9\u05E9\u05D5\u05E8 \u05E9\u05D7\u05D6\u05D5\u05E8"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: "var(--muted2)",
-      marginBottom: 20
-    }
-  }, "\u05E0\u05DE\u05E6\u05D0\u05D5: ", ((_rd$projects = rd.projects) === null || _rd$projects === void 0 ? void 0 : _rd$projects.length) || 0, " \u05E4\u05E8\u05D5\u05D9\u05E7\u05D8\u05D9\u05DD \xB7 ", ((_rd$users = rd.users) === null || _rd$users === void 0 ? void 0 : _rd$users.length) || 0, " \u05DE\u05E9\u05EA\u05DE\u05E9\u05D9\u05DD \xB7 ", ((_rd$passwords = rd.passwords) === null || _rd$passwords === void 0 ? void 0 : _rd$passwords.length) || 0, " \u05E1\u05D9\u05E1\u05DE\u05D0\u05D5\u05EA", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: "var(--red)"
-    }
-  }, "\u05E4\u05E2\u05D5\u05DC\u05D4 \u05D6\u05D5 \u05EA\u05D7\u05DC\u05D9\u05E3 \u05D0\u05EA \u05DB\u05DC \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD!")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 10
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "btn-gold",
-    onClick: () => {
-      onRestore(rd);
-      setConfirm(false);
-    }
-  }, "\u2713 \u05D0\u05E9\u05E8 \u05E9\u05D7\u05D6\u05D5\u05E8"), /*#__PURE__*/React.createElement("button", {
-    className: "btn-ghost",
-    onClick: () => setConfirm(false)
-  }, "\u05D1\u05D9\u05D8\u05D5\u05DC")))));
+
+  // ── Drive folder ──
+  const [driveFolderLocal, setDriveFolderLocal] = useState(driveFolder || "");
+
+  return React.createElement("div", { className: "fade", style: { padding: "18px 22px" } },
+    React.createElement("div", { className: "section-title" }, "💾 גיבוי וסנכרון"),
+
+    // Tabs
+    React.createElement("div", { style: { display: "flex", gap: 2, borderBottom: "1px solid var(--border)", marginBottom: 20 } },
+      [["backup","💾 גיבויים"],["import","📥 ייבוא"],["drive","☁️ Google Drive"],["history","🕐 היסטוריה"]].map(([k,l]) =>
+        React.createElement("button", { key: k, className: "tab-btn" + (activeTab===k?" active":""), onClick: ()=>setActiveTab(k) }, l)
+      )
+    ),
+
+    // ── BACKUP TAB ──
+    activeTab === "backup" && React.createElement("div", { className: "fade" },
+      React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20 } },
+        React.createElement("div", { className: "card", style: { padding: "20px 18px", textAlign: "center" } },
+          React.createElement("div", { style: { fontSize: 32, marginBottom: 8 } }, "📦"),
+          React.createElement("div", { style: { fontWeight: 800, fontSize: 14, marginBottom: 6 } }, "ייצוא JSON"),
+          React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", marginBottom: 14 } }, "גיבוי מלא של כל הנתונים — פרויקטים, משתמשים, הגדרות"),
+          React.createElement("button", { className: "btn-gold", style: { width: "100%" }, onClick: exportJSON }, "⬇️ ייצא JSON")
+        ),
+        React.createElement("div", { className: "card", style: { padding: "20px 18px", textAlign: "center" } },
+          React.createElement("div", { style: { fontSize: 32, marginBottom: 8 } }, "📊"),
+          React.createElement("div", { style: { fontWeight: 800, fontSize: 14, marginBottom: 6 } }, "ייצוא Excel / CSV"),
+          React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", marginBottom: 14 } }, "טבלת פרויקטים לפתיחה ב-Excel"),
+          React.createElement("button", { className: "btn-blue", style: { width: "100%" }, onClick: exportCSV }, "⬇️ ייצא CSV")
+        )
+      ),
+      lastAutoSave && React.createElement("div", { className: "card", style: { padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 } },
+        React.createElement("span", { style: { fontSize: 18 } }, "🕐"),
+        React.createElement("div", null,
+          React.createElement("div", { style: { fontWeight: 700, fontSize: 12 } }, "גיבוי אוטומטי אחרון"),
+          React.createElement("div", { style: { fontSize: 11, color: "var(--muted)" } }, new Date(lastAutoSave).toLocaleString("he-IL"))
+        )
+      )
+    ),
+
+    // ── IMPORT TAB ──
+    activeTab === "import" && React.createElement("div", { className: "fade" },
+      React.createElement("div", { className: "card", style: { marginBottom: 14 } },
+        React.createElement("div", { style: { fontWeight: 700, fontSize: 14, marginBottom: 10 } }, "📥 ייבוא מקובץ JSON"),
+        React.createElement("div", { style: { fontSize: 12, color: "var(--muted)", marginBottom: 12 } }, "ייבא קובץ גיבוי שנוצר על ידי המערכת (postflow_backup_*.json)"),
+        React.createElement("input", { type: "file", accept: ".json", onChange: handleFileImport, style: { marginBottom: 10 } }),
+        importError && React.createElement("div", { style: { color: "var(--red)", fontSize: 12, marginBottom: 8 } }, "❌ " + importError),
+        importPreview && React.createElement("div", { className: "card", style: { background: "var(--accentbg)", marginBottom: 10, padding: "10px 14px" } },
+          React.createElement("div", { style: { fontWeight: 700, marginBottom: 6 } }, "תצוגה מקדימה:"),
+          React.createElement("div", { style: { fontSize: 12 } },
+            React.createElement("div", null, "📁 פרויקטים: " + (importPreview.projects?.length || 0)),
+            React.createElement("div", null, "👥 משתמשים: " + (importPreview.users?.length || 0)),
+            importPreview.exportedAt && React.createElement("div", null, "📅 יוצא: " + new Date(importPreview.exportedAt).toLocaleString("he-IL"))
+          ),
+          React.createElement("button", { className: "btn-gold", style: { marginTop: 10 }, onClick: confirmImport }, "✅ אשר ייבוא")
+        )
+      )
+    ),
+
+    // ── DRIVE TAB ──
+    activeTab === "drive" && React.createElement("div", { className: "fade" },
+      React.createElement("div", { className: "card", style: { marginBottom: 14 } },
+        React.createElement("div", { style: { fontWeight: 700, fontSize: 14, marginBottom: 10 } }, "☁️ תיקיית גיבוי Google Drive"),
+        React.createElement("div", { style: { fontSize: 12, color: "var(--muted)", marginBottom: 12 } }, "הגדר תיקיית Drive לשמירת גיבויים אוטומטיים. הכנס את מזהה התיקייה (מה-URL)."),
+        React.createElement(Lbl, null, "Drive Folder ID"),
+        React.createElement("input", {
+          value: driveFolderLocal,
+          onChange: e => setDriveFolderLocal(e.target.value),
+          placeholder: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs...",
+          style: { fontSize: 12, marginBottom: 10 }
+        }),
+        React.createElement("div", { style: { display: "flex", gap: 8 } },
+          React.createElement("button", { className: "btn-gold btn-sm", onClick: () => {
+            if (onUpdateDriveFolder) onUpdateDriveFolder(driveFolderLocal);
+            alert("✅ תיקיית Drive נשמרה");
+          }}, "💾 שמור"),
+          driveFolderLocal && React.createElement("a", { href: "https://drive.google.com/drive/folders/" + driveFolderLocal, target: "_blank", className: "btn-ghost btn-sm", style: { textDecoration: "none" } }, "🔗 פתח תיקייה")
+        )
+      )
+    ),
+
+    // ── HISTORY TAB ──
+    activeTab === "history" && React.createElement("div", { className: "fade" },
+      backupHistory.length === 0
+        ? React.createElement("div", { style: { textAlign: "center", padding: 40, color: "var(--muted)" } }, "אין גיבויים ידניים בהיסטוריה")
+        : React.createElement("div", null,
+            backupHistory.map((b, i) =>
+              React.createElement("div", { key: i, style: { display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--border)" } },
+                React.createElement("span", { style: { fontSize: 20 } }, "📦"),
+                React.createElement("div", { style: { flex: 1 } },
+                  React.createElement("div", { style: { fontWeight: 700, fontSize: 12 } }, new Date(b.date).toLocaleString("he-IL")),
+                  React.createElement("div", { style: { fontSize: 11, color: "var(--muted)" } }, b.projects + " פרויקטים · " + b.users + " משתמשים")
+                ),
+                React.createElement("span", { className: "tag", style: { fontSize: 10 } }, b.type || "ידני")
+              )
+            )
+          )
+    )
+  );
 }
 
 // ══════════════════════════════════════════
@@ -7893,7 +7906,9 @@ function Settings({
   studioLocation,
   onUpdateCalendar,
   onSaveShiftTypesToSheets,
-  onPullSettingsFromSheets
+  onPullSettingsFromSheets,
+  sheetsUrlProp,
+  onUpdateSheetsUrl
 }) {
   const LIGHT_THEMES = [
     { id: "default",      label: "כחול (ברירת מחדל)", bg: "#f0f2f7", surf: "#ffffff", accent: "#0073ea", sidebar: "#1a2236" },
@@ -7913,6 +7928,7 @@ function Settings({
   const [calId, setCalId] = useState(calendarId || "");
   const [calKey, setCalKey] = useState(calendarApiKey || "");
   const [calLoc, setCalLoc] = useState(studioLocation || "");
+  const [sheetsUrl, setSheetsUrl] = useState(sheetsUrlProp || "");
   // re-sync local state when parent shiftTypes changes (e.g. after pull from sheets)
   useEffect(() => setEtSt(shiftTypes || DEF_SHIFT_TYPES), [shiftTypes]);
   const updSt = (id, k, v) => setEtSt(ts => ts.map(t => t.id === id ? {
@@ -8063,7 +8079,28 @@ function Settings({
       fontSize: 11,
       color: "var(--muted)"
     }
-  }, "\uD83D\uDCA1 \u05D4\u05E2\u05DC\u05D4 \u05EA\u05DE\u05D5\u05E0\u05D4 \u05DC-imgur.com \u05D0\u05D5 Cloudinary, \u05D4\u05D3\u05D1\u05E7 \u05D0\u05EA \u05D4-URL \u05D9\u05E9\u05D9\u05E8\u05D5\u05EA \u05DB\u05D0\u05DF")), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCA1 \u05D4\u05E2\u05DC\u05D4 \u05EA\u05DE\u05D5\u05E0\u05D4 \u05DC-imgur.com \u05D0\u05D5 Cloudinary, \u05D4\u05D3\u05D1\u05E7 \u05D0\u05EA \u05D4-URL \u05D9\u05E9\u05D9\u05E8\u05D5\u05EA \u05DB\u05D0\u05DF")), /*#__PURE__*/React.createElement("div", { className: "card", style: { marginBottom: 14 } },
+    /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 10 } }, "📊 שעות — סנכרון Google Sheets"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: "var(--muted)", marginBottom: 10 } }, "הגדר כתובת Google Sheet לסנכרון שעות עובדים. הוסף את ה-URL של הגיליון (וודא שיתוף מתאים)."),
+    /*#__PURE__*/React.createElement("div", { className: "fcol" },
+      /*#__PURE__*/React.createElement(Lbl, null, "Google Sheet URL"),
+      /*#__PURE__*/React.createElement("input", {
+        value: sheetsUrl,
+        onChange: e => setSheetsUrl(e.target.value),
+        placeholder: "https://docs.google.com/spreadsheets/d/...",
+        style: { fontSize: 12 }
+      })
+    ),
+    /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 10 } },
+      /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", onClick: () => {
+        if (onUpdateSheetsUrl) onUpdateSheetsUrl(sheetsUrl);
+        alert("✅ כתובת Google Sheets נשמרה");
+      }}, "💾 שמור"),
+      sheetsUrl && /*#__PURE__*/React.createElement("a", { href: sheetsUrl, target: "_blank", className: "btn-ghost btn-sm", style: { textDecoration: "none" } }, "🔗 פתח גיליון")
+    )
+  ),
+
+  /*#__PURE__*/React.createElement("div", {
     className: "card",
     style: { marginBottom: 14 }
   }, /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 12 } }, "\uD83D\uDCC5 Google Calendar \u2014 \u05D9\u05D5\u05DE\u05DF \u05E1\u05D8\u05D5\u05D3\u05D9\u05D5"),
@@ -8256,10 +8293,11 @@ function NewProjectModal({
       shifts: [],
       hours: [],
       quotes: [],
+      deliverables: [],
       plan: {
-        crew: [],
-        milestones: [],
-        notes: ""
+        staffRows: INTERNAL_COSTS.map(ic => ({ ...ic, id: uid(), qty: 0 })),
+        notes: "",
+        plannedShifts: []
       }
     });
     onClose();
@@ -8419,6 +8457,27 @@ function App({
     clients,
     events
   } = data;
+
+  // Sync derived client names from projects+quotes into clients list (no duplicates)
+  const syncDerivedClients = useCallback((projList, clientList) => {
+    const allNames = new Set([
+      ...(projList || []).map(p => p.client).filter(Boolean),
+      ...(projList || []).flatMap(p => (p.quotes || []).map(q => q.client)).filter(Boolean)
+    ]);
+    const existingNames = new Set((clientList || []).map(c => typeof c === "string" ? c : c.name).filter(Boolean));
+    const newClients = [];
+    allNames.forEach(name => {
+      if (!existingNames.has(name)) {
+        newClients.push({ id: uid(), name, contact: "", email: "", phone: "", address: "", notes: "", active: true });
+      }
+    });
+    if (newClients.length > 0) {
+      const merged = [...(clientList || []), ...newClients];
+      upd({ clients: merged });
+      newClients.forEach(cl => sbUpsert("clients", clientToRow(cl)).catch(() => {}));
+    }
+  }, []);
+
   const upd = patch => setData(d => ({
     ...d,
     ...patch
@@ -8460,13 +8519,20 @@ function App({
     upsertScreeningEvent(p, "onlineScreening", "online", "📡 הקרנת אונליין");
   };
   const addProject = p => {
+    const newProjects = [...data.projects, p];
     upd({
-      projects: [...data.projects, p],
+      projects: newProjects,
       nextProjNum: (data.nextProjNum || 1) + 1
     });
     sbUpsert("projects", projToRow(p)).catch(() => {});
     upsertScreeningEvent(p, "offlineScreening", "offline", "🖥 הקרנת אופליין");
     upsertScreeningEvent(p, "onlineScreening", "online", "📡 הקרנת אונליין");
+    // Auto-add client to clients list if new
+    if (p.client && !(clients || []).some(c => (typeof c === "string" ? c : c.name) === p.client)) {
+      const newClient = { id: uid(), name: p.client, contact: "", email: "", phone: "", address: "", notes: "", active: true };
+      upd({ clients: [...(clients || []), newClient] });
+      sbUpsert("clients", clientToRow(newClient)).catch(() => {});
+    }
   };
   const deleteProject = p => {
     if (!window.confirm(`למחוק את הפרויקט "${p.name}"?\nפעולה זו לא ניתנת לביטול.`)) return;
@@ -8497,6 +8563,11 @@ function App({
   const [showNewProj, setShowNewProj] = useState(false);
   const [lastAutoSave, setLastAutoSave] = useState("");
   const [calEditModal, setCalEditModal] = useState(null);
+
+  // Run sync on mount and when projects change
+  useEffect(() => {
+    if (currentUser && projects) syncDerivedClients(projects, clients);
+  }, [currentUser, projects.length]);
 
   // Persist to localStorage (fallback)
   useEffect(() => {
@@ -9368,7 +9439,14 @@ view === n.id && !selProjId ? " active" : ""}`,
       selProj.updatedAt && /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", marginTop: 6 } },
         "עודכן לאחרונה: ", new Date(selProj.updatedAt).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" })
       )
-    )
+    ),
+
+    /* ── Section 5: Deliverables table ── */
+    /*#__PURE__*/React.createElement(DeliverablesTable, {
+      project: selProj,
+      onChange: updateProjAndSync,
+      canEdit: canEditProj
+    })
   );
 })() : /*#__PURE__*/React.createElement(SearchOverlay, {
     globalSearch: globalSearch,
@@ -9523,6 +9601,11 @@ view === n.id && !selProjId ? " active" : ""}`,
     calendarId: data.calendarId || "",
     calendarApiKey: data.calendarApiKey || "",
     studioLocation: data.studioLocation || "",
+    sheetsUrlProp: data.hoursGoogleSheetUrl || "",
+    onUpdateSheetsUrl: url => {
+      upd({ hoursGoogleSheetUrl: url });
+      sbSetting("hoursGoogleSheetUrl", url, "Google Sheet שעות").catch(() => {});
+    },
     onUpdateCalendar: ({ calendarId, calendarApiKey, studioLocation }) => {
       upd({ calendarId, calendarApiKey, studioLocation });
       sbSetting("calendarId", calendarId, "יומן גוגל ID").catch(() => {});
@@ -10310,7 +10393,7 @@ function QuoteBuilderForm({ projects, quoteTemplates, onUpdateTemplates, editing
   // 1. Deliverables State (תוצרים ומפרט טכני)
   const [deliverables, setDeliverables] = useState(() => {
     if (isEditing && editingQuote.deliverablesArr) return editingQuote.deliverablesArr;
-    return [{ id: uid(), desc: "", proportions: [], resolutions: {}, platform: "" }];
+    return [{ id: uid(), desc: "", timing: "", platforms: [], proportions: [] }];
   });
 
   // 2. Costs/Pricing State (פירוט עלויות)
@@ -10331,7 +10414,7 @@ function QuoteBuilderForm({ projects, quoteTemplates, onUpdateTemplates, editing
 
   // --- Deliverables Handlers ---
   const updDeliverable = (id, k, v) => setDeliverables(ds => ds.map(d => d.id === id ? { ...d, [k]: v } : d));
-  const addDeliverable = () => setDeliverables(ds => [...ds, { id: uid(), desc: "", proportions: [], resolutions: {}, platform: "" }]);
+  const addDeliverable = () => setDeliverables(ds => [...ds, { id: uid(), desc: "", timing: "", platforms: [], proportions: [] }]);
   const delDeliverable = id => setDeliverables(ds => ds.filter(d => d.id !== id));
   const moveDeliverable = (id, dir) => {
     const idx = deliverables.findIndex(d => d.id === id);
@@ -10637,80 +10720,104 @@ function QuoteBuilderForm({ projects, quoteTemplates, onUpdateTemplates, editing
     // ── 2. רשימת תוצרים (ללא עלויות) ──
     React.createElement("div", { className: "card", style: { marginBottom: 14 } },
       React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } },
-        React.createElement("div", { style: { fontWeight: 700 } }, "📦 2. רשימת תוצרים ומפרט טכני"),
+        React.createElement("div", { style: { fontWeight: 700 } }, "📦 2. רשימת תוצרים"),
         React.createElement("button", { className: "btn-ghost btn-sm", onClick: addDeliverable }, "+ תוצר נוסף")
       ),
       React.createElement("div", { style: { overflowX: "auto" } },
-        React.createElement("table", { style: { width: "100%", borderCollapse: "collapse" } },
+        React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } },
           React.createElement("thead", null,
-            React.createElement("tr", { style: { borderBottom: "1px solid var(--border)" } },
-              ["", "תיאור התוצר", "פלטפורמות יעד", "מפרט טכני (רזולוציה/פרופורציה)", ""].map(h =>
-                React.createElement("th", { key: h, style: { textAlign: "right", padding: "7px 4px", fontSize: 10, color: "var(--muted)", fontWeight: 700, whiteSpace: "nowrap" } }, h)
+            React.createElement("tr", { style: { background: "var(--card2)", borderBottom: "2px solid var(--border)" } },
+              ["", "תוצר", "תזמון", "פלטפורמות", "פרופורציות", ""].map(h =>
+                React.createElement("th", { key: h, style: { padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "var(--muted)", fontSize: 11, whiteSpace: "nowrap" } }, h)
               )
             )
           ),
           React.createElement("tbody", null,
-            deliverables.map((d, idx) => React.createElement(React.Fragment, { key: d.id },
-              React.createElement("tr", { style: { borderBottom: showTechFor[d.id] ? "none" : "1px solid var(--border)" } },
-                React.createElement("td", { style: { padding: "3px 2px", width: 36 } },
-                  React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 1 } },
-                    React.createElement("button", { onClick: () => moveDeliverable(d.id, -1), style: { background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 10, padding: "1px 4px" } }, "▲"),
-                    React.createElement("button", { onClick: () => moveDeliverable(d.id, 1), style: { background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 10, padding: "1px 4px" } }, "▼")
-                  )
-                ),
-                React.createElement("td", { style: { padding: "4px 3px", minWidth: 160 } },
-                  React.createElement("input", { value: d.desc, onChange: e => updDeliverable(d.id, "desc", e.target.value), placeholder: "סרטון תדמית ראשי...", style: { padding: "5px 8px" } })
-                ),
-                React.createElement("td", { style: { padding: "4px 3px", width: 160 } },
-                  React.createElement("input", { list: `plats_${d.id}`, value: d.platform || "", onChange: e => updDeliverable(d.id, "platform", e.target.value), placeholder: "דיגיטל, טלוויזיה...", style: { padding: "5px 8px" } }),
-                  React.createElement("datalist", { id: `plats_${d.id}` }, PLATFORM_OPTS.map(p => React.createElement("option", { key: p, value: p })))
-                ),
-                React.createElement("td", { style: { padding: "4px 3px", width: 140 } },
-                  React.createElement("button", { className: showTechFor[d.id] ? "btn-gold btn-sm" : "btn-ghost btn-sm",
-                    style: { fontSize: 10, padding: "4px 8px", width: "100%", border: showTechFor[d.id] ? "none" : "1px solid var(--border2)" },
-                    onClick: () => toggleTech(d.id) },
-                    showTechFor[d.id] ? "🎬 סגור מפרט ▲" : "🎬 הגדר פרופורציות ▼"
-                  )
-                ),
-                React.createElement("td", { style: { padding: "4px 3px", width: 36 } },
-                  deliverables.length > 1 && React.createElement("button", { className: "btn-red", style: { padding: "4px 7px", fontSize: 11 }, onClick: () => delDeliverable(d.id) }, "✕")
+            deliverables.map((d, di) => React.createElement("tr", {
+              key: d.id,
+              style: { borderBottom: "1px solid var(--border)", background: di % 2 === 0 ? "transparent" : "var(--card2)" }
+            },
+              // Row order buttons
+              React.createElement("td", { style: { padding: "3px 2px", width: 28 } },
+                React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 1 } },
+                  React.createElement("button", { onClick: () => moveDeliverable(d.id, -1), style: { background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 9, padding: "1px 3px" } }, "▲"),
+                  React.createElement("button", { onClick: () => moveDeliverable(d.id, 1), style: { background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 9, padding: "1px 3px" } }, "▼")
                 )
               ),
-              // חלונית מפרט טכני חכם
-              showTechFor[d.id] && React.createElement("tr", { key: d.id + "_tech", style: { borderBottom: "1px solid var(--border)", background: "var(--card2)" } },
-                React.createElement("td", { colSpan: 5, style: { padding: "12px 14px", borderRight: "4px solid var(--accent)", borderRadius: "0 0 8px 8px" } },
-                  React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
-                    React.createElement("div", null,
-                      React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", fontWeight: "bold", marginBottom: 6 } }, "בחר פרופורציות (ניתן לבחור מרובות):"),
-                      React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } },
-                        RATIO_OPTS.map(ratio => React.createElement("button", {
-                          key: ratio,
-                          className: (d.proportions||[]).includes(ratio) ? "btn-gold btn-sm" : "btn-ghost btn-sm",
-                          style: { borderRadius: 20 },
-                          onClick: () => toggleProportion(d.id, ratio)
-                        }, (d.proportions||[]).includes(ratio) ? "✓ " + ratio : ratio))
-                      )
-                    ),
-                    (d.proportions && d.proportions.length > 0) && React.createElement("div", { style: { background: "var(--bg)", padding: 10, borderRadius: 6, border: "1px solid var(--border)" } },
-                      React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", fontWeight: "bold", marginBottom: 6 } }, "רזולוציות מותאמות:"),
-                      React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 } },
-                        d.proportions.map(ratio => React.createElement("div", { key: ratio },
-                          React.createElement("span", { style: { fontSize: 11, display: "block", marginBottom: 4 } }, `רזולוציה ל-${ratio}:`),
-                          React.createElement("select", { value: (d.resolutions||{})[ratio] || "", onChange: e => setResolution(d.id, ratio, e.target.value), style: { fontSize: 11, padding: "5px" } },
-                            RES_BY_RATIO[ratio].map(res => React.createElement("option", { key: res, value: res }, res))
-                          )
-                        ))
-                      )
+              // תוצר — description
+              React.createElement("td", { style: { padding: "5px 4px", minWidth: 150 } },
+                React.createElement("input", {
+                  value: d.desc || "",
+                  onChange: e => updDeliverable(d.id, "desc", e.target.value),
+                  placeholder: "שם הסרט / תוצר...",
+                  style: { padding: "5px 8px", fontSize: 12 }
+                })
+              ),
+              // תזמון
+              React.createElement("td", { style: { padding: "5px 4px", width: 120 } },
+                React.createElement("input", {
+                  value: d.timing || "",
+                  onChange: e => updDeliverable(d.id, "timing", e.target.value),
+                  placeholder: "תאריך / שלב...",
+                  style: { padding: "5px 8px", fontSize: 12, width: "100%" }
+                })
+              ),
+              // פלטפורמות — multi-select checkboxes
+              React.createElement("td", { style: { padding: "5px 4px", minWidth: 160 } },
+                React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 4 } },
+                  PLATFORM_OPTS.map(pl =>
+                    React.createElement("label", { key: pl, style: { display: "flex", alignItems: "center", gap: 3, fontSize: 11, cursor: "pointer", whiteSpace: "nowrap",
+                      background: (d.platforms || []).includes(pl) ? "var(--accentbg)" : "var(--card2)",
+                      border: "1px solid " + ((d.platforms || []).includes(pl) ? "var(--accent)" : "var(--border)"),
+                      borderRadius: 4, padding: "2px 6px", color: (d.platforms || []).includes(pl) ? "var(--accent)" : "var(--muted)" } },
+                      React.createElement("input", {
+                        type: "checkbox",
+                        style: { display: "none" },
+                        checked: (d.platforms || []).includes(pl),
+                        onChange: e => {
+                          const cur = d.platforms || [];
+                          updDeliverable(d.id, "platforms", e.target.checked ? [...cur, pl] : cur.filter(x => x !== pl));
+                        }
+                      }),
+                      pl
                     )
                   )
                 )
+              ),
+              // פרופורציות — multi-select chips
+              React.createElement("td", { style: { padding: "5px 4px", minWidth: 160 } },
+                React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 4 } },
+                  DELIVERABLE_RATIOS.map(ratio =>
+                    React.createElement("label", { key: ratio, style: { display: "flex", alignItems: "center", gap: 3, fontSize: 11, cursor: "pointer", whiteSpace: "nowrap",
+                      background: (d.proportions || []).includes(ratio) ? "var(--accentbg)" : "var(--card2)",
+                      border: "1px solid " + ((d.proportions || []).includes(ratio) ? "var(--accent)" : "var(--border)"),
+                      borderRadius: 4, padding: "2px 6px", color: (d.proportions || []).includes(ratio) ? "var(--accent)" : "var(--muted)" } },
+                      React.createElement("input", {
+                        type: "checkbox",
+                        style: { display: "none" },
+                        checked: (d.proportions || []).includes(ratio),
+                        onChange: e => {
+                          const cur = d.proportions || [];
+                          updDeliverable(d.id, "proportions", e.target.checked ? [...cur, ratio] : cur.filter(x => x !== ratio));
+                        }
+                      }),
+                      ratio
+                    )
+                  )
+                )
+              ),
+              // Delete
+              React.createElement("td", { style: { padding: "5px 4px", width: 30 } },
+                React.createElement("button", {
+                  className: "btn-red", style: { padding: "3px 7px", fontSize: 11 },
+                  onClick: () => delDeliverable(d.id)
+                }, "✕")
               )
             ))
           )
         )
-      )
+      ),
     ),
-
     // ── 3. פירוט עלויות ──
     React.createElement("div", { className: "card", style: { marginBottom: 14 } },
       React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } },
@@ -10912,12 +11019,99 @@ function PriceListModule({ priceLists, onSave, projects, user }) {
     });
   };
 
+  const [showImport, setShowImport] = useState(false);
+  const [namedLists, setNamedLists] = useState(() => priceLists.namedLists || []);
+  const [selNamedList, setSelNamedList] = useState(null);
+
+  const importFromText = (text) => {
+    const lines = text.trim().split("\n").filter(Boolean);
+    const imported = lines.map(line => {
+      const parts = line.split(/\t|,/).map(s => s.trim().replace(/^"|"$/g, ""));
+      return { id: uid(), desc: parts[0]||"", unit: parts[1]||"פרויקט", price: parseFloat(parts[2])||0, cost_price: parseFloat(parts[3])||0, category: parts[4]||"" };
+    }).filter(x => x.desc);
+    if (imported.length === 0) return;
+    const listName = window.prompt("שם המחירון:", "מחירון מיובא " + new Date().toLocaleDateString("he-IL")) || "מחירון מיובא";
+    const newList = { id: uid(), name: listName, items: imported, createdAt: new Date().toISOString() };
+    const updated = [...namedLists, newList];
+    setNamedLists(updated); onSave({ ...priceLists, namedLists: updated });
+    setSelNamedList(newList.id); setTab("named"); setShowImport(false);
+    alert("יובאו " + imported.length + " פריטים");
+  };
+  const createNewList = () => {
+    const name = window.prompt("שם המחירון החדש:");
+    if (!name) return;
+    const newList = { id: uid(), name: name.trim(), items: [], createdAt: new Date().toISOString() };
+    const updated = [...namedLists, newList];
+    setNamedLists(updated); onSave({ ...priceLists, namedLists: updated });
+    setSelNamedList(newList.id); setTab("named");
+  };
+  const deleteNamedList = id => { if (!confirm("למחוק?")) return; const u=namedLists.filter(l=>l.id!==id); setNamedLists(u); onSave({...priceLists,namedLists:u}); if(selNamedList===id)setSelNamedList(null); };
+  const renameList = id => { const l=namedLists.find(x=>x.id===id); const n=window.prompt("שם חדש:",l?.name||""); if(!n)return; const u=namedLists.map(x=>x.id===id?{...x,name:n}:x); setNamedLists(u); onSave({...priceLists,namedLists:u}); };
+  const updNamedItem = (lid,iid,k,v) => { const u=namedLists.map(l=>l.id!==lid?l:{...l,items:l.items.map(x=>x.id!==iid?x:{...x,[k]:["price","cost_price"].includes(k)?parseFloat(v)||0:v})}); setNamedLists(u); onSave({...priceLists,namedLists:u}); };
+  const delNamedItem = (lid,iid) => { const u=namedLists.map(l=>l.id!==lid?l:{...l,items:l.items.filter(x=>x.id!==iid)}); setNamedLists(u); onSave({...priceLists,namedLists:u}); };
+  const addNamedItem = lid => { const u=namedLists.map(l=>l.id!==lid?l:{...l,items:[...l.items,{id:uid(),desc:"",unit:"פרויקט",price:0,cost_price:0,category:""}]}); setNamedLists(u); onSave({...priceLists,namedLists:u}); };
+
   return React.createElement("div", { className:"fade" },
-    // Tabs
-    React.createElement("div", { style:{display:"flex", borderBottom:"1px solid var(--border)", marginBottom:16, gap:2} },
-      [["base","📋 מחירון בסיס"],["byClient","🏢 לפי לקוח"]].map(([k,l]) =>
-        React.createElement("button", { key:k, className:`tab-btn${tab===k?" active":""}`, onClick:()=>setTab(k) }, l)
+    // Import modal
+    showImport && React.createElement("div", { style:{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:9000,display:"flex",alignItems:"center",justifyContent:"center"} },
+      React.createElement("div", { className:"card", style:{width:500,maxWidth:"95vw",padding:24} },
+        React.createElement("div", {style:{fontWeight:700,fontSize:15,marginBottom:12}}, "📥 ייבוא מחירון"),
+        React.createElement("p", {style:{fontSize:12,color:"var(--muted)",marginBottom:10}}, "הדבק שורות מ-Excel: תיאור[TAB]יחידה[TAB]מחיר[TAB]עלות[TAB]קטגוריה"),
+        React.createElement("textarea", {id:"plImport",rows:10,placeholder:"גריסה וסנכרון\tפרויקט\t4500\t0\tפוסט",style:{width:"100%",fontSize:12,fontFamily:"monospace",marginBottom:12}}),
+        React.createElement("div",{style:{display:"flex",gap:8}},
+          React.createElement("button",{className:"btn-gold",onClick:()=>importFromText(document.getElementById("plImport").value)},"ייבא"),
+          React.createElement("button",{className:"btn-ghost",onClick:()=>setShowImport(false)},"ביטול")
+        )
       )
+    ),
+    // Tabs + action buttons
+    React.createElement("div", { style:{display:"flex", borderBottom:"1px solid var(--border)", marginBottom:16, gap:2, alignItems:"center", flexWrap:"wrap"} },
+      [["base","📋 מחירון בסיס"],["byClient","🏢 לפי לקוח"],["named","📂 מחירונים"]].map(([k,l]) =>
+        React.createElement("button", { key:k, className:`tab-btn${tab===k?" active":""}`, onClick:()=>setTab(k) }, l)
+      ),
+      React.createElement("div", {style:{marginRight:"auto",display:"flex",gap:6}},
+        isAdminPL && React.createElement("button", {className:"btn-blue btn-sm",onClick:()=>setShowImport(true)}, "📥 ייבא מ-Excel"),
+        isAdminPL && React.createElement("button", {className:"btn-gold btn-sm",onClick:createNewList}, "+ מחירון חדש")
+      )
+    ),
+    // Named lists tab
+    tab === "named" && React.createElement("div", { className:"fade" },
+      namedLists.length === 0
+        ? React.createElement("div",{style:{textAlign:"center",padding:40,color:"var(--muted)"}},
+            React.createElement("div",{style:{fontSize:28,marginBottom:8}},"📂"),
+            "לחץ '+ מחירון חדש' ליצירה, או '📥 ייבא מ-Excel' לייבוא")
+        : React.createElement("div",null,
+            React.createElement("div",{style:{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",alignItems:"center"}},
+              namedLists.map(l => React.createElement("div",{key:l.id,style:{display:"flex",alignItems:"center",gap:4,
+                background:selNamedList===l.id?"var(--accentbg)":"var(--card2)",
+                border:"1px solid "+(selNamedList===l.id?"var(--accent)":"var(--border)"),
+                borderRadius:8,padding:"4px 10px",cursor:"pointer"}},
+                React.createElement("span",{style:{fontWeight:700,fontSize:12,color:selNamedList===l.id?"var(--accent)":"var(--text)"},onClick:()=>setSelNamedList(l.id)},l.name),
+                React.createElement("span",{style:{fontSize:10,color:"var(--muted)"}},l.items.length+"פ׳"),
+                isAdminPL && React.createElement("span",{style:{cursor:"pointer",fontSize:11,opacity:.6},onClick:()=>renameList(l.id)},"✏️"),
+                isAdminPL && React.createElement("span",{style:{cursor:"pointer",fontSize:11,opacity:.6},onClick:()=>deleteNamedList(l.id)},"🗑️")
+              ))
+            ),
+            selNamedList && (() => {
+              const list = namedLists.find(l=>l.id===selNamedList);
+              if (!list) return null;
+              return React.createElement("div",null,
+                React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px 90px 36px",gap:4,marginBottom:6,padding:"0 4px"}},
+                  ["תיאור","יחידה","קטגוריה","מחיר","עלות",""].map((h,i)=>React.createElement("div",{key:i,style:{fontSize:10,fontWeight:700,color:"var(--muted)"}},h))
+                ),
+                list.items.map(item => React.createElement("div",{key:item.id,
+                  style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px 90px 36px",gap:4,alignItems:"center",padding:"5px 4px",borderBottom:"1px solid var(--border)"}},
+                  React.createElement("input",{value:item.desc,onChange:e=>updNamedItem(list.id,item.id,"desc",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
+                  React.createElement("select",{value:item.unit,onChange:e=>updNamedItem(list.id,item.id,"unit",e.target.value),style:{fontSize:12,padding:"3px 5px"}},UNITS.map(u=>React.createElement("option",{key:u,value:u},u))),
+                  React.createElement("input",{value:item.category||"",onChange:e=>updNamedItem(list.id,item.id,"category",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
+                  React.createElement("input",{type:"number",value:item.price,onChange:e=>updNamedItem(list.id,item.id,"price",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
+                  React.createElement("input",{type:"number",value:item.cost_price||0,onChange:e=>updNamedItem(list.id,item.id,"cost_price",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
+                  React.createElement("button",{className:"btn-red",style:{padding:"2px 5px",fontSize:10},onClick:()=>delNamedItem(list.id,item.id)},"✕")
+                )),
+                isAdminPL && React.createElement("button",{className:"btn-ghost btn-sm",style:{marginTop:8},onClick:()=>addNamedItem(list.id)},"+")
+              );
+            })()
+          )
     ),
 
     // ── BASE TAB ──────────────────────────────────────────
