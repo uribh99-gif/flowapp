@@ -2641,6 +2641,8 @@ const calcHoursDisplay = (ts, te) => {
   const diff = eh * 60 + em - (sh * 60 + sm);
   return diff > 0 ? (diff / 60).toFixed(1) : "?";
 };
+const DEFAULT_WORKER_NAMES = ["ליר", "נעמי", "יואב", "גל", "אריק", "אור", "הקרנות", "צילומים"];
+
 function WeeklyCalendar({
   projects,
   user,
@@ -2655,7 +2657,7 @@ function WeeklyCalendar({
   initialNumWeeks
 }) {
   var _editModal$shift, _editModal$shift2, _users$find;
-  const [viewMode, setViewMode] = useState("week"); // "day" | "week" | "month"
+  const [viewMode, setViewMode] = useState("year"); // "day" | "week" | "month" | "year"
   const [weekStart, setWeekStart] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - d.getDay());
@@ -2743,6 +2745,68 @@ function WeeklyCalendar({
     return d;
   });
 
+  // All weeks from current week to end of year (for year view)
+  const yearWeeks = useMemo(() => {
+    const ws = new Date(weekStart);
+    const endOfYear = new Date(ws.getFullYear(), 11, 31);
+    const weeks = [];
+    const cur = new Date(ws);
+    while (cur <= endOfYear) {
+      weeks.push(Array.from({length: 7}, (_, i) => {
+        const d = new Date(cur); d.setDate(d.getDate() + i); return d;
+      }));
+      cur.setDate(cur.getDate() + 7);
+    }
+    return weeks;
+  }, [weekStart]);
+
+  // Workers sorted by default order
+  const orderedUsers = useMemo(() => {
+    return [...users].sort((a, b) => {
+      const ai = DEFAULT_WORKER_NAMES.indexOf(a.name);
+      const bi = DEFAULT_WORKER_NAMES.indexOf(b.name);
+      if (ai === -1 && bi === -1) return 0;
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+  }, [users]);
+
+  // Drag & drop state
+  const [dragShift, setDragShift] = useState(null);
+  const [clipboard, setClipboard] = useState(null);
+  const [dragOverDate, setDragOverDate] = useState(null);
+
+  const handleDragStart = (e, shift, mode) => {
+    e.stopPropagation();
+    setDragShift({ shift, mode });
+    e.dataTransfer.effectAllowed = mode === "copy" ? "copy" : "move";
+  };
+  const handleDragOver = (e, date) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = dragShift && dragShift.mode === "copy" ? "copy" : "move";
+    setDragOverDate(date);
+  };
+  const handleDrop = (e, date) => {
+    e.preventDefault();
+    setDragOverDate(null);
+    if (!dragShift) return;
+    const { shift, mode } = dragShift;
+    if (shift.date === date && mode === "move") { setDragShift(null); return; }
+    if (mode === "move") onDeleteShift(shift);
+    onSaveShift({ ...shift, id: uid(), date });
+    setDragShift(null);
+  };
+  const handleDragEnd = () => { setDragShift(null); setDragOverDate(null); };
+  const copyShiftToClipboard = (shift) => setClipboard({ shift, mode: "copy" });
+  const cutShiftToClipboard = (shift) => setClipboard({ shift, mode: "cut" });
+  const pasteShift = (date) => {
+    if (!clipboard) return;
+    const { shift, mode } = clipboard;
+    if (mode === "cut") { onDeleteShift(shift); setClipboard(null); }
+    onSaveShift({ ...shift, id: uid(), date });
+  };
+
   // Build event map: date → [{...shift, projName, client}] — deduped by shift id
   const evMap = useMemo(() => {
     const m = {};
@@ -2794,141 +2858,124 @@ function WeeklyCalendar({
       }
     });
   };
-  const renderWeek = (days, label) => /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 28
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: "var(--muted2)",
-      marginBottom: 8,
-      padding: "4px 10px",
-      background: "var(--card2)",
-      borderRadius: 8,
-      display: "inline-block"
-    }
-  }, label, " \xB7 ", fmtDate(days[0]), " \u2013 ", fmtDate(days[6])), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "repeat(7,1fr)",
-      gap: 6,
-      minWidth: 560
-    }
-  }, days.map(d => {
-    const key = isoDate(d);
-    const isToday = key === todayStr();
-    const wknd = isWknd(d);
-    const evs = evMap[key] || [];
-    // Group by worker
-    const byWorker = {};
-    evs.forEach(ev => {
-      const wid = ev.person || "_";
-      if (!byWorker[wid]) byWorker[wid] = [];
-      byWorker[wid].push(ev);
-    });
-    return /*#__PURE__*/React.createElement("div", {
-      key: key,
-      className: `cal-day${isToday ? " today" : ""}${wknd ? " weekend" : ""}`,
-      style: {
-        minWidth: colW,
-        minHeight: rowH
+  const renderWeek = (days, label) => {
+    const cols = days.map(d => {
+      const key = isoDate(d);
+      const isToday = key === todayStr();
+      const wknd = isWknd(d);
+      const evs = evMap[key] || [];
+      const isDragOver = dragOverDate === key;
+      // Sort events by default worker order
+      const sorted = [...evs].sort((a, b) => {
+        const ai = orderedUsers.findIndex(u => u.id === a.person);
+        const bi = orderedUsers.findIndex(u => u.id === b.person);
+        if (ai === -1 && bi === -1) return 0;
+        if (ai === -1) return 1; if (bi === -1) return -1;
+        return ai - bi;
+      });
+      const wids = [...new Set(sorted.map(ev => ev.person || "_"))];
+
+      return React.createElement("div", {
+        key,
+        className: "cal-day" + (isToday ? " today" : "") + (wknd ? " weekend" : ""),
+        style: { minWidth: colW, minHeight: rowH, position: "relative",
+          border: isDragOver ? "2px dashed var(--accent)" : undefined,
+          background: isDragOver ? "var(--accentbg)" : undefined },
+        onClick: () => openNew(key),
+        onDragOver: e => handleDragOver(e, key),
+        onDrop: e => handleDrop(e, key),
+        onDragLeave: () => setDragOverDate(null)
       },
-      onClick: () => openNew(key)
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        textAlign: "center",
-        marginBottom: 6,
-        cursor: "pointer"
-      },
-      onClick: e => { e.stopPropagation(); setSelectedDay(new Date(key)); setViewMode("day"); }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10,
-        fontWeight: 700,
-        color: isToday ? "var(--accent)" : wknd ? "var(--orange)" : "var(--muted2)"
-      }
-    }, HEB_DAYS[d.getDay()]), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 13,
-        fontWeight: 800,
-        color: isToday ? "var(--accent)" : wknd ? "var(--muted)" : "var(--text)",
-        textDecoration: "underline",
-        textDecorationColor: isToday ? "var(--accent)" : "transparent"
-      }
-    }, fmtDate(d)), wknd && /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 8,
-        color: "var(--orange)",
-        opacity: .7
-      }
-    }, "\u05E1\u05D5\u05E3 \u05E9\u05D1\u05D5\u05E2")), Object.entries(byWorker).map(([wid, wevs]) => {
-      const workerObj = users.find(u => u.id === wid);
-      const wColor = aCol(users.indexOf(workerObj) || 0);
-      return /*#__PURE__*/React.createElement("div", {
-        key: wid,
-        style: {
-          marginBottom: 4
+        // Day header
+        React.createElement("div", {
+          style: { textAlign: "center", marginBottom: 4, cursor: "pointer" },
+          onClick: e => { e.stopPropagation(); setSelectedDay(new Date(key)); setViewMode("day"); }
         },
-        onClick: e => e.stopPropagation()
-      }, canSeeAll && workerObj && /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: 8,
-          color: wColor,
-          fontWeight: 700,
-          marginBottom: 2,
-          display: "flex",
-          alignItems: "center",
-          gap: 2
-        }
-      }, /*#__PURE__*/React.createElement("span", {
-        style: {
-          width: 8,
-          height: 8,
-          borderRadius: "50%",
-          background: wColor,
-          display: "inline-block"
-        }
-      }), workerObj.name.split(" ")[0]), wevs.map(ev => {
-        const tasks = ev.tasks || [];
-        const firstCol = stColor(tasks[0] || "other", sts);
-        return /*#__PURE__*/React.createElement("div", {
-          key: ev.id,
-          className: "cal-ev",
-          style: {
-            background: firstCol + "25",
-            color: firstCol,
-            border: `1px solid ${firstCol}40`
-          },
-          onClick: e => {
-            e.stopPropagation();
-            openEdit(ev);
-          }
-        }, ev.projName && /*#__PURE__*/React.createElement("div", {
-          style: {
-            fontSize: 8,
-            opacity: .65,
-            fontWeight: 400
-          }
-        }, ev.projName.slice(0, 14)), /*#__PURE__*/React.createElement("div", null, tasks.map(t => stLabel(t, sts)).join(", ").slice(0, 20) || "—"), (ev.hours || ev.timeStart) && /*#__PURE__*/React.createElement("div", {
-          style: {
-            fontSize: 8,
-            opacity: .55,
-            fontWeight: 400
-          }
-        }, ev.hours ? "" + ev.hours + "h" : calcHoursDisplay(ev.timeStart, ev.timeEnd) + "h"));
-      }));
-    }), canEdit && evs.length === 0 && /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 9,
-        color: "var(--muted)",
-        opacity: .3,
-        textAlign: "center",
-        marginTop: 10
-      }
-    }, "+ \u05DC\u05D7\u05E5"));
-  })));
+          React.createElement("div", { style: { fontSize: 9, fontWeight: 700,
+            color: isToday ? "var(--accent)" : wknd ? "var(--orange)" : "var(--muted2)" } },
+            HEB_DAYS[d.getDay()]),
+          React.createElement("div", { style: { fontSize: 12, fontWeight: 800,
+            color: isToday ? "var(--accent)" : wknd ? "var(--muted)" : "var(--text)" } },
+            fmtDate(d))
+        ),
+        // Paste button
+        clipboard && canEdit ? React.createElement("div", {
+          style: { position: "absolute", top: 3, left: 3, zIndex: 5 },
+          onClick: e => { e.stopPropagation(); pasteShift(key); }
+        }, React.createElement("button", {
+          style: { fontSize: 9, padding: "1px 5px", background: "var(--accent)",
+            color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }
+        }, "📋")) : null,
+        // Shifts grouped by worker
+        ...wids.map(wid => {
+          const wu = users.find(u => u.id === wid);
+          const wc = aCol(users.indexOf(wu) || 0);
+          const wevs = sorted.filter(ev => (ev.person || "_") === wid);
+          return React.createElement("div", { key: wid, style: { marginBottom: 3 },
+            onClick: e => e.stopPropagation() },
+            canSeeAll && wu ? React.createElement("div", {
+              style: { fontSize: 8, color: wc, fontWeight: 700, marginBottom: 1,
+                display: "flex", alignItems: "center", gap: 2 }
+            }, React.createElement("span", { style: { width: 6, height: 6, borderRadius: "50%",
+              background: wc, display: "inline-block" } }), wu.name) : null,
+            ...wevs.map(ev => {
+              const proj = ev.projId ? projects.find(p => p.id === ev.projId) : null;
+              const projName = proj ? proj.name : (ev.projName || "");
+              const tasks = ev.tasks || [];
+              const fc = stColor(tasks[0] || "other", sts);
+              const isGrabbed = dragShift && dragShift.shift && dragShift.shift.id === ev.id;
+              return React.createElement("div", {
+                key: ev.id, className: "cal-ev",
+                draggable: canEdit,
+                style: { background: fc + "25", color: fc, border: "1px solid " + fc + "40",
+                  cursor: canEdit ? "grab" : "pointer", opacity: isGrabbed ? 0.35 : 1 },
+                onClick: e => { e.stopPropagation(); openEdit(ev); },
+                onDragStart: e => handleDragStart(e, ev, e.ctrlKey || e.metaKey ? "copy" : "move"),
+                onDragEnd: handleDragEnd,
+                title: "גרור להזזה · Ctrl+גרור להעתקה"
+              },
+                // PROJECT NAME — prominent
+                projName ? React.createElement("div", { style: { fontSize: 10, fontWeight: 800,
+                  color: fc, lineHeight: 1.2, marginBottom: 1,
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
+                  projName) : null,
+                // Task types — secondary
+                tasks.length > 0 ? React.createElement("div", { style: { fontSize: 8,
+                  opacity: .65, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
+                  tasks.map(t => stLabel(t, sts)).join(", ")) : null,
+                // Hours
+                (ev.hours || ev.timeStart) ? React.createElement("div", { style: { fontSize: 8, opacity: .5 } },
+                  ev.hours ? ev.hours + "h" : calcHoursDisplay(ev.timeStart, ev.timeEnd) + "h") : null,
+                // Copy/Cut buttons
+                canEdit ? React.createElement("div", {
+                  style: { display: "flex", gap: 3, marginTop: 1 },
+                  onClick: e => e.stopPropagation()
+                },
+                  React.createElement("span", { style: { fontSize: 9, cursor: "pointer", opacity: .5 },
+                    title: "העתק", onClick: () => copyShiftToClipboard(ev) }, "📋"),
+                  React.createElement("span", { style: { fontSize: 9, cursor: "pointer", opacity: .5 },
+                    title: "גזור", onClick: () => cutShiftToClipboard(ev) }, "✂️")
+                ) : null
+              );
+            })
+          );
+        }),
+        canEdit && evs.length === 0 ? React.createElement("div", {
+          style: { fontSize: 9, color: "var(--muted)", opacity: .3,
+            textAlign: "center", marginTop: 8 } }, "+ לחץ") : null
+      );
+    });
+
+    return React.createElement("div", { style: { marginBottom: 16 } },
+      React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "var(--muted2)",
+        marginBottom: 5, padding: "3px 8px", background: "var(--card2)",
+        borderRadius: 6, display: "inline-block" } },
+        label, " · ", fmtDate(days[0]), " – ", fmtDate(days[6])),
+      React.createElement("div", { style: { display: "grid",
+        gridTemplateColumns: "repeat(7,1fr)", gap: 3, minWidth: 560 } },
+        ...cols)
+    );
+  };
   // ─── Day view renderer ───────────────────────────────────────
   const renderDay = (date) => {
     const key = isoDate(date);
@@ -3114,6 +3161,13 @@ function WeeklyCalendar({
   }, "\uD83D\uDFE5 \u05E9\u05D9\u05E9\u05D9/\u05E9\u05D1\u05EA")),
   viewMode === "day" ? renderDay(selectedDay) :
   viewMode === "month" ? renderMonth() :
+  viewMode === "year" ? yearWeeks.map((weekDays, wi) => {
+    const isCurrentWeek = isoDate(weekDays[0]) === isoDate(new Date(weekStart));
+    const weekLabel = isCurrentWeek ? "שבוע נוכחי" :
+      wi === 0 ? "שבוע נוכחי" :
+      "שבוע " + weekDays[0].toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit" });
+    return renderWeek(weekDays, weekLabel);
+  }) :
   Array.from({
     length: numWeeks
   }, (_, wi) => {
