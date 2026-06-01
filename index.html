@@ -2815,8 +2815,15 @@ function WeeklyCalendar({
     if (!dragShift) return;
     const { shift, mode } = dragShift;
     if (shift.date === date && mode === "move") { setDragShift(null); return; }
-    if (mode === "move") onDeleteShift(shift);
-    onSaveShift({ ...shift, id: uid(), date });
+    if (mode === "move") {
+      // Move: delete from source date, save to dest date — keep same id to avoid duplicates
+      onDeleteShift(shift);
+      // Small timeout to let delete settle before save
+      setTimeout(() => onSaveShift({ ...shift, date }), 30);
+    } else {
+      // Copy: new id on dest
+      onSaveShift({ ...shift, id: uid(), date });
+    }
     setDragShift(null);
   };
   const handleDragEnd = () => { setDragShift(null); setDragOverDate(null); };
@@ -10161,7 +10168,7 @@ function FinanceModule({ projects, users, currentUser, quoteTemplates, onSaveQuo
 
     // ── TAB: מחירון ─────────────────────────────────────────────
     finTab === "pricelist" && React.createElement(PriceListModule, {
-      priceLists, onSave: savePL, projects, user
+      priceLists, onSave: savePL, projects, user: currentUser
     }),
 
     // ── TAB: דוחות ──────────────────────────────────────────────
@@ -10966,6 +10973,30 @@ function QuoteBuilderForm({ projects, quoteTemplates, onUpdateTemplates, editing
 // ══════════════════════════════════════════
 // PRICE LIST MODULE
 // ══════════════════════════════════════════
+function NamedListItems({ list, UNITS, isAdminPL, updItem, delItem, addItem }) {
+  if (!list) return null;
+  return React.createElement("div", null,
+    React.createElement("div", {style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px 90px 36px",gap:4,marginBottom:6,padding:"0 4px"}},
+      ["תיאור","יחידה","קטגוריה","מחיר","עלות",""].map((h,i) =>
+        React.createElement("div",{key:i,style:{fontSize:10,fontWeight:700,color:"var(--muted)"}},h)
+      )
+    ),
+    list.items.map(item =>
+      React.createElement("div",{key:item.id,
+        style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px 90px 36px",gap:4,alignItems:"center",padding:"5px 4px",borderBottom:"1px solid var(--border)"}},
+        React.createElement("input",{value:item.desc,onChange:e=>updItem(list.id,item.id,"desc",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
+        React.createElement("select",{value:item.unit,onChange:e=>updItem(list.id,item.id,"unit",e.target.value),style:{fontSize:12,padding:"3px 5px"}},
+          UNITS.map(u=>React.createElement("option",{key:u,value:u},u))),
+        React.createElement("input",{value:item.category||"",onChange:e=>updItem(list.id,item.id,"category",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
+        React.createElement("input",{type:"number",value:item.price,onChange:e=>updItem(list.id,item.id,"price",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
+        React.createElement("input",{type:"number",value:item.cost_price||0,onChange:e=>updItem(list.id,item.id,"cost_price",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
+        React.createElement("button",{className:"btn-red",style:{padding:"2px 5px",fontSize:10},onClick:()=>delItem(list.id,item.id)},"✕")
+      )
+    ),
+    isAdminPL && React.createElement("button",{className:"btn-ghost btn-sm",style:{marginTop:8},onClick:()=>addItem(list.id)},"+")
+  );
+}
+
 function PriceListModule({ priceLists, onSave, projects, user }) {
   const [tab, setTab] = useState("base");
   const [selClient, setSelClient] = useState("");
@@ -11092,25 +11123,13 @@ function PriceListModule({ priceLists, onSave, projects, user }) {
                 isAdminPL && React.createElement("span",{style:{cursor:"pointer",fontSize:11,opacity:.6},onClick:()=>deleteNamedList(l.id)},"🗑️")
               ))
             ),
-            selNamedList && (() => {
-              const list = namedLists.find(l=>l.id===selNamedList);
-              if (!list) return null;
-              return React.createElement("div",null,
-                React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px 90px 36px",gap:4,marginBottom:6,padding:"0 4px"}},
-                  ["תיאור","יחידה","קטגוריה","מחיר","עלות",""].map((h,i)=>React.createElement("div",{key:i,style:{fontSize:10,fontWeight:700,color:"var(--muted)"}},h))
-                ),
-                list.items.map(item => React.createElement("div",{key:item.id,
-                  style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px 90px 36px",gap:4,alignItems:"center",padding:"5px 4px",borderBottom:"1px solid var(--border)"}},
-                  React.createElement("input",{value:item.desc,onChange:e=>updNamedItem(list.id,item.id,"desc",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
-                  React.createElement("select",{value:item.unit,onChange:e=>updNamedItem(list.id,item.id,"unit",e.target.value),style:{fontSize:12,padding:"3px 5px"}},UNITS.map(u=>React.createElement("option",{key:u,value:u},u))),
-                  React.createElement("input",{value:item.category||"",onChange:e=>updNamedItem(list.id,item.id,"category",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
-                  React.createElement("input",{type:"number",value:item.price,onChange:e=>updNamedItem(list.id,item.id,"price",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
-                  React.createElement("input",{type:"number",value:item.cost_price||0,onChange:e=>updNamedItem(list.id,item.id,"cost_price",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
-                  React.createElement("button",{className:"btn-red",style:{padding:"2px 5px",fontSize:10},onClick:()=>delNamedItem(list.id,item.id)},"✕")
-                )),
-                isAdminPL && React.createElement("button",{className:"btn-ghost btn-sm",style:{marginTop:8},onClick:()=>addNamedItem(list.id)},"+")
-              );
-            })()
+            selNamedList ? React.createElement(NamedListItems, {
+              list: namedLists.find(l=>l.id===selNamedList),
+              UNITS, isAdminPL,
+              updItem: updNamedItem,
+              delItem: delNamedItem,
+              addItem: addNamedItem
+            }) : null
           )
     ),
 
