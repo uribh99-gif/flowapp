@@ -147,27 +147,40 @@ const GS = () => /*#__PURE__*/React.createElement("style", null, `
   --sidebar-border:rgba(100,160,255,0.08);
 }
 
-/* ── DARK: Warm Mocha ──────────────────────────────── */
-[data-dark="true"][data-theme="dark-warm"]{
-  --bg:#1a1510;
-  --surf:#221c15;
-  --card:#2a2018;
-  --card2:#1e1912;
-  --border:#352a1e;
-  --border2:#4a3a28;
-  --accent:#d4853a;
-  --accent2:#b8692c;
-  --accentbg:#2a1e0e;
-  --text:#f0e8d8;
-  --muted:#b09878;
-  --muted2:#7a6848;
-  --shadow:0 2px 10px rgba(20,10,0,0.4);
-  --shadow2:0 6px 24px rgba(20,10,0,0.5);
-  --sidebar-bg:#110e09;
-  --sidebar-muted:#6a5040;
-  --sidebar-active:#e8a060;
-  --sidebar-active-bg:rgba(212,133,58,0.2);
-  --sidebar-border:rgba(255,200,120,0.08);
+/* ── DARK: Spatial Vision Glass (Inspired by WWDC23) ──────────────── */
+[data-dark="true"][data-theme="dark-warm"] {
+  /* רקע הבסיס של האתר - כהה, ניטרלי ומעט חם */
+  --bg: #1c1c1e; 
+  
+  /* משטחים וכרטיסים במראה זכוכית מעושנת עם דרגות שקיפות שונות */
+  --surf: rgba(30, 30, 32, 0.65);
+  --card: rgba(45, 45, 48, 0.5);
+  --card2: rgba(28, 28, 30, 0.8);
+  
+  /* גבולות דקים והברקות קצה המדמים החזר אור של זכוכית תלת-ממדית */
+  --border: rgba(255, 255, 255, 0.1);
+  --border2: rgba(255, 255, 255, 0.18);
+  
+  /* צבעי הדגשה (אפקט הלחיצה וההפעלה הכחול-סגול הנקי של אפל) */
+  --accent: #2f80ed;
+  --accent2: #007aff;
+  --accentbg: rgba(0, 122, 255, 0.15);
+  
+  /* טיפוגרפיה: טקסט לבן בוהק וטקסטים משניים עמומים (Vibrant Secondary) */
+  --text: #ffffff;
+  --muted: rgba(255, 255, 255, 0.6);
+  --muted2: rgba(255, 255, 255, 0.35);
+  
+  /* צללים רכים, רחבים ועמוקים מאוד שנותנים תחושת ריחוף (Spatial Depth) */
+  --shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+  --shadow2: 0 16px 40px rgba(0, 0, 0, 0.4);
+  
+  /* סרגל צד התואם את שפת הממשק */
+  --sidebar-bg: rgba(20, 20, 22, 0.75);
+  --sidebar-muted: rgba(255, 255, 255, 0.4);
+  --sidebar-active: #ffffff;
+  --sidebar-active-bg: rgba(255, 255, 255, 0.1);
+  --sidebar-border: rgba(255, 255, 255, 0.05);
 }
 
 /* ── LIGHT: Default ────────────────────────────────── */
