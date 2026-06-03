@@ -147,40 +147,27 @@ const GS = () => /*#__PURE__*/React.createElement("style", null, `
   --sidebar-border:rgba(100,160,255,0.08);
 }
 
-/* ── DARK: Spatial Vision Glass (Inspired by WWDC23) ──────────────── */
-[data-dark="true"][data-theme="dark-warm"] {
-  /* רקע הבסיס של האתר - כהה, ניטרלי ומעט חם */
-  --bg: #1c1c1e; 
-  
-  /* משטחים וכרטיסים במראה זכוכית מעושנת עם דרגות שקיפות שונות */
-  --surf: rgba(30, 30, 32, 0.65);
-  --card: rgba(45, 45, 48, 0.5);
-  --card2: rgba(28, 28, 30, 0.8);
-  
-  /* גבולות דקים והברקות קצה המדמים החזר אור של זכוכית תלת-ממדית */
-  --border: rgba(255, 255, 255, 0.1);
-  --border2: rgba(255, 255, 255, 0.18);
-  
-  /* צבעי הדגשה (אפקט הלחיצה וההפעלה הכחול-סגול הנקי של אפל) */
-  --accent: #2f80ed;
-  --accent2: #007aff;
-  --accentbg: rgba(0, 122, 255, 0.15);
-  
-  /* טיפוגרפיה: טקסט לבן בוהק וטקסטים משניים עמומים (Vibrant Secondary) */
-  --text: #ffffff;
-  --muted: rgba(255, 255, 255, 0.6);
-  --muted2: rgba(255, 255, 255, 0.35);
-  
-  /* צללים רכים, רחבים ועמוקים מאוד שנותנים תחושת ריחוף (Spatial Depth) */
-  --shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
-  --shadow2: 0 16px 40px rgba(0, 0, 0, 0.4);
-  
-  /* סרגל צד התואם את שפת הממשק */
-  --sidebar-bg: rgba(20, 20, 22, 0.75);
-  --sidebar-muted: rgba(255, 255, 255, 0.4);
-  --sidebar-active: #ffffff;
-  --sidebar-active-bg: rgba(255, 255, 255, 0.1);
-  --sidebar-border: rgba(255, 255, 255, 0.05);
+/* ── DARK: Warm Mocha ──────────────────────────────── */
+[data-dark="true"][data-theme="dark-warm"]{
+  --bg:#1a1510;
+  --surf:#221c15;
+  --card:#2a2018;
+  --card2:#1e1912;
+  --border:#352a1e;
+  --border2:#4a3a28;
+  --accent:#d4853a;
+  --accent2:#b8692c;
+  --accentbg:#2a1e0e;
+  --text:#f0e8d8;
+  --muted:#b09878;
+  --muted2:#7a6848;
+  --shadow:0 2px 10px rgba(20,10,0,0.4);
+  --shadow2:0 6px 24px rgba(20,10,0,0.5);
+  --sidebar-bg:#110e09;
+  --sidebar-muted:#6a5040;
+  --sidebar-active:#e8a060;
+  --sidebar-active-bg:rgba(212,133,58,0.2);
+  --sidebar-border:rgba(255,200,120,0.08);
 }
 
 /* ── LIGHT: Default ────────────────────────────────── */
@@ -299,6 +286,11 @@ button{font-family:'Heebo',sans-serif;cursor:pointer;border:none;border-radius:v
 
 /* Cards */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow)}
+[data-dark="true"] .card{background:rgba(44,44,46,0.9);border-color:rgba(255,255,255,0.07);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+[data-dark="true"] .card2{background:rgba(58,58,60,0.75);border-color:rgba(255,255,255,0.05);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+[data-dark="true"] .modal-box{background:rgba(28,28,30,0.97);border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);border-radius:20px}
+[data-dark="false"][data-theme^="ios"] .card{border-radius:16px}
+[data-dark="false"][data-theme^="ios"] input,[data-dark="false"][data-theme^="ios"] select{border-radius:10px}
 .card:hover{box-shadow:var(--shadow2)}
 .card2{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:12px}
 
@@ -327,18 +319,17 @@ h2,.section-title{color:var(--text)}
 /* ══ SIDEBAR (dark panel) ══════════════════════════ */
 .nav-item{
   display:flex;align-items:center;gap:9px;
-  padding:8px 12px;border-radius:8px;cursor:pointer;
+  padding:9px 12px;border-radius:12px;cursor:pointer;
   font-size:13px;font-weight:500;
   color:var(--sidebar-muted);
-  transition:all .12s;user-select:none;
-  margin-bottom:1px;
+  transition:all .18s;user-select:none;
+  margin-bottom:2px;position:relative;
 }
-.nav-item:hover{background:var(--sidebar-hover);color:var(--sidebar-text)}
-.nav-item.active{
-  background:var(--sidebar-active-bg);
-  color:var(--sidebar-active);
-  font-weight:700;
-}
+.nav-item:hover{background:rgba(255,255,255,0.07);color:#fff}
+.nav-item.active{background:rgba(255,255,255,0.14);color:#fff}
+.nav-item.active::after{content:"";position:absolute;right:0;top:22%;bottom:22%;width:3px;background:var(--accent);border-radius:2px 0 0 2px}
+.nav-item .nav-icon{font-size:16px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:9px;flex-shrink:0;background:rgba(255,255,255,0.06)}
+.nav-item.active .nav-icon{background:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,0.3)}
 .nav-icon-wrap{width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:13px}
 
 /* Tabs */
@@ -2556,6 +2547,7 @@ function Dashboard({ projects, user, logoUrl, onSelect, onGoto, globalSearch,
   const [projSearch, setProjSearch] = useState("");
   const [projStatus, setProjStatus] = useState("all");
   const [projSort, setProjSort] = useState("updated");
+  const [showProjPanel, setShowProjPanel] = useState(true);
 
   const filteredProjs = useMemo(() => {
     let list = myP;
@@ -2640,6 +2632,57 @@ function Dashboard({ projects, user, logoUrl, onSelect, onGoto, globalSearch,
       className:"dash-panels",
       style:{ display:"flex", gap:10, flex:1, minHeight:0, overflow:"hidden" }
     },
+
+      // ── LEFT: active projects collapsible ──────────────
+      React.createElement("div", {
+        style:{ width: showProjPanel ? 218 : 30, flexShrink:0, display:"flex",
+          flexDirection:"column", transition:"width .2s ease", position:"relative",
+          background:"var(--surf)", border:"1px solid var(--border)",
+          borderRadius:14, overflow:"hidden", boxShadow:"var(--shadow)" }
+      },
+        React.createElement("button", {
+          onClick: () => setShowProjPanel(x => !x),
+          title: showProjPanel ? "סגור" : "פרויקטים",
+          style:{ position:"absolute", top:7, left:4, zIndex:10,
+            background:"var(--card2)", border:"1px solid var(--border)",
+            borderRadius:8, width:20, height:20, cursor:"pointer",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontSize:10, color:"var(--muted)", padding:0 }
+        }, showProjPanel ? "◀" : "▶"),
+        showProjPanel && React.createElement("div", {
+          style:{display:"flex",flexDirection:"column",flex:1,overflow:"hidden",paddingTop:8}
+        },
+          React.createElement("div", { style:{padding:"0 10px 6px",paddingRight:30} },
+            React.createElement("div", { style:{fontWeight:800,fontSize:11,color:"var(--muted2)",marginBottom:6} }, "פרויקטים פעילים"),
+            React.createElement("input", {
+              value: projSearch, onChange: e => setProjSearch(e.target.value),
+              placeholder:"חיפוש...",
+              style:{fontSize:11,padding:"4px 8px",borderRadius:8,width:"100%",boxSizing:"border-box"}
+            })
+          ),
+          React.createElement("div", { style:{flex:1,overflowY:"auto",padding:"4px 6px 8px"} },
+            filteredProjs.length === 0
+              ? React.createElement("div", { style:{color:"var(--muted)",fontSize:11,textAlign:"center",padding:16} }, "אין תוצאות")
+              : filteredProjs.map(p => {
+                  const sc = STATUS_CFG[p.status] || {};
+                  return React.createElement("div", {
+                    key: p.id, onClick: () => onSelect(p.id),
+                    style:{ padding:"7px 10px", borderRadius:10, cursor:"pointer",
+                      marginBottom:3, borderRight:"3px solid "+(sc.color||"var(--border)"),
+                      background:"var(--card2)", transition:"background .12s" },
+                    onMouseEnter: e => e.currentTarget.style.background="var(--accentbg)",
+                    onMouseLeave: e => e.currentTarget.style.background="var(--card2)"
+                  },
+                    React.createElement("div", {
+                      style:{ fontWeight:800, fontSize:12, color:"var(--text)",
+                        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }
+                    }, p.name),
+                    React.createElement("div", { style:{ fontSize:10, color:sc.color||"var(--muted)", marginTop:1 } }, sc.label||p.status)
+                  );
+                })
+          )
+        )
+      ),
 
       // ── RIGHT: WeeklyCalendar fills rest ────────────────
       /*#__PURE__*/React.createElement("div", {
@@ -9378,6 +9421,8 @@ function App({
     style: {
       background: "var(--sidebar-bg)",
       borderLeft: mobile ? "none" : "1px solid rgba(255,255,255,0.06)",
+      backdropFilter: "blur(20px)",
+      WebkitBackdropFilter: "blur(20px)",
       padding: "16px 10px",
       display: "flex",
       flexDirection: "column",
@@ -9465,7 +9510,7 @@ function App({
 
 view === n.id && !selProjId ? " active" : ""}`,
     onClick: () => goto(n.id)
-  }, /*#__PURE__*/React.createElement("span", null, n.icon), n.label, n.id === "finance" && /*#__PURE__*/React.createElement("span", { style: { marginRight: "auto", fontSize: 8, background: "rgba(0,200,117,0.15)", color: "#4ade80", padding: "2px 6px", borderRadius: 8, border: "1px solid rgba(74,222,128,0.25)", fontWeight: 800 } }, "ADMIN"))), (isAdmin || isProd) && projects.filter(p => p.status === "active").length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", { className:"nav-icon" }, n.icon), n.label, n.id === "finance" && /*#__PURE__*/React.createElement("span", { style: { marginRight: "auto", fontSize: 8, background: "rgba(0,200,117,0.15)", color: "#4ade80", padding: "2px 6px", borderRadius: 8, border: "1px solid rgba(74,222,128,0.25)", fontWeight: 800 } }, "ADMIN"))), (isAdmin || isProd) && projects.filter(p => p.status === "active").length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: "var(--sidebar-muted)",
@@ -9498,12 +9543,7 @@ view === n.id && !selProjId ? " active" : ""}`,
       textOverflow: "ellipsis",
       whiteSpace: "nowrap"
     }
-  }, p.name)))), /*#__PURE__*/React.createElement("a", {
-    href: "#",
-    className: "nav-item",
-    onClick: e => { e.preventDefault(); window.open("https://app.fppstudio.co.il/outputs", "_blank"); },
-    style: { textDecoration: "none", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, cursor: "pointer" }
-  }, /*#__PURE__*/React.createElement("span", null, "🎥"), "דף תוצרים ↗"),
+  }, p.name)))),
   /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: "auto",
