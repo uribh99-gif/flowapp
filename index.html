@@ -45,6 +45,14 @@ Splash.set(10,'טוען...');
   const theme = localStorage.getItem('pf_theme') || 'default';
   const r = document.getElementById('root');
   if(r){ r.setAttribute('data-dark', dark ? 'true' : 'false'); r.setAttribute('data-theme', theme); }
+  // Apply custom theme vars if saved
+  try {
+    const ct = JSON.parse(localStorage.getItem('pf_custom_theme') || 'null');
+    if (ct && theme === 'custom') {
+      const root = document.documentElement;
+      Object.entries(ct).forEach(([k,v]) => root.style.setProperty(k, v));
+    }
+  } catch(e) {}
 })();
 </script>
 <script>
@@ -207,6 +215,9 @@ const GS = () => /*#__PURE__*/React.createElement("style", null, `
   --sidebar-active-bg:rgba(26,122,69,0.2);
   --sidebar-active:#6bc68a;
 }
+
+/* ── CUSTOM THEME ──────────────────────────────────── */
+/* vars are written inline on :root by JS — no CSS needed here */
 
 /* ── LIGHT: Clean Gray ─────────────────────────────── */
 [data-dark="false"][data-theme="light-gray"]{
@@ -2140,6 +2151,127 @@ function MultiProjSelect({ projects, values, onChange }) {
             React.createElement("span", { style: { fontWeight: 600 } }, p.name),
             React.createElement("span", { style: { fontSize: 10, color: "var(--muted)", marginRight: 8 } }, " · ", p.client)
           ))
+    )
+  );
+}
+
+// ══════════════════════════════════════════
+// CUSTOM THEME EDITOR
+// ══════════════════════════════════════════
+const CUSTOM_THEME_DEFAULTS_LIGHT = {
+  "--bg": "#f0f2f7", "--surf": "#ffffff", "--card": "#ffffff", "--card2": "#f5f7fb",
+  "--border": "#e0e4ed", "--border2": "#c8cdd9",
+  "--accent": "#0073ea", "--text": "#1a2236", "--muted": "#6b7280", "--muted2": "#9ba3af",
+  "--sidebar-bg": "#1a2236", "--sidebar-text": "#c8d0e0"
+};
+const CUSTOM_THEME_DEFAULTS_DARK = {
+  "--bg": "#16181f", "--surf": "#1e2130", "--card": "#242840", "--card2": "#1a1d28",
+  "--border": "#2e3348", "--border2": "#3d4460",
+  "--accent": "#0073ea", "--text": "#ffffff", "--muted": "#c0c8dc", "--muted2": "#8a93a8",
+  "--sidebar-bg": "#0f1118", "--sidebar-text": "#c8d0e0"
+};
+const CUSTOM_VAR_LABELS = [
+  { key: "--bg",          label: "רקע ראשי",       group: "layout" },
+  { key: "--surf",        label: "רקע משטח",        group: "layout" },
+  { key: "--card",        label: "כרטיס",           group: "layout" },
+  { key: "--card2",       label: "כרטיס משני",       group: "layout" },
+  { key: "--border",      label: "מסגרת",           group: "layout" },
+  { key: "--border2",     label: "מסגרת כהה",       group: "layout" },
+  { key: "--accent",      label: "צבע ראשי (Accent)", group: "brand" },
+  { key: "--text",        label: "טקסט ראשי",       group: "text" },
+  { key: "--muted",       label: "טקסט משני",       group: "text" },
+  { key: "--muted2",      label: "טקסט חיוור",       group: "text" },
+  { key: "--sidebar-bg",  label: "Sidebar — רקע",   group: "sidebar" },
+  { key: "--sidebar-text",label: "Sidebar — טקסט",  group: "sidebar" },
+];
+
+function CustomThemeEditor({ isDark, onActivate }) {
+  const storageKey = 'pf_custom_theme';
+  const defaults = isDark ? CUSTOM_THEME_DEFAULTS_DARK : CUSTOM_THEME_DEFAULTS_LIGHT;
+  const [vars, setVars] = useState(() => {
+    try { return { ...defaults, ...JSON.parse(localStorage.getItem(storageKey) || '{}') }; }
+    catch { return { ...defaults }; }
+  });
+  const [previewActive, setPreviewActive] = useState(false);
+
+  const applyVars = (v) => {
+    const root = document.documentElement;
+    CUSTOM_VAR_LABELS.forEach(({ key }) => root.style.setProperty(key, v[key] || defaults[key]));
+  };
+  const clearVars = () => {
+    const root = document.documentElement;
+    CUSTOM_VAR_LABELS.forEach(({ key }) => root.style.removeProperty(key));
+  };
+
+  const handleChange = (key, val) => {
+    const next = { ...vars, [key]: val };
+    setVars(next);
+    if (previewActive) applyVars(next);
+  };
+
+  const handlePreview = () => {
+    if (!previewActive) { applyVars(vars); setPreviewActive(true); }
+    else { clearVars(); setPreviewActive(false); }
+  };
+
+  const handleSave = () => {
+    localStorage.setItem(storageKey, JSON.stringify(vars));
+    applyVars(vars);
+    onActivate("custom");
+    setPreviewActive(true);
+  };
+
+  const handleReset = () => {
+    setVars({ ...defaults });
+    if (previewActive) applyVars(defaults);
+  };
+
+  const groups = [
+    { id: "layout", label: "רקע ופריסה" },
+    { id: "brand",  label: "צבע ראשי" },
+    { id: "text",   label: "טקסטים" },
+    { id: "sidebar",label: "Sidebar" },
+  ];
+
+  return React.createElement("div", { style: { marginTop: 20 } },
+    React.createElement("div", { style: { fontWeight: 700, fontSize: 14, marginBottom: 4 } }, "🎨 עורך ערכת צבע מותאמת אישית"),
+    React.createElement("div", { style: { fontSize: 12, color: "var(--muted)", marginBottom: 16 } },
+      "ערוך צבעים ולחץ תצוגה מקדימה לבדיקה, או שמור כדי להפעיל"),
+
+    groups.map(g => React.createElement("div", { key: g.id, style: { marginBottom: 16 } },
+      React.createElement("div", { style: { fontSize: 11, fontWeight: 800, color: "var(--muted2)",
+        textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 } }, g.label),
+      React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px,1fr))", gap: 8 } },
+        CUSTOM_VAR_LABELS.filter(v => v.group === g.id).map(({ key, label }) =>
+          React.createElement("div", { key,
+            style: { background: "var(--card2)", borderRadius: 8, padding: "8px 10px",
+              border: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 8 }
+          },
+            React.createElement("input", {
+              type: "color", value: vars[key] || defaults[key],
+              onChange: e => handleChange(key, e.target.value),
+              style: { width: 32, height: 32, border: "none", borderRadius: 6,
+                cursor: "pointer", padding: 2, background: "none", flexShrink: 0 }
+            }),
+            React.createElement("div", null,
+              React.createElement("div", { style: { fontSize: 11, fontWeight: 600, lineHeight: 1.2 } }, label),
+              React.createElement("div", { style: { fontSize: 10, color: "var(--muted2)", fontFamily: "monospace" } },
+                vars[key] || defaults[key])
+            )
+          )
+        )
+      )
+    )),
+
+    React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 } },
+      React.createElement("button", {
+        className: previewActive ? "btn-gold btn-sm" : "btn-ghost btn-sm",
+        onClick: handlePreview
+      }, previewActive ? "🔴 בטל תצוגה מקדימה" : "👁 תצוגה מקדימה"),
+      React.createElement("button", { className: "btn-green btn-sm", onClick: handleSave },
+        "💾 שמור והפעל"),
+      React.createElement("button", { className: "btn-ghost btn-sm", onClick: handleReset },
+        "↺ אפס לברירת מחדל")
     )
   );
 }
@@ -8077,12 +8209,14 @@ function Settings({
     { id: "light-gray",   label: "אפור נקי",           bg: "#e8eaed", surf: "#f2f3f5", accent: "#2563eb", sidebar: "#232529" },
     { id: "light-purple", label: "סגול עדין",           bg: "#f0eef8", surf: "#faf9ff", accent: "#7c4dff", sidebar: "#2d1b69" },
     { id: "light-forest", label: "ירוק יער",             bg: "#edf4f0", surf: "#f8fcf9", accent: "#1a7a45", sidebar: "#0d3d20" },
+    { id: "custom",       label: "מותאם אישית ✏️",     bg: null, surf: null, accent: null, sidebar: null, isCustom: true },
   ];
   const DARK_THEMES = [
     { id: "default",   label: "כהה רגיל",     bg: "#16181f", surf: "#1e2130", accent: "#0073ea", sidebar: "#1a2236" },
     { id: "dark-deep", label: "שחור עמוק",     bg: "#0a0b0f", surf: "#111318", accent: "#0073ea", sidebar: "#070809" },
     { id: "dark-navy", label: "כחול נייבי",    bg: "#0d1628", surf: "#112040", accent: "#0073ea", sidebar: "#080f20" },
     { id: "dark-warm", label: "חום חמים",      bg: "#1a1510", surf: "#221c15", accent: "#d4a85a", sidebar: "#110e09" },
+    { id: "custom",    label: "מותאם אישית ✏️", bg: null, surf: null, accent: null, sidebar: null, isCustom: true },
   ];
   const currentThemes = isDark ? DARK_THEMES : LIGHT_THEMES;
   const [etSt, setEtSt] = useState(shiftTypes || DEF_SHIFT_TYPES);
@@ -8184,14 +8318,18 @@ function Settings({
             flexShrink: 0
           }
         },
-          /*#__PURE__*/React.createElement("div", { style: { display: "flex", height: 56 } },
-            /*#__PURE__*/React.createElement("div", { style: { width: 36, background: th.sidebar, flexShrink: 0 } }),
-            /*#__PURE__*/React.createElement("div", { style: { flex: 1, background: th.bg, display: "flex", flexDirection: "column", gap: 4, padding: "8px 7px" } },
-              /*#__PURE__*/React.createElement("div", { style: { height: 7, borderRadius: 3, background: th.surf, border: "1px solid rgba(0,0,0,0.07)" } }),
-              /*#__PURE__*/React.createElement("div", { style: { height: 7, borderRadius: 3, background: th.accent, width: "60%" } }),
-              /*#__PURE__*/React.createElement("div", { style: { height: 5, borderRadius: 3, background: th.surf, border: "1px solid rgba(0,0,0,0.07)", width: "80%" } })
-            )
-          ),
+          th.isCustom
+            ? /*#__PURE__*/React.createElement("div", { style: { height: 56, display: "flex", alignItems: "center",
+                justifyContent: "center", fontSize: 28,
+                background: "linear-gradient(135deg,#f0f2f7 0%,#e0e4ed 25%,#acb4c8 50%,#1a2236 75%,#0073ea 100%)" } }, "🎨")
+            : /*#__PURE__*/React.createElement("div", { style: { display: "flex", height: 56 } },
+                /*#__PURE__*/React.createElement("div", { style: { width: 36, background: th.sidebar, flexShrink: 0 } }),
+                /*#__PURE__*/React.createElement("div", { style: { flex: 1, background: th.bg, display: "flex", flexDirection: "column", gap: 4, padding: "8px 7px" } },
+                  /*#__PURE__*/React.createElement("div", { style: { height: 7, borderRadius: 3, background: th.surf, border: "1px solid rgba(0,0,0,0.07)" } }),
+                  /*#__PURE__*/React.createElement("div", { style: { height: 7, borderRadius: 3, background: th.accent, width: "60%" } }),
+                  /*#__PURE__*/React.createElement("div", { style: { height: 5, borderRadius: 3, background: th.surf, border: "1px solid rgba(0,0,0,0.07)", width: "80%" } })
+                )
+              ),
           /*#__PURE__*/React.createElement("div", { style: {
             padding: "5px 8px",
             fontSize: 11, fontWeight: isActive ? 700 : 500,
@@ -8206,6 +8344,9 @@ function Settings({
         );
       })
     )
+  ),
+  colorTheme === "custom" && /*#__PURE__*/React.createElement("div", { className: "card", style: { marginBottom: 14 } },
+    /*#__PURE__*/React.createElement(CustomThemeEditor, { isDark, onActivate: onChangeTheme })
   ),
   /*#__PURE__*/React.createElement("div", {
     className: "card",
@@ -8608,6 +8749,14 @@ function App({
     root.setAttribute('data-theme', colorTheme);
     localStorage.setItem('pf_dark', isDark ? '1' : '0');
     localStorage.setItem('pf_theme', colorTheme);
+    if (colorTheme === 'custom') {
+      try {
+        const ct = JSON.parse(localStorage.getItem('pf_custom_theme') || 'null');
+        if (ct) Object.entries(ct).forEach(([k,v]) => document.documentElement.style.setProperty(k, v));
+      } catch(e) {}
+    } else {
+      CUSTOM_VAR_LABELS.forEach(({key}) => document.documentElement.style.removeProperty(key));
+    }
   }, [isDark, colorTheme]);
   const {
     users,
