@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow BETA01</title>
+<title>PostFlow BETA02</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -1167,17 +1167,13 @@ function sbSubscribe(table, onEvent) {
     ws.onmessage = e => {
       try {
         const m = JSON.parse(e.data);
-        // Log everything except heartbeat for debugging
-        if (m.event !== "heartbeat" && m.topic !== "phoenix") {
-          console.log("[Realtime raw]", table, m.event, JSON.stringify(m.payload).slice(0, 500));
-        }
+
         const pl = m.payload;
         // Supabase Realtime v2: postgres_changes arrive as pl.data with nested record
         if (pl && pl.data) {
           const d = pl.data;
           if (d.type && (d.record || d.old_record)) {
             const rec = d.type === "DELETE" ? d.old_record : d.record;
-            console.log("[Realtime event]", table, d.type, rec && rec.id);
             onEvent(d.type, rec, d.old_record);
             return;
           }
@@ -1185,7 +1181,6 @@ function sbSubscribe(table, onEvent) {
         // v1 / broadcast fallback
         if (pl && pl.type && (pl.record || pl.old_record)) {
           const rec = pl.type === "DELETE" ? pl.old_record : pl.record;
-          console.log("[Realtime event v1]", table, pl.type, rec && rec.id);
           onEvent(pl.type, rec, pl.old_record);
         }
       } catch(err) {
@@ -3249,13 +3244,15 @@ function WeeklyCalendar({
       const isDragOver = dragOverDate === key;
       // Sort events by default worker order
       const sorted = [...evs].sort((a, b) => {
-        const ai = orderedUsers.findIndex(u => u.id === a.person);
-        const bi = orderedUsers.findIndex(u => u.id === b.person);
+        const aName = (users.find(u => u.id === a.person) || {}).name || a.freelanceName || "";
+        const bName = (users.find(u => u.id === b.person) || {}).name || b.freelanceName || "";
+        const ai = workerOrder.indexOf(aName);
+        const bi = workerOrder.indexOf(bName);
         if (ai === -1 && bi === -1) return 0;
         if (ai === -1) return 1; if (bi === -1) return -1;
         return ai - bi;
       });
-      const wids = [...new Set(sorted.map(ev => ev.person || "_"))];
+      const wids = [...new Set(sorted.map(ev => ev.person || (ev.freelanceName ? "__fl__" + ev.id : "_")))];
 
       return React.createElement("div", {
         key,
@@ -3292,7 +3289,7 @@ function WeeklyCalendar({
         ...wids.map(wid => {
           const wu = users.find(u => u.id === wid);
           const wc = aCol(users.indexOf(wu) || 0);
-          const wevs = sorted.filter(ev => (ev.person || "_") === wid);
+          const wevs = sorted.filter(ev => (ev.person || (ev.freelanceName ? "__fl__" + ev.id : "_")) === wid);
           return React.createElement("div", { key: wid, style: { marginBottom: 3 },
             onClick: e => e.stopPropagation() },
             canSeeAll && wu ? React.createElement("div", {
@@ -8915,10 +8912,9 @@ function App({
     }
   }, []);
 
-  const upd = patch => setData(d => ({
-    ...d,
-    ...patch
-  }));
+  const upd = patch => setData(d =>
+    typeof patch === "function" ? patch(d) : ({ ...d, ...patch })
+  );
   const upsertScreeningEvent = (p, dateField, type, title) => {
     const date = p[dateField];
     const evId = `${type}-${p.id}`;
@@ -9006,10 +9002,22 @@ function App({
     if (currentUser && projects) syncDerivedClients(projects, clients);
   }, [currentUser, projects.length]);
 
-  // Persist to localStorage (fallback)
+  // Persist settings to localStorage (fallback — NOT shifts/projects which come from Supabase)
   useEffect(() => {
-    saveLocal(data);
-  }, [data]);
+    try {
+      const settingsOnly = {
+        shiftTypes: data.shiftTypes,
+        quoteTemplates: data.quoteTemplates,
+        logoUrl: data.logoUrl,
+        calendarId: data.calendarId,
+        calendarApiKey: data.calendarApiKey,
+        studioLocation: data.studioLocation,
+        nextProjNum: data.nextProjNum,
+        passwords: data.passwords
+      };
+      localStorage.setItem(LS_KEY, JSON.stringify(settingsOnly));
+    } catch(e) {}
+  }, [data.shiftTypes, data.quoteTemplates, data.logoUrl, data.nextProjNum]);
 
   // Update logo in splash
   useEffect(() => {
@@ -9338,8 +9346,7 @@ function App({
     };
     // Write to Supabase shifts table
     const row = shiftToRow(s, users, projects);
-    console.log("[onSaveShift] upserting", row.id, row.date, row.person_name);
-    sbUpsert("shifts", row).then(() => console.log("[onSaveShift] upsert OK", row.id)).catch(e => console.error("[onSaveShift] FAIL", e.message, JSON.stringify(e)));
+    sbUpsert("shifts", row).catch(e => console.error("[shifts upsert]", e.message));
 
     // 🗓 Sync screening shifts to internal events + Google Calendar
     const SCREENING_TYPES = { screening_off: { label: "🖥 הקרנת אופליין", type: "screening" }, screening_on: { label: "📡 הקרנת אונליין", type: "screening" } };
