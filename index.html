@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow v40</title>
+<title>PostFlow v50</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -1167,9 +1167,9 @@ function sbSubscribe(table, onEvent) {
     ws.onmessage = e => {
       try {
         const m = JSON.parse(e.data);
-        // Log everything except heartbeat/phx_reply for debugging
-        if (m.event !== "heartbeat" && m.event !== "phx_reply" && m.topic !== "phoenix") {
-          console.log("[Realtime raw]", table, JSON.stringify(m).slice(0, 400));
+        // Log everything except heartbeat for debugging
+        if (m.event !== "heartbeat" && m.topic !== "phoenix") {
+          console.log("[Realtime raw]", table, m.event, JSON.stringify(m.payload).slice(0, 500));
         }
         const pl = m.payload;
         // Supabase Realtime v2: postgres_changes arrive as pl.data with nested record
@@ -9344,7 +9344,9 @@ function App({
       id: finalId
     };
     // Write to Supabase shifts table
-    sbUpsert("shifts", shiftToRow(s, users, projects)).catch(e => console.error("[shifts]", e.message));
+    const row = shiftToRow(s, users, projects);
+    console.log("[onSaveShift] upserting", row.id, row.date, row.person_name);
+    sbUpsert("shifts", row).then(() => console.log("[onSaveShift] upsert OK", row.id)).catch(e => console.error("[onSaveShift] FAIL", e.message, JSON.stringify(e)));
 
     // 🗓 Sync screening shifts to internal events + Google Calendar
     const SCREENING_TYPES = { screening_off: { label: "🖥 הקרנת אופליין", type: "screening" }, screening_on: { label: "📡 הקרנת אונליין", type: "screening" } };
