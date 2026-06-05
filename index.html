@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow v51</title>
+<title>PostFlow BETA01</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -3195,23 +3195,16 @@ function WeeklyCalendar({
   // Build event map: date → [{...shift, projName, client}] — deduped by shift id
   const evMap = useMemo(() => {
     const m = {};
-    const seen = new Set();
-    const addShift = (s, extra) => {
-      if (seen.has(s.id)) return;
-      seen.add(s.id);
-      const show = canSeeAll || s.person === user.id;
+    // Single source of truth: globalShifts only
+    (globalShifts || []).forEach(s => {
+      const show = canSeeAll || s.person === user.id || (!s.person && s.freelanceName);
       if (!show) return;
+      // Enrich with project name if available
+      const proj = s.projId ? projects.find(p => p.id === s.projId) : null;
+      const projName = proj ? proj.name : (s.projName || "");
       if (!m[s.date]) m[s.date] = [];
-      m[s.date].push({ ...s, ...extra });
-    };
-    // משמרות מפרויקטים
-    projects.forEach(proj => (proj.shifts || []).forEach(s =>
-      addShift(s, { projName: proj.name, client: proj.client, projId: proj.id })
-    ));
-    // משמרות ללא פרויקט
-    (globalShifts || []).forEach(s =>
-      addShift(s, { projName: "", client: "", projId: "" })
-    );
+      m[s.date].push({ ...s, projName, client: proj ? proj.client : (s.client || "") });
+    });
     return m;
   }, [projects, globalShifts, canSeeAll, user.id]);
   const openNew = date => {
@@ -9383,24 +9376,12 @@ function App({
       }
     }
 
-    // Update local state
-    if (!s.projId) {
-      const existing = (data.globalShifts || []).find(x => x.id === shift.id);
-      const newGlobal = existing ? (data.globalShifts || []).map(x => x.id === shift.id ? s : x) : [...(data.globalShifts || []), s];
-      upd({
-        globalShifts: newGlobal
-      });
-      return;
-    }
-    const proj = projects.find(p => p.id === s.projId);
-    if (!proj) return;
-    const existing = (proj.shifts || []).find(x => x.id === shift.id);
-    const newShifts = existing ? (proj.shifts || []).map(x => x.id === shift.id ? s : x) : [...(proj.shifts || []), s];
-    upd({
-      projects: data.projects.map(p => p.id === proj.id ? {
-        ...proj,
-        shifts: newShifts
-      } : p)
+    // Optimistic local update (immediate UI feedback on this browser)
+    // Realtime will sync all other browsers
+    upd(d => {
+      const gs = d.globalShifts || [];
+      const filtered = gs.filter(x => x.id !== s.id);
+      return { ...d, globalShifts: [...filtered, s] };
     });
   };
   const onDeleteShift = shift => {
@@ -9414,20 +9395,11 @@ function App({
     upd(d => ({ ...d, events: (d.events||[]).filter(x => x.id !== evId && x.id !== evId2) }));
     sbSoftDelete("events", evId, "").catch(() => {});
     sbSoftDelete("shifts", shift.id, (currentUser === null || currentUser === void 0 ? void 0 : currentUser.name) || "").catch(() => {});
-    if (!shift.projId) {
-      upd({
-        globalShifts: (data.globalShifts || []).filter(s => s.id !== shift.id)
-      });
-      return;
-    }
-    const proj = projects.find(p => p.id === shift.projId);
-    if (!proj) return;
-    upd({
-      projects: data.projects.map(p => p.id === proj.id ? {
-        ...proj,
-        shifts: (proj.shifts || []).filter(s => s.id !== shift.id)
-      } : p)
-    });
+    // Optimistic local removal — Realtime will confirm on all browsers
+    upd(d => ({
+      ...d,
+      globalShifts: (d.globalShifts || []).filter(x => x.id !== shift.id)
+    }));
   };
   // ── Events (יומן) CRUD ──────────────────────────────────────
   const saveEvent = ev => {
@@ -11923,8 +11895,8 @@ function AppLoader() {
           }
         });
 
-        // Build globalShifts from shifts table (those without proj_id)
-        const globalShifts = (sbShifts || []).filter(s => !s.proj_id).map(rowToShift);
+        // Build globalShifts from ALL shifts (single unified store)
+        const globalShifts = (sbShifts || []).map(rowToShift);
 
         // Merge hours into projects
         const projMap = {};
@@ -11937,13 +11909,7 @@ function AppLoader() {
             projMap[h.projId].hours = [...(projMap[h.projId].hours || []), h];
           }
         });
-        // Merge proj-linked shifts into projects
-        (sbShifts || []).filter(s => s.proj_id).forEach(r => {
-          const s = rowToShift(r);
-          if (projMap[s.projId]) {
-            projMap[s.projId].shifts = [...(projMap[s.projId].shifts || []), s];
-          }
-        });
+        // All shifts live in globalShifts — no per-project split needed
         const local = loadLocal();
         Splash.set(90, "מוכן!");
         setInitData({
