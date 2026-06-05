@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow v50</title>
+<title>PostFlow v51</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -977,10 +977,10 @@ function shiftToRow(s, users, projects) {
     id: s.id,
     proj_id: firstProjId,
     proj_name: prn,
-    proj_ids: projIds.length > 1 ? JSON.stringify(projIds) : null,
+    ...(projIds.length > 1 ? { proj_ids: JSON.stringify(projIds) } : {}),
     person: s.person || "",
     person_name: pn,
-    freelance_name: s.freelanceName || "",
+    ...(s.freelanceName ? { freelance_name: s.freelanceName } : {}),
     date: s.date || "",
     time_start: s.timeStart || "09:00",
     hours: s.hours || 2,
