@@ -2914,8 +2914,13 @@ function WeeklyCalendar({
     if (!dragShift) return;
     const { shift, mode } = dragShift;
     if (shift.date === date && mode === "move") { setDragShift(null); return; }
-    if (mode === "move") onDeleteShift(shift);
-    onSaveShift({ ...shift, id: uid(), date });
+    if (mode === "copy") {
+      // copy — new id, original stays untouched
+      onSaveShift({ ...shift, id: uid(), date });
+    } else {
+      // move — same id, new date → upsert updates in place, no delete needed
+      onSaveShift({ ...shift, date });
+    }
     setDragShift(null);
   };
   const handleDragEnd = () => { setDragShift(null); setDragOverDate(null); };
@@ -9345,12 +9350,7 @@ view === n.id && !selProjId ? " active" : ""}`,
       textOverflow: "ellipsis",
       whiteSpace: "nowrap"
     }
-  }, p.name)))), /*#__PURE__*/React.createElement("a", {
-    href: "#",
-    className: "nav-item",
-    onClick: e => { e.preventDefault(); window.open("https://app.fppstudio.co.il/outputs", "_blank"); },
-    style: { textDecoration: "none", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, cursor: "pointer" }
-  }, /*#__PURE__*/React.createElement("span", null, "🎥"), "דף תוצרים ↗"),
+  }, p.name)))),
   /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: "auto",
