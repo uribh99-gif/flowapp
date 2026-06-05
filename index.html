@@ -1167,9 +1167,30 @@ function sbSubscribe(table, onEvent) {
     ws.onmessage = e => {
       try {
         const m = JSON.parse(e.data);
+        // Log everything except heartbeat/phx_reply for debugging
+        if (m.event !== "heartbeat" && m.event !== "phx_reply" && m.topic !== "phoenix") {
+          console.log("[Realtime raw]", table, JSON.stringify(m).slice(0, 400));
+        }
         const pl = m.payload;
-        if (pl && pl.data && pl.data.type) onEvent(pl.data.type, pl.data.record, pl.data.old_record);
-      } catch {}
+        // Supabase Realtime v2: postgres_changes arrive as pl.data with nested record
+        if (pl && pl.data) {
+          const d = pl.data;
+          if (d.type && (d.record || d.old_record)) {
+            const rec = d.type === "DELETE" ? d.old_record : d.record;
+            console.log("[Realtime event]", table, d.type, rec && rec.id);
+            onEvent(d.type, rec, d.old_record);
+            return;
+          }
+        }
+        // v1 / broadcast fallback
+        if (pl && pl.type && (pl.record || pl.old_record)) {
+          const rec = pl.type === "DELETE" ? pl.old_record : pl.record;
+          console.log("[Realtime event v1]", table, pl.type, rec && rec.id);
+          onEvent(pl.type, rec, pl.old_record);
+        }
+      } catch(err) {
+        console.warn("[sbSubscribe] parse error", err);
+      }
     };
 
     ws.onerror = () => {};
