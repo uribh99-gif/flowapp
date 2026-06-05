@@ -103,9 +103,9 @@ const GS = () => /*#__PURE__*/React.createElement("style", null, `
   --border:#2e3348;
   --border2:#3d4460;
   --accentbg:#1a2a4a;
-  --text:#e2e6f0;
-  --muted:#9ba3b8;
-  --muted2:#6b7288;
+  --text:#ffffff;
+  --muted:#c0c8dc;
+  --muted2:#8a93a8;
   --shadow:0 2px 10px rgba(0,0,0,0.4);
   --shadow2:0 6px 24px rgba(0,0,0,0.5);
 }
@@ -119,9 +119,9 @@ const GS = () => /*#__PURE__*/React.createElement("style", null, `
   --border:#1e2230;
   --border2:#2a2f40;
   --accentbg:#0d1a30;
-  --text:#edf0fa;
-  --muted:#a8b0c8;
-  --muted2:#6a7090;
+  --text:#ffffff;
+  --muted:#c8d0e4;
+  --muted2:#8a92a8;
   --shadow:0 2px 10px rgba(0,0,0,0.6);
   --shadow2:0 6px 28px rgba(0,0,0,0.7);
   --sidebar-bg:#070809;
@@ -137,9 +137,9 @@ const GS = () => /*#__PURE__*/React.createElement("style", null, `
   --border:#1e3058;
   --border2:#2a4278;
   --accentbg:#1a3060;
-  --text:#dde8ff;
-  --muted:#8faad8;
-  --muted2:#5a7298;
+  --text:#ffffff;
+  --muted:#b8ccf0;
+  --muted2:#7a9ac8;
   --shadow:0 2px 10px rgba(0,10,40,0.5);
   --shadow2:0 6px 24px rgba(0,10,40,0.6);
   --sidebar-bg:#080f20;
@@ -158,9 +158,9 @@ const GS = () => /*#__PURE__*/React.createElement("style", null, `
   --accent:#d4853a;
   --accent2:#b8692c;
   --accentbg:#2a1e0e;
-  --text:#f0e8d8;
-  --muted:#b09878;
-  --muted2:#7a6848;
+  --text:#ffffff;
+  --muted:#d4c0a0;
+  --muted2:#9a8060;
   --shadow:0 2px 10px rgba(20,10,0,0.4);
   --shadow2:0 6px 24px rgba(20,10,0,0.5);
   --sidebar-bg:#110e09;
@@ -192,55 +192,6 @@ const GS = () => /*#__PURE__*/React.createElement("style", null, `
   --sidebar-active:#b39dff;
 }
 
-/* ── LIGHT: iOS ───────────────────────────────────── */
-[data-dark="false"][data-theme="ios-light"]{
-  --bg:#f2f2f7;--surf:#ffffff;--card:#ffffff;--card2:#f2f2f7;
-  --border:#d1d1d6;--border2:#c7c7cc;--accent:#007aff;--accent2:#0062cc;
-  --accentbg:#e8f2ff;--text:#000000;--muted:#6e6e73;--muted2:#8e8e93;
-  --shadow:0 1px 3px rgba(0,0,0,0.12);--shadow2:0 4px 20px rgba(0,0,0,0.12);
-  --sidebar-bg:#1c1c1e;--sidebar-border:rgba(255,255,255,0.08);
-  --radius:12px;--radius-lg:16px;
-}
-[data-dark="false"][data-theme="ios-teal"]{
-  --bg:#f2f2f7;--surf:#ffffff;--card:#ffffff;--card2:#f2f2f7;
-  --border:#d1d1d6;--border2:#c7c7cc;--accent:#30b0c7;--accent2:#1a9eb5;
-  --accentbg:#e0f6fa;--text:#000000;--muted:#6e6e73;--muted2:#8e8e93;
-  --shadow:0 1px 3px rgba(0,0,0,0.12);
-  --sidebar-bg:#1c1c1e;--radius:12px;--radius-lg:16px;
-}
-[data-dark="false"][data-theme="ios-mint"]{
-  --bg:#f2f2f7;--surf:#ffffff;--card:#ffffff;--card2:#f2f2f7;
-  --border:#d1d1d6;--border2:#c7c7cc;--accent:#00c7be;--accent2:#00a89e;
-  --accentbg:#d6f6f4;--text:#000000;--muted:#6e6e73;--muted2:#8e8e93;
-  --shadow:0 1px 3px rgba(0,0,0,0.12);
-  --sidebar-bg:#1c1c1e;--radius:12px;--radius-lg:16px;
-}
-[data-dark="true"][data-theme="ios-dark"],
-[data-dark="true"][data-theme="ios-dark-blue"],
-[data-dark="true"][data-theme="ios-dark-teal"]{
-  --bg:#000000;--surf:#1c1c1e;--card:#2c2c2e;--card2:#3a3a3c;
-  --border:#38383a;--border2:#48484a;--accentbg:#001a3a;
-  --text:#ffffff;--muted:#8e8e93;--muted2:#6e6e73;
-  --shadow:0 1px 4px rgba(0,0,0,0.5);--shadow2:0 8px 28px rgba(0,0,0,0.7);
-  --sidebar-bg:#000000;--sidebar-border:rgba(255,255,255,0.08);
-  --radius:12px;--radius-lg:16px;
-}
-[data-dark="true"][data-theme="ios-dark"]{ --accent:#0a84ff;--accent2:#0062cc;--accentbg:#001a3a; }
-[data-dark="false"][data-theme="gray-vivid"]{
-  --bg:#e5e5ea;--surf:#f2f2f7;--card:#ffffff;--card2:#e5e5ea;
-  --border:#c7c7cc;--border2:#aeaeb2;--accent:#ff3b30;--accent2:#d70015;
-  --accentbg:#fff0ef;--text:#1c1c1e;--muted:#636366;--muted2:#8e8e93;
-  --shadow:0 2px 8px rgba(0,0,0,0.15);--sidebar-bg:#1c1c1e;--radius:12px;--radius-lg:16px;
-}
-[data-dark="true"][data-theme="gray-vivid-dark"]{
-  --bg:#1c1c1e;--surf:#2c2c2e;--card:#3a3a3c;--card2:#48484a;
-  --border:#48484a;--border2:#636366;--accent:#ff453a;--accent2:#ff3b30;
-  --accentbg:#3a1a1a;--text:#ffffff;--muted:#aeaeb2;--muted2:#8e8e93;
-  --shadow:0 2px 8px rgba(0,0,0,0.5);--sidebar-bg:#000000;--radius:12px;--radius-lg:16px;
-}
-[data-dark="true"][data-theme="ios-dark-blue"]{ --accent:#5e5ce6;--accent2:#4a48cc;--accentbg:#1a1850; }
-[data-dark="true"][data-theme="ios-dark-teal"]{ --accent:#5ac8fa;--accent2:#3ab4e8;--accentbg:#003a50; }
-
 /* ── LIGHT: Forest Green ───────────────────────────── */
 [data-dark="false"][data-theme="light-forest"]{
   --bg:#edf4f0;
@@ -255,6 +206,27 @@ const GS = () => /*#__PURE__*/React.createElement("style", null, `
   --sidebar-bg:#0d3d20;
   --sidebar-active-bg:rgba(26,122,69,0.2);
   --sidebar-active:#6bc68a;
+}
+
+/* ── LIGHT: Clean Gray ─────────────────────────────── */
+[data-dark="false"][data-theme="light-gray"]{
+  --bg:#e8eaed;
+  --surf:#f2f3f5;
+  --card:#ffffff;
+  --card2:#eeeff2;
+  --border:#d0d3da;
+  --border2:#b0b5c0;
+  --accent:#2563eb;
+  --accent2:#1d4ed8;
+  --accentbg:#dbeafe;
+  --text:#111318;
+  --muted:#444750;
+  --muted2:#6b7280;
+  --sidebar-bg:#232529;
+  --sidebar-text:#e8eaed;
+  --sidebar-muted:#9ba3af;
+  --sidebar-active-bg:rgba(37,99,235,0.18);
+  --sidebar-active:#93bbfc;
 }
 body{background:var(--bg);color:var(--text);font-family:'Heebo',sans-serif;direction:rtl;min-height:100vh;overflow-x:hidden;font-size:14px}
 ::-webkit-scrollbar{width:4px;height:4px}
@@ -298,13 +270,6 @@ button{font-family:'Heebo',sans-serif;cursor:pointer;border:none;border-radius:v
 
 /* Cards */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow)}
-[data-dark="true"] .card{background:rgba(44,44,46,0.9);border-color:rgba(255,255,255,0.07);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-[data-dark="true"] select{color:var(--text);background:var(--card)}
-[data-dark="true"] select option{color:var(--text);background:var(--card2)}
-[data-dark="true"] .card2{background:rgba(58,58,60,0.75);border-color:rgba(255,255,255,0.05);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-[data-dark="true"] .modal-box{background:rgba(28,28,30,0.97);border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);border-radius:20px}
-[data-dark="false"][data-theme^="ios"] .card{border-radius:16px}
-[data-dark="false"][data-theme^="ios"] input,[data-dark="false"][data-theme^="ios"] select{border-radius:10px}
 .card:hover{box-shadow:var(--shadow2)}
 .card2{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:12px}
 
@@ -333,17 +298,18 @@ h2,.section-title{color:var(--text)}
 /* ══ SIDEBAR (dark panel) ══════════════════════════ */
 .nav-item{
   display:flex;align-items:center;gap:9px;
-  padding:9px 12px;border-radius:12px;cursor:pointer;
+  padding:8px 12px;border-radius:8px;cursor:pointer;
   font-size:13px;font-weight:500;
   color:var(--sidebar-muted);
-  transition:all .18s;user-select:none;
-  margin-bottom:2px;position:relative;
+  transition:all .12s;user-select:none;
+  margin-bottom:1px;
 }
-.nav-item:hover{background:rgba(255,255,255,0.07);color:#fff}
-.nav-item.active{background:rgba(255,255,255,0.14);color:#fff}
-.nav-item.active::after{content:"";position:absolute;right:0;top:22%;bottom:22%;width:3px;background:var(--accent);border-radius:2px 0 0 2px}
-.nav-item .nav-icon{font-size:16px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:9px;flex-shrink:0;background:rgba(255,255,255,0.06)}
-.nav-item.active .nav-icon{background:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.nav-item:hover{background:var(--sidebar-hover);color:var(--sidebar-text)}
+.nav-item.active{
+  background:var(--sidebar-active-bg);
+  color:var(--sidebar-active);
+  font-weight:700;
+}
 .nav-icon-wrap{width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:13px}
 
 /* Tabs */
@@ -353,8 +319,6 @@ h2,.section-title{color:var(--text)}
 /* Project cards */
 .proj-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow)}
 .proj-card:hover{border-color:var(--accent);box-shadow:var(--shadow2);transform:translateY(-2px)}
-[data-dark="true"] .proj-card .proj-name{color:#fff!important;font-weight:900!important}
-[data-dark="true"] .cal-ev .proj-name{color:#fff!important;font-weight:900!important}
 
 /* Calendar days */
 .cal-day{background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:7px 6px;min-height:100px;transition:all .12s;cursor:pointer}
@@ -369,10 +333,10 @@ h2,.section-title{color:var(--text)}
 .srch-wrap{position:relative}
 .srch-wrap input{padding-right:32px}
 .srch-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
-.srch-drop{position:absolute;top:calc(100%+4px);right:0;left:0;background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);z-index:300;max-height:260px;overflow-y:auto;box-shadow:var(--shadow2)}
-.srch-item{padding:9px 13px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)}
+.srch-drop{position:absolute;top:calc(100%+4px);right:0;left:0;background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);z-index:300;max-height:260px;overflow-y:auto;box-shadow:var(--shadow2);color:var(--text)}
+.srch-item{padding:9px 13px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);color:var(--text)}
 .srch-item:last-child{border-bottom:none}
-.srch-item:hover{background:var(--accentbg)}
+.srch-item:hover{background:var(--accentbg);color:var(--text)}
 
 /* Table */
 th{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
@@ -431,52 +395,22 @@ th{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;le
   .desktop-sidebar{display:none!important}
   .mob-bar{display:flex!important}
 }
-.mob-bar{
-  display:none;position:fixed;bottom:0;left:0;right:0;
-  background:rgba(var(--surf-rgb,30,33,48),.92);
-  -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
-  border-top:1px solid var(--border);
-  padding:6px 0 calc(6px + env(safe-area-inset-bottom));
-  z-index:800;justify-content:space-around;
-  box-shadow:0 -1px 0 var(--border),0 -4px 20px rgba(0,0,0,0.18);
-}
-.mob-btn{
-  display:flex;flex-direction:column;align-items:center;gap:2px;
-  background:none;border:none;color:var(--muted);
-  font-size:10px;font-family:'Heebo',sans-serif;cursor:pointer;
-  padding:5px 12px;border-radius:10px;transition:all .15s;font-weight:600;
-  min-width:44px;min-height:44px;justify-content:center;
-}
-.mob-btn .mob-icon{font-size:20px;line-height:1}
+.mob-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1px solid var(--border);padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:800;justify-content:space-around;box-shadow:0 -2px 12px rgba(0,0,0,0.10)}
+.mob-btn{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--muted2);font-size:9px;font-family:'Heebo',sans-serif;cursor:pointer;padding:4px 10px;border-radius:var(--radius);transition:all .12s;font-weight:600}
 .mob-btn.active{color:var(--accent)}
-.mob-btn.active .mob-icon{transform:scale(1.1)}
 @media(max-width:768px){
-  main{padding:10px 10px 76px!important}
-  .card{padding:14px 12px!important;border-radius:14px!important}
-  .card2{padding:11px!important;border-radius:12px!important}
-  .section-title{font-size:18px!important}
+  main{padding:12px 10px 80px!important}
+  .card{padding:12px!important}
+  .card2{padding:10px!important}
+  .section-title{font-size:16px!important}
   .dash-panels{flex-direction:column!important;overflow-y:auto!important}
   .users-grid{grid-template-columns:repeat(2,1fr)!important}
-  button{min-height:40px;border-radius:10px!important}
-  input,select{font-size:16px!important;min-height:40px;border-radius:10px!important}
+  button{min-height:36px}
+  input,select{font-size:16px!important;min-height:36px}
   .mob-hide{display:none!important}
-  /* Calendar mobile */
-  .cal-day{min-width:100px!important}
-  .cal-ev{font-size:11px!important;padding:5px 7px!important;border-radius:8px!important}
-  /* Forms */
-  .frow{flex-direction:column!important}
-  /* Tables horizontal scroll */
-  table{font-size:12px!important}
-  /* Quote builder */
-  .quote-lines tr td{padding:4px 3px!important}
 }
 @media(max-width:480px){
   .users-grid{grid-template-columns:repeat(2,1fr)!important}
-  main{padding:8px 8px 76px!important}
-  .card{padding:12px 10px!important}
-  button{font-size:13px!important}
-  .section-title{font-size:16px!important}
-  .dash-panels>.left-panel{display:none!important}
 }
 select option{background:var(--surf)}
 `);
@@ -617,15 +551,6 @@ const PERM_DEFS = [{
 }, {
   key: "viewReports",
   label: "צפיה בדוחות",
-  default: {
-    admin: true,
-    producer: true,
-    worker: false,
-    guest: false
-  }
-}, {
-  key: "editDeliverables",
-  label: "עריכת דף תוצרים",
   default: {
     admin: true,
     producer: true,
@@ -1033,13 +958,18 @@ function rowToProj(r) {
 function shiftToRow(s, users, projects) {
   var _find, _find2;
   const pn = ((_find = (users || []).find(u => u.id === s.person)) === null || _find === void 0 ? void 0 : _find.name) || s.personName || "";
-  const prn = ((_find2 = (projects || []).find(p => p.id === s.projId)) === null || _find2 === void 0 ? void 0 : _find2.name) || s.projName || "";
+  // Support multi-project: projIds array takes precedence over single projId
+  const projIds = s.projIds && s.projIds.length ? s.projIds : (s.projId ? [s.projId] : []);
+  const firstProjId = projIds[0] || null;
+  const prn = ((_find2 = (projects || []).find(p => p.id === firstProjId)) === null || _find2 === void 0 ? void 0 : _find2.name) || s.projName || "";
   return {
     id: s.id,
-    proj_id: s.projId || null,
+    proj_id: firstProjId,
     proj_name: prn,
+    proj_ids: projIds.length > 1 ? JSON.stringify(projIds) : null,
     person: s.person || "",
     person_name: pn,
+    freelance_name: s.freelanceName || "",
     date: s.date || "",
     time_start: s.timeStart || "09:00",
     hours: s.hours || 2,
@@ -1050,9 +980,16 @@ function shiftToRow(s, users, projects) {
   };
 }
 function rowToShift(r) {
+  // Parse multi-project IDs if present
+  let projIds = [];
+  if (r.proj_ids) {
+    try { projIds = JSON.parse(r.proj_ids); } catch {}
+  }
+  if (!projIds.length && r.proj_id) projIds = [r.proj_id];
   return {
     id: r.id,
-    projId: r.proj_id,
+    projId: projIds[0] || r.proj_id,
+    projIds: projIds,
     projName: r.proj_name,
     person: r.person,
     personName: r.person_name,
@@ -1060,7 +997,8 @@ function rowToShift(r) {
     timeStart: r.time_start,
     hours: r.hours || 2,
     tasks: r.tasks || [],
-    note: r.note || ""
+    note: r.note || "",
+    freelanceName: r.freelance_name || ""
   };
 }
 function hourToRow(h, users, projects) {
@@ -2142,6 +2080,71 @@ function ProjSearchSelect({
 }
 
 // ══════════════════════════════════════════
+// MULTI PROJECT SELECT
+// ══════════════════════════════════════════
+function MultiProjSelect({ projects, values, onChange }) {
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const ref = useRef();
+  useEffect(() => {
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+  const activeProjects = useMemo(() => projects.filter(p => p.status === "active"), [projects]);
+  const res = useMemo(() => {
+    const lq = q.trim().toLowerCase();
+    const pool = lq ? activeProjects.filter(p =>
+      (p.name||"").toLowerCase().includes(lq) ||
+      (p.projectNumber||"").toString().includes(lq) ||
+      (p.client||"").toLowerCase().includes(lq)
+    ) : activeProjects;
+    return pool.filter(p => !values.includes(p.id));
+  }, [q, activeProjects, values]);
+  const selectedProjs = values.map(id => projects.find(p => p.id === id)).filter(Boolean);
+  const add = (id) => { onChange([...values, id]); setQ(""); setOpen(false); };
+  const remove = (id) => onChange(values.filter(x => x !== id));
+  return React.createElement("div", { ref, style: { position: "relative" } },
+    selectedProjs.length > 0 && React.createElement("div", {
+      style: { display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 6 }
+    }, selectedProjs.map((p, i) =>
+      React.createElement("div", { key: p.id,
+        style: { display: "flex", alignItems: "center", gap: 4, background: "var(--accentbg)", color: "var(--accent)",
+          border: "1px solid rgba(0,115,234,0.25)", borderRadius: 20, padding: "3px 8px 3px 4px", fontSize: 11, fontWeight: 700 }
+      },
+        React.createElement("span", { style: { background: "var(--accent)", color: "#fff", borderRadius: "50%", width: 16, height: 16,
+          display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, flexShrink: 0 } }, i + 1),
+        React.createElement("span", { style: { maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
+          "#" + (p.projectNumber||"—") + " " + p.name),
+        React.createElement("span", { style: { cursor: "pointer", color: "var(--muted)", fontSize: 14, lineHeight: 1, marginRight: 2 },
+          onClick: () => remove(p.id) }, "×")
+      )
+    )),
+    React.createElement("div", { style: { position: "relative" } },
+      React.createElement("input", {
+        value: q,
+        onChange: e => { setQ(e.target.value); setOpen(true); },
+        onFocus: () => setOpen(true),
+        placeholder: values.length
+          ? "+ הוסף פרויקט נוסף (" + activeProjects.length + " פעילים)..."
+          : "חפש פרויקטים (" + activeProjects.length + " פעילים)..."
+      }),
+      React.createElement("span", { style: { position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", color: "var(--muted2)", fontSize: 12, pointerEvents: "none" } }, "🔍")
+    ),
+    open && React.createElement("div", { className: "srch-drop", style: { maxHeight: 280 } },
+      res.length === 0
+        ? React.createElement("div", { style: { padding: "12px 14px", color: "var(--muted)", fontSize: 12 } },
+            values.length && !q ? "כל הפרויקטים הפעילים כבר נבחרו" : "לא נמצאו פרויקטים")
+        : res.map(p => React.createElement("div", { key: p.id, className: "srch-item", onClick: () => add(p.id) },
+            React.createElement("span", { style: { color: "var(--accent)", fontWeight: 800, marginLeft: 8 } }, "#", p.projectNumber||"—"),
+            React.createElement("span", { style: { fontWeight: 600 } }, p.name),
+            React.createElement("span", { style: { fontSize: 10, color: "var(--muted)", marginRight: 8 } }, " · ", p.client)
+          ))
+    )
+  );
+}
+
+// ══════════════════════════════════════════
 // LOGIN
 // ══════════════════════════════════════════
 function Login({
@@ -2570,7 +2573,6 @@ function Dashboard({ projects, user, logoUrl, onSelect, onGoto, globalSearch,
   const [projSearch, setProjSearch] = useState("");
   const [projStatus, setProjStatus] = useState("all");
   const [projSort, setProjSort] = useState("updated");
-  const [showProjPanel, setShowProjPanel] = useState(true);
 
   const filteredProjs = useMemo(() => {
     let list = myP;
@@ -2656,54 +2658,81 @@ function Dashboard({ projects, user, logoUrl, onSelect, onGoto, globalSearch,
       style:{ display:"flex", gap:10, flex:1, minHeight:0, overflow:"hidden" }
     },
 
-      // ── LEFT: active projects collapsible ──────────────
-      React.createElement("div", {
-        style:{ width: showProjPanel ? 218 : 30, flexShrink:0, display:"flex",
-          flexDirection:"column", transition:"width .2s ease", position:"relative",
+      // ── LEFT: projects ──────────────────────────────────
+      /*#__PURE__*/React.createElement("div", {
+        style:{
+          width:224, flexShrink:0, display:"flex", flexDirection:"column",
           background:"var(--surf)", border:"1px solid var(--border)",
-          borderRadius:14, overflow:"hidden", boxShadow:"var(--shadow)" }
+          borderRadius:"var(--radius-lg)", overflow:"hidden", boxShadow:"var(--shadow)"
+        }
       },
-        React.createElement("button", {
-          onClick: () => setShowProjPanel(x => !x),
-          title: showProjPanel ? "סגור" : "פרויקטים",
-          style:{ position:"absolute", top:7, left:4, zIndex:10,
-            background:"var(--card2)", border:"1px solid var(--border)",
-            borderRadius:8, width:20, height:20, cursor:"pointer",
-            display:"flex", alignItems:"center", justifyContent:"center",
-            fontSize:10, color:"var(--muted)", padding:0 }
-        }, showProjPanel ? "◀" : "▶"),
-        showProjPanel && React.createElement("div", {
-          style:{display:"flex",flexDirection:"column",flex:1,overflow:"hidden",paddingTop:8}
+        /*#__PURE__*/React.createElement("div", {
+          style:{ padding:"10px 10px 8px", borderBottom:"1px solid var(--border)", flexShrink:0 }
         },
-          React.createElement("div", { style:{padding:"0 10px 6px",paddingRight:30} },
-            React.createElement("div", { style:{fontWeight:800,fontSize:11,color:"var(--muted2)",marginBottom:6} }, "פרויקטים פעילים"),
-            React.createElement("input", {
-              value: projSearch, onChange: e => setProjSearch(e.target.value),
-              placeholder:"חיפוש...",
-              style:{fontSize:11,padding:"4px 8px",borderRadius:8,width:"100%",boxSizing:"border-box"}
-            })
+          /*#__PURE__*/React.createElement("div", {
+            style:{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:7}
+          },
+            /*#__PURE__*/React.createElement("span", {style:{fontWeight:700,fontSize:13,color:"var(--text)"}}, "פרויקטים"),
+            /*#__PURE__*/React.createElement("span", {
+              style:{fontSize:10,color:"var(--muted)",background:"var(--accentbg)",
+                color:"var(--accent)",padding:"1px 7px",borderRadius:20,fontWeight:700}
+            }, filteredProjs.length)
           ),
-          React.createElement("div", { style:{flex:1,overflowY:"auto",padding:"4px 6px 8px"} },
-            filteredProjs.length === 0
-              ? React.createElement("div", { style:{color:"var(--muted)",fontSize:11,textAlign:"center",padding:16} }, "אין תוצאות")
-              : filteredProjs.map(p => {
-                  const sc = STATUS_CFG[p.status] || {};
-                  return React.createElement("div", {
-                    key: p.id, onClick: () => onSelect(p.id),
-                    style:{ padding:"7px 10px", borderRadius:10, cursor:"pointer",
-                      marginBottom:3, borderRight:"3px solid "+(sc.color||"var(--border)"),
-                      background:"var(--card2)", transition:"background .12s" },
-                    onMouseEnter: e => e.currentTarget.style.background="var(--accentbg)",
-                    onMouseLeave: e => e.currentTarget.style.background="var(--card2)"
-                  },
-                    React.createElement("div", {
-                      style:{ fontWeight:800, fontSize:12, color:"var(--text)",
-                        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }
-                    }, p.name),
-                    React.createElement("div", { style:{ fontSize:10, color:sc.color||"var(--muted)", marginTop:1 } }, sc.label||p.status)
-                  );
-                })
+          /*#__PURE__*/React.createElement("div", {style:{position:"relative",marginBottom:6}},
+            /*#__PURE__*/React.createElement("input", {
+              value:projSearch, onChange:e=>setProjSearch(e.target.value),
+              placeholder:"חיפוש פרויקט...",
+              style:{paddingRight:26,fontSize:12,padding:"5px 24px 5px 8px",borderRadius:6,width:"100%"}
+            }),
+            /*#__PURE__*/React.createElement("span", {
+              style:{position:"absolute",right:7,top:"50%",transform:"translateY(-50%)",
+                color:"var(--muted2)",fontSize:11,pointerEvents:"none"}
+            }, "🔍")
+          ),
+          /*#__PURE__*/React.createElement("div", {style:{display:"flex",gap:4}},
+            /*#__PURE__*/React.createElement("select", {
+              value:projStatus, onChange:e=>setProjStatus(e.target.value),
+              style:{fontSize:10,padding:"3px 4px",flex:1,borderRadius:5}
+            }, STATUS_OPTS.map(o=>/*#__PURE__*/React.createElement("option",{key:o.v,value:o.v},o.l))),
+            /*#__PURE__*/React.createElement("select", {
+              value:projSort, onChange:e=>setProjSort(e.target.value),
+              style:{fontSize:10,padding:"3px 4px",flex:1,borderRadius:5}
+            }, SORT_OPTS.map(o=>/*#__PURE__*/React.createElement("option",{key:o.v,value:o.v},o.l)))
           )
+        ),
+        /*#__PURE__*/React.createElement("div", {style:{overflowY:"auto",flex:1,padding:"5px 7px"}},
+          filteredProjs.length === 0
+            ? /*#__PURE__*/React.createElement("div", {
+                style:{textAlign:"center",color:"var(--muted2)",padding:"20px 8px",fontSize:12}
+              }, "לא נמצאו פרויקטים")
+            : filteredProjs.map(p => {
+                const pc = projColor(p.id, projects);
+                const sc = STATUS_CFG[p.status] || STATUS_CFG.active;
+                return /*#__PURE__*/React.createElement("div", {
+                  key:p.id, onClick:()=>onSelect(p.id),
+                  style:{
+                    padding:"7px 8px",borderRadius:7,marginBottom:3,cursor:"pointer",
+                    border:"1px solid var(--border)",background:"var(--surf)",
+                    borderRight:"3px solid "+pc,transition:"all .12s"
+                  },
+                  onMouseEnter:e=>{e.currentTarget.style.background="var(--card2)";e.currentTarget.style.borderColor="var(--border2)";},
+                  onMouseLeave:e=>{e.currentTarget.style.background="var(--surf)";e.currentTarget.style.borderColor="var(--border)";}
+                },
+                  /*#__PURE__*/React.createElement("div", {style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:1}},
+                    /*#__PURE__*/React.createElement("div", {style:{minWidth:0,flex:1,display:"flex",alignItems:"center",gap:4}},
+                      /*#__PURE__*/React.createElement("span", {style:{fontSize:9,fontWeight:700,color:pc}}, "#"+(p.projectNumber||"—")),
+                      /*#__PURE__*/React.createElement("span", {style:{fontWeight:600,fontSize:11,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}, p.name)
+                    ),
+                    /*#__PURE__*/React.createElement("span", {
+                      style:{fontSize:9,fontWeight:600,color:sc.color,background:sc.color+"18",
+                        padding:"1px 5px",borderRadius:6,flexShrink:0,marginRight:3}
+                    }, sc.label)
+                  ),
+                  p.client && /*#__PURE__*/React.createElement("div", {style:{fontSize:10,color:"var(--muted2)",marginBottom:1}}, p.client),
+                  p.onlineScreening && /*#__PURE__*/React.createElement("div", {style:{fontSize:10,color:"var(--red)",fontWeight:600}}, "📡 "+p.onlineScreening),
+                  /*#__PURE__*/React.createElement(PBar, {v:p.progress,color:pc})
+                );
+              })
         )
       ),
 
@@ -2757,25 +2786,7 @@ function WeeklyCalendar({
   });
   const [selectedDay, setSelectedDay] = useState(() => new Date());
   const [numWeeks, setNumWeeks] = useState(initialNumWeeks || 2);
-  const [colW, setColW] = useState(() => {
-    const avail = (window.innerWidth - 250);
-    return Math.max(80, Math.floor(avail / 7));
-  }); // auto-fit 7 days
-  const [colWidths, setColWidths] = useState({});
-  const getColW = (dateKey) => colWidths[dateKey] || colW;
-  const resizingRef = useRef(null);
-  const onResizeStart = (e, dateKey) => {
-    e.preventDefault(); e.stopPropagation();
-    const startW = getColW(dateKey);
-    resizingRef.current = { key: dateKey, startX: e.clientX, startW };
-    const onMove = (me) => {
-      const dx = me.clientX - resizingRef.current.startX;
-      setColWidths(w => ({ ...w, [resizingRef.current.key]: Math.max(70, resizingRef.current.startW + dx) }));
-    };
-    const onUp = () => { resizingRef.current = null; window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  };
+  const [colW, setColW] = useState(160); // px per day column
   const [rowH, setRowH] = useState(90); // px per shift card area
   const [detailModal, setDetailModal] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -2903,15 +2914,8 @@ function WeeklyCalendar({
     if (!dragShift) return;
     const { shift, mode } = dragShift;
     if (shift.date === date && mode === "move") { setDragShift(null); return; }
-    if (mode === "move") {
-      // Move: delete from source date, save to dest date — keep same id to avoid duplicates
-      onDeleteShift(shift);
-      // Small timeout to let delete settle before save
-      setTimeout(() => onSaveShift({ ...shift, date }), 30);
-    } else {
-      // Copy: new id on dest
-      onSaveShift({ ...shift, id: uid(), date });
-    }
+    if (mode === "move") onDeleteShift(shift);
+    onSaveShift({ ...shift, id: uid(), date });
     setDragShift(null);
   };
   const handleDragEnd = () => { setDragShift(null); setDragOverDate(null); };
@@ -2956,6 +2960,7 @@ function WeeklyCalendar({
         tasks: [],
         person: "",
         projId: "",
+        projIds: [],
         note: "",
         timeStart: "09:00",
         hours: 2
@@ -2971,7 +2976,10 @@ function WeeklyCalendar({
       mode: "edit",
       shift: {
         ...ev,
-        tasks: ev.tasks || []
+        tasks: ev.tasks || [],
+        projIds: ev.projIds && ev.projIds.length ? ev.projIds : (ev.projId ? [ev.projId] : []),
+        person: (!ev.person && ev.freelanceName) ? "__freelance__" : (ev.person || ""),
+        freelanceName: ev.freelanceName || ""
       }
     });
   };
@@ -2995,7 +3003,7 @@ function WeeklyCalendar({
       return React.createElement("div", {
         key,
         className: "cal-day" + (isToday ? " today" : "") + (wknd ? " weekend" : ""),
-        style: { minWidth: getColW(key), width: getColW(key), minHeight: rowH, position: "relative",
+        style: { minWidth: colW, minHeight: rowH, position: "relative",
           border: isDragOver ? "2px dashed var(--accent)" : undefined,
           background: isDragOver ? "var(--accentbg)" : undefined },
         onClick: () => openNew(key),
@@ -3005,25 +3013,15 @@ function WeeklyCalendar({
       },
         // Day header
         React.createElement("div", {
-          style: { textAlign: "center", marginBottom: 4, cursor: "pointer", position: "relative" },
+          style: { textAlign: "center", marginBottom: 4, cursor: "pointer" },
           onClick: e => { e.stopPropagation(); setSelectedDay(new Date(key)); setViewMode("day"); }
         },
           React.createElement("div", { style: { fontSize: 9, fontWeight: 700,
-            color: isToday ? "var(--accent)" : d.getDate()===1 ? "var(--accent)" : wknd ? "var(--orange)" : "var(--muted2)" } },
-            HEB_DAYS[d.getDay()], d.getDate()===1 ? " ✦" : ""),
-          React.createElement("div", { style: {
-            fontSize: d.getDate()===1 ? 13 : 12,
-            fontWeight: d.getDate()===1 ? 900 : 800,
-            color: isToday ? "var(--accent)" : d.getDate()===1 ? "var(--accent)" : wknd ? "var(--muted)" : "var(--text)",
-            background: d.getDate()===1 && !isToday ? "var(--accentbg)" : "transparent",
-            borderRadius: 5, padding: d.getDate()===1 ? "0 4px" : 0, display: "inline-block"
-          } }, fmtDate(d)),
-          React.createElement("div", {
-            title: "גרור לשינוי רוחב עמודה",
-            style: { position:"absolute", left:0, top:0, bottom:0, width:6, cursor:"col-resize", zIndex:5, borderRadius:3 },
-            onMouseDown: e => onResizeStart(e, key),
-            onClick: e => e.stopPropagation()
-          })
+            color: isToday ? "var(--accent)" : wknd ? "var(--orange)" : "var(--muted2)" } },
+            HEB_DAYS[d.getDay()]),
+          React.createElement("div", { style: { fontSize: 12, fontWeight: 800,
+            color: isToday ? "var(--accent)" : wknd ? "var(--muted)" : "var(--text)" } },
+            fmtDate(d))
         ),
         // Paste button
         clipboard && canEdit ? React.createElement("div", {
@@ -3044,18 +3042,25 @@ function WeeklyCalendar({
               style: { fontSize: 8, color: wc, fontWeight: 700, marginBottom: 1,
                 display: "flex", alignItems: "center", gap: 2 }
             }, React.createElement("span", { style: { width: 6, height: 6, borderRadius: "50%",
-              background: wc, display: "inline-block" } }),
-                wu ? wu.name : (wevs.find(e => e.freelancerName)?.freelancerName || "פרילאנסר")
-              ) : null,
+              background: wc, display: "inline-block" } }), wu.name) : null,
             ...wevs.map(ev => {
-              const proj = ev.projId ? projects.find(p => p.id === ev.projId) : null;
-              const projName = proj ? proj.name : (ev.projName || "");
+              // Support multi-project display
+              const evProjIds = ev.projIds && ev.projIds.length ? ev.projIds : (ev.projId ? [ev.projId] : []);
+              const evProjs = evProjIds.map(id => projects.find(p => p.id === id)).filter(Boolean);
+              const projName = evProjs.length ? evProjs.map(p => p.name).join(" + ") : (ev.projName || "");
               const tasks = ev.tasks || [];
               const fc = stColor(tasks[0] || "other", sts);
-              const personLabel = ev.person === "__freelancer__"
-                ? (ev.freelancerName || "פרילאנסר") : "";
               const isGrabbed = dragShift && dragShift.shift && dragShift.shift.id === ev.id;
-              return React.createElement("div", {
+              const freelanceName = ev.freelanceName || "";
+              const workerForCard = !ev.person && freelanceName ? null : users.find(u => u.id === ev.person);
+              const displayName = freelanceName || (workerForCard ? "" : "");
+              return React.createElement(React.Fragment, { key: ev.id },
+                freelanceName ? React.createElement("div", {
+                  style: { fontSize: 9, fontWeight: 800, color: "var(--orange)", marginBottom: 2,
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    padding: "1px 3px", background: "rgba(255,140,0,0.10)", borderRadius: 4 }
+                }, "👤 " + freelanceName) : null,
+              React.createElement("div", {
                 key: ev.id, className: "cal-ev",
                 draggable: canEdit,
                 style: { background: fc + "25", color: fc, border: "1px solid " + fc + "40",
@@ -3065,11 +3070,25 @@ function WeeklyCalendar({
                 onDragEnd: handleDragEnd,
                 title: "גרור להזזה · Ctrl+גרור להעתקה"
               },
-                // PROJECT NAME — prominent
-                projName ? React.createElement("div", { style: { fontSize: 11, fontWeight: 900,
-                  color: "var(--text)", lineHeight: 1.2, marginBottom: 1,
-                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
-                  projName) : null,
+                // PROJECT NAMES — prominent (multi-project support)
+                evProjs.length > 1
+                  ? React.createElement("div", { style: { lineHeight: 1.3, marginBottom: 1 } },
+                      evProjs.map((p, i) => React.createElement("div", {
+                        key: p.id,
+                        style: { fontSize: 9, fontWeight: 800, color: fc,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          display: "flex", alignItems: "center", gap: 2 }
+                      },
+                        React.createElement("span", { style: { background: fc, color: "#fff", borderRadius: "50%",
+                          width: 10, height: 10, display: "inline-flex", alignItems: "center",
+                          justifyContent: "center", fontSize: 7, fontWeight: 900, flexShrink: 0 } }, i + 1),
+                        p.name
+                      ))
+                    )
+                  : projName ? React.createElement("div", { style: { fontSize: 10, fontWeight: 800,
+                      color: fc, lineHeight: 1.2, marginBottom: 1,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
+                      projName) : null,
                 // Task types — secondary
                 tasks.length > 0 ? React.createElement("div", { style: { fontSize: 8,
                   opacity: .65, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
@@ -3087,6 +3106,7 @@ function WeeklyCalendar({
                   React.createElement("span", { style: { fontSize: 9, cursor: "pointer", opacity: .5 },
                     title: "גזור", onClick: () => cutShiftToClipboard(ev) }, "✂️")
                 ) : null
+              )
               );
             })
           );
@@ -3103,7 +3123,7 @@ function WeeklyCalendar({
         borderRadius: 6, display: "inline-block" } },
         label, " · ", fmtDate(days[0]), " – ", fmtDate(days[6])),
       React.createElement("div", { style: { display: "grid",
-        gridTemplateColumns: "repeat(7,1fr)", gap: 1, minWidth: 0 } },
+        gridTemplateColumns: "repeat(7,1fr)", gap: 3, minWidth: 560 } },
         ...cols)
     );
   };
@@ -3116,7 +3136,7 @@ function WeeklyCalendar({
       /*#__PURE__*/React.createElement("div", { style: { fontWeight: 800, fontSize: 18, marginBottom: 16, color: isoDate(date) === todayStr() ? "var(--accent)" : "var(--text)" } },
         HEB_DAYS[date.getDay()], " ", date.getDate(), " ", HEB_MONTHS_SHORT[date.getMonth()], " ", date.getFullYear()
       ),
-
+      canEdit && /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", style: { marginBottom: 14 }, onClick: () => openNew(key) }, "+ הוסף שיבוץ"),
       evs.length === 0 && /*#__PURE__*/React.createElement("div", { style: { color: "var(--muted)", textAlign: "center", padding: 32 } }, "אין שיבוצים ליום זה"),
       evs.map(ev => {
         const workerObj = users.find(u => u.id === ev.person);
@@ -3130,9 +3150,17 @@ function WeeklyCalendar({
         },
           /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 } },
             /*#__PURE__*/React.createElement("div", null,
-              workerObj && /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: wColor, fontWeight: 700, marginBottom: 4 } }, workerObj.name),
+              (ev.freelanceName
+                ? /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: "var(--orange)", fontWeight: 700, marginBottom: 4 } }, "👤 ", ev.freelanceName)
+                : workerObj && /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: wColor, fontWeight: 700, marginBottom: 4 } }, workerObj.name)
+              ),
               /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 14 } }, tasks.map(t => stLabel(t, sts)).join(", ") || "—"),
-              ev.projName && /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", marginTop: 2 } }, "📁 ", ev.projName)
+              (() => {
+                const dpIds = ev.projIds && ev.projIds.length ? ev.projIds : (ev.projId ? [ev.projId] : []);
+                const dpProjs = dpIds.map(id => projects.find(p => p.id === id)).filter(Boolean);
+                const dpName = dpProjs.length ? dpProjs.map(p => p.name).join(" + ") : (ev.projName || "");
+                return dpName ? /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", marginTop: 2 } }, "📁 ", dpName) : null;
+              })()
             ),
             /*#__PURE__*/React.createElement("div", { style: { textAlign: "left", fontSize: 12, color: "var(--muted2)" } },
               ev.timeStart && /*#__PURE__*/React.createElement("div", null, "🕐 ", ev.timeStart),
@@ -3171,15 +3199,14 @@ function WeeklyCalendar({
           return /*#__PURE__*/React.createElement("div", {
             key: key,
             style: {
-              minHeight: 72,
-              background: isToday ? "var(--accentbg)" : wknd ? "var(--card2)" : "var(--surf)",
-              border: `1.5px solid ${isToday ? "var(--accent)" : wknd ? "var(--border2)" : "var(--border)"}`,
+              minHeight: 72, background: isToday ? "var(--accentbg)" : wknd ? "#f5f5f8" : "var(--surf)",
+              border: `1.5px solid ${isToday ? "var(--accent)" : "var(--border)"}`,
               borderRadius: 8, padding: "4px 5px", cursor: "pointer",
-              opacity: 1
+              opacity: wknd ? 0.85 : 1
             },
             onClick: () => { setSelectedDay(new Date(key)); setViewMode("day"); }
           },
-            /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: d===1 ? 900 : 800, color: isToday ? "var(--accent)" : d===1 ? "var(--accent)" : wknd ? "var(--orange)" : "var(--text)", marginBottom: 3 } }, d===1 ? "1 ✦" : d),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 800, color: isToday ? "var(--accent)" : wknd ? "var(--orange)" : "var(--muted2)", marginBottom: 3 } }, d),
             evs.slice(0, 3).map(ev => {
               const tasks = ev.tasks || [];
               const col = stColor(tasks[0] || "other", sts);
@@ -3259,7 +3286,9 @@ function WeeklyCalendar({
         onChange: e => setRowH(+e.target.value),
         style: { width: 70, accentColor: "var(--accent)", cursor: "pointer" } })
     ),
-
+    canEdit && /*#__PURE__*/React.createElement("button", {
+      className: "btn-gold btn-sm", style: { marginRight: "auto" }, onClick: () => openNew(null)
+    }, "+ הוסף שיבוץ"),
     /*#__PURE__*/React.createElement("button", {
       className: "btn-ghost btn-sm",
       onClick: () => setIsFullscreen(f => !f),
@@ -3395,15 +3424,21 @@ function ShiftModal({
   };
   const [s, setS] = useState({
     ...initialShift,
-    tasks: initialShift.tasks || []
+    tasks: initialShift.tasks || [],
+    projIds: initialShift.projIds && initialShift.projIds.length
+      ? initialShift.projIds
+      : (initialShift.projId ? [initialShift.projId] : []),
+    freelanceName: initialShift.freelanceName || ""
   });
+  const isFreelance = s.person === "__freelance__";
   const [hours, setHours] = useState(() => calcHours(initialShift.timeStart, initialShift.timeEnd) || 2);
   const upd = k => e => setS(x => ({
     ...x,
     [k]: e.target.value
   }));
   const sts = shiftTypes || DEF_SHIFT_TYPES;
-  const proj = projects.find(p => p.id === s.projId);
+  const projIds = s.projIds || (s.projId ? [s.projId] : []);
+  const proj = projects.find(p => p.id === projIds[0]);
 
   // חישוב timeEnd מ-timeStart + hours
   const computeEnd = (start, h) => {
@@ -3414,12 +3449,20 @@ function ShiftModal({
   };
   const buildShift = () => {
     const ts = s.timeStart || "09:00";
+    const ids = s.projIds && s.projIds.length ? s.projIds : (s.projId ? [s.projId] : []);
+    const finalPerson = s.person === "__freelance__" ? "" : (s.person || "");
+    const finalFreelanceName = s.person === "__freelance__" ? (s.freelanceName || "") : "";
     return {
       ...s,
       id: s.id || uid(),
       timeStart: ts,
       timeEnd: computeEnd(ts, hours),
-      hours
+      hours,
+      projIds: ids,
+      projId: ids[0] || "",
+      person: finalPerson,
+      freelanceName: finalFreelanceName,
+      personName: finalFreelanceName || s.personName || ""
     };
   };
   return /*#__PURE__*/React.createElement("div", {
@@ -3447,12 +3490,13 @@ function ShiftModal({
     style: {
       marginBottom: 12
     }
-  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05E4\u05E8\u05D5\u05D9\u05E7\u05D8 (\u05D0\u05D5\u05E4\u05E6\u05D9\u05D5\u05E0\u05DC\u05D9)"), /*#__PURE__*/React.createElement(ProjSearchSelect, {
+  }, /*#__PURE__*/React.createElement(Lbl, null, "\u05E4\u05E8\u05D5\u05D9\u05E7\u05D8\u05D9\u05DD (\u05D0\u05D5\u05E4\u05E6\u05D9\u05D5\u05E0\u05DC\u05D9)"), /*#__PURE__*/React.createElement(MultiProjSelect, {
     projects: projects,
-    value: s.projId,
-    onChange: v => setS(x => ({
+    values: s.projIds || (s.projId ? [s.projId] : []),
+    onChange: ids => setS(x => ({
       ...x,
-      projId: v
+      projIds: ids,
+      projId: ids[0] || ""
     }))
   })), /*#__PURE__*/React.createElement("div", {
     className: "frow"
@@ -3463,21 +3507,15 @@ function ShiftModal({
     onChange: upd("person")
   }, /*#__PURE__*/React.createElement("option", {
     value: ""
-  }, "\u2014 \u05D1\u05D7\u05E8 \u05E2\u05D5\u05D1\u05D3 \u2014"), /*#__PURE__*/React.createElement("option", { value: "__freelancer__" }, "🎯 פרילאנסר..."),
-  users.filter(u => u.active !== "false" && u.active !== "0").map(u => /*#__PURE__*/React.createElement("option", {
+  }, "\u2014 \u05D1\u05D7\u05E8 \u05E2\u05D5\u05D1\u05D3 \u2014"), users.filter(u => u.active !== "false" && u.active !== "0").map(u => /*#__PURE__*/React.createElement("option", {
     key: u.id,
     value: u.id
-  }, u.name)))),
-  s.person === "__freelancer__" && /*#__PURE__*/React.createElement("div", { className: "fcol", style: { marginTop: 6 } },
-    /*#__PURE__*/React.createElement(Lbl, null, "שם הפרילאנסר"),
-    /*#__PURE__*/React.createElement("input", {
-      value: s.freelancerName || "",
-      onChange: e => setS(x => ({ ...x, freelancerName: e.target.value })),
-      placeholder: "שם מלא...",
-      style: { fontSize: 13 }
-    })
-  ),
-  /*#__PURE__*/React.createElement("div", {
+  }, u.name)), /*#__PURE__*/React.createElement("option", { value: "__freelance__" }, "\ud83d\udc64 \u05e4\u05e8\u05d9\u05dc\u05d0\u05e0\u05e1...")), isFreelance && /*#__PURE__*/React.createElement("input", {
+    style: { marginTop: 6 },
+    value: s.freelanceName,
+    onChange: upd("freelanceName"),
+    placeholder: "\u05e9\u05dd \u05d4\u05e4\u05e8\u05d9\u05dc\u05d0\u05e0\u05e1..."
+  })), /*#__PURE__*/React.createElement("div", {
     className: "fcol"
   }, /*#__PURE__*/React.createElement(Lbl, null, "\u05E9\u05E2\u05EA \u05D4\u05EA\u05D7\u05DC\u05D4"), /*#__PURE__*/React.createElement("input", {
     type: "time",
@@ -3574,102 +3612,6 @@ function ShiftModal({
 // ══════════════════════════════════════════
 // PROJECTS LIST
 // ══════════════════════════════════════════
-function ProjectImportModal({ onClose, onImport }) {
-  const [rows, setRows] = React.useState([]);
-  const [headers, setHeaders] = React.useState([]);
-  const [error, setError] = React.useState("");
-
-  const parseCSV = (text) => {
-    const lines = text.trim().split(/\r?\n/).filter(Boolean);
-    if (lines.length < 2) { setError("צריך לפחות כותרת ושורה אחת"); return; }
-    const sep = lines[0].includes("\t") ? "\t" : ",";
-    const hdrs = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g,""));
-    const data = lines.slice(1).map(line => {
-      const vals = line.split(sep).map(v => v.trim().replace(/^"|"$/g,""));
-      const obj = {};
-      hdrs.forEach((h, i) => { obj[h] = vals[i] || ""; });
-      return obj;
-    });
-    setHeaders(hdrs); setRows(data); setError("");
-  };
-
-  const handleFile = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      if (typeof XLSX !== "undefined" && file.name.match(/\.xlsx?$/i)) {
-        try {
-          const wb = XLSX.read(ev.target.result, { type: "binary" });
-          const ws = wb.Sheets[wb.SheetNames[0]];
-          const data = XLSX.utils.sheet_to_json(ws, { defval: "" });
-          if (data.length > 0) { setHeaders(Object.keys(data[0])); setRows(data); setError(""); }
-          else setError("הקובץ ריק");
-        } catch(e) { setError("שגיאה: " + e.message); }
-      } else {
-        parseCSV(ev.target.result);
-      }
-    };
-    if (file.name.match(/\.xlsx?$/i)) reader.readAsBinaryString(file);
-    else reader.readAsText(file, "utf-8");
-  };
-
-  return React.createElement("div", { className: "modal-bg", onClick: onClose },
-    React.createElement("div", { className: "modal-box", style: { maxWidth: 560, maxHeight: "85vh", overflow: "auto" },
-      onClick: e => e.stopPropagation() },
-      React.createElement("div", { style: { display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 } },
-        React.createElement("div", { style: { fontWeight:800, fontSize:16 } }, "📥 ייבוא פרויקטים"),
-        React.createElement("button", { className:"btn-ghost btn-sm", onClick: onClose }, "✕")
-      ),
-      React.createElement("div", { style: { fontSize:12, color:"var(--muted)", marginBottom:14, lineHeight:1.6 } },
-        "עמודות נתמכות: ", React.createElement("b", null, "שם"), " (חובה), לקוח, מפיקה, סטטוס, התקדמות, מסירה, אופליין, אונליין, הערות.",
-        React.createElement("br"), "ניתן להעלות קובץ xlsx/csv, או להדביק טבלה מ-Google Sheets."
-      ),
-      React.createElement("div", { className:"card2", style:{marginBottom:10,padding:"12px 14px"} },
-        React.createElement("div", { style:{fontWeight:700,fontSize:12,marginBottom:8} }, "העלאת קובץ"),
-        React.createElement("input", { type:"file", accept:".xlsx,.xls,.csv", onChange: handleFile })
-      ),
-      React.createElement("div", { className:"card2", style:{marginBottom:10,padding:"12px 14px"} },
-        React.createElement("div", { style:{fontWeight:700,fontSize:12,marginBottom:8} }, "הדבקה מ-Google Sheets"),
-        React.createElement("textarea", {
-          rows:5,
-          placeholder:"בחר שורות ב-Google Sheets → Ctrl+C → הדבק כאן",
-          style:{width:"100%",fontSize:11,fontFamily:"monospace",direction:"ltr"},
-          onChange: e => parseCSV(e.target.value)
-        })
-      ),
-      error && React.createElement("div", { style:{color:"var(--red)",fontSize:12,marginBottom:8} }, "❌ " + error),
-      rows.length > 0 && React.createElement("div", { style:{marginBottom:14} },
-        React.createElement("div", { style:{fontWeight:700,fontSize:12,marginBottom:8,color:"var(--green)"} },
-          "✅ " + rows.length + " שורות · עמודות: " + headers.slice(0,6).join(", ") + (headers.length > 6 ? "..." : "")
-        ),
-        React.createElement("div", { style:{overflowX:"auto",maxHeight:180,overflow:"auto",border:"1px solid var(--border)",borderRadius:8} },
-          React.createElement("table", { style:{width:"100%",borderCollapse:"collapse",fontSize:11} },
-            React.createElement("thead", null,
-              React.createElement("tr", { style:{background:"var(--card2)"} },
-                headers.map(h => React.createElement("th", { key:h, style:{padding:"5px 8px",fontWeight:700,whiteSpace:"nowrap"} }, h))
-              )
-            ),
-            React.createElement("tbody", null,
-              rows.slice(0,5).map((row, i) =>
-                React.createElement("tr", { key:i, style:{borderTop:"1px solid var(--border)"} },
-                  headers.map(h => React.createElement("td", { key:h, style:{padding:"4px 8px",whiteSpace:"nowrap"} }, String(row[h]||"").slice(0,25)))
-                )
-              )
-            )
-          )
-        ),
-        rows.length > 5 && React.createElement("div", { style:{fontSize:10,color:"var(--muted)",marginTop:4} }, "מציג 5 מתוך " + rows.length)
-      ),
-      React.createElement("div", { style:{display:"flex",gap:8,justifyContent:"flex-end"} },
-        React.createElement("button", { className:"btn-ghost", onClick: onClose }, "ביטול"),
-        rows.length > 0 && React.createElement("button", { className:"btn-gold", onClick: () => onImport(rows) },
-          "ייבא " + rows.length + " פרויקטים →")
-      )
-    )
-  );
-}
-
 function ProjectsList({
   projects,
   user,
@@ -3677,9 +3619,7 @@ function ProjectsList({
   onSelect,
   onNew,
   onUpdate,
-  onDelete,
-  onAdd,
-  nextProjNum
+  onDelete
 }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -3688,7 +3628,6 @@ function ProjectsList({
   const [editInline, setEditInline] = useState(null);
   const [checked, setChecked] = useState([]);
   const [showExportMenu, setShowExportMenu] = useState(false);
-  const [showImportProjects, setShowImportProjects] = useState(false);
   const [showStatusReport, setShowStatusReport] = useState(false);
   const highlightRef = useRef();
   const isAdmin = user.role === "admin",
@@ -3877,36 +3816,7 @@ function ProjectsList({
     );
   };
 
-  const handleProjectImport = (rows) => {
-    const newProjs = rows.map((row, i) => {
-      const get = (...keys) => { for (const k of keys) { const v = row[k]; if (v !== undefined && v !== null && String(v).trim() !== "") return String(v).trim(); } return ""; };
-      return {
-        id: uid(),
-        projectNumber: get("מספר","number","projectNumber") || String((nextProjNum||1)+i).padStart(3,"0"),
-        name: get("שם","name","projectName","שם הפרויקט","שם פרויקט"),
-        client: get("לקוח","client"), producer: get("מפיקה","מפיק","producer"),
-        status: get("סטטוס","status") || "active",
-        progress: parseInt(get("התקדמות","progress")) || 0,
-        deliveryDate: get("מסירה","תאריך מסירה","deliveryDate"),
-        offlineScreening: get("אופליין","offlineScreening"),
-        onlineScreening: get("אונליין","onlineScreening"),
-        statusNote: get("הערות","notes","statusNote"),
-        tasks:[], shifts:[], hours:[], quotes:[], deliverables:[],
-        plan:{ staffRows:[], notes:"", plannedShifts:[] }
-      };
-    }).filter(p => p.name);
-    if (!newProjs.length) { alert("לא נמצאו פרויקטים עם שם."); return; }
-    if (window.confirm("ייבא " + newProjs.length + " פרויקטים?")) {
-      newProjs.forEach(p => onAdd(p));
-      setShowImportProjects(false);
-      alert("✅ יובאו " + newProjs.length + " פרויקטים");
-    }
-  };
-
   return /*#__PURE__*/React.createElement("div", { className: "fade" },
-  showImportProjects && /*#__PURE__*/React.createElement(ProjectImportModal, {
-    onClose: () => setShowImportProjects(false), onImport: handleProjectImport
-  }),
   /* ── Sticky header + search/filter bar ── */
   /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3926,7 +3836,6 @@ function ProjectsList({
           /*#__PURE__*/React.createElement("button", { onClick: () => setViewMode("list"), style: { padding: "5px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, background: viewMode === "list" ? "var(--accent)" : "transparent", color: viewMode === "list" ? "#ffffff" : "var(--muted2)" } }, "☰ רשימה")
         ),
         canEdit && /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", onClick: onNew }, "+ פרויקט חדש"),
-        canEdit && /*#__PURE__*/React.createElement("button", { className: "btn-blue btn-sm", onClick: () => setShowImportProjects(true) }, "📥 ייבוא מאקסל"),
         /*#__PURE__*/React.createElement("div", { style: { position: "relative" } },
           /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", onClick: () => setShowExportMenu(x => !x) }, "⬇️ ייצוא CSV", checked.length ? ` (${checked.length})` : " הכל"),
           showExportMenu && /*#__PURE__*/React.createElement("div", { style: { position: "absolute", top: "calc(100%+4px)", left: 0, background: "var(--card)", border: "1px solid var(--border2)", borderRadius: 10, padding: 8, zIndex: 200, minWidth: 160, boxShadow: "0 4px 20px rgba(0,0,0,.4)" } },
@@ -4014,7 +3923,7 @@ function ProjectsList({
         /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 } },
           /*#__PURE__*/React.createElement("div", null,
             /*#__PURE__*/React.createElement("span", { style: { fontWeight: 800, fontSize: 10, color: "var(--accent)", background: "var(--accent)18", borderRadius: 5, padding: "2px 6px", marginLeft: 6 } }, "#", p.projectNumber || "—"),
-            /*#__PURE__*/React.createElement("div", { style: { fontWeight: 800, fontSize: 15, marginTop: 4, color: "var(--text)" } }, p.name)
+            /*#__PURE__*/React.createElement("div", { style: { fontWeight: 800, fontSize: 15, marginTop: 4 } }, p.name)
           ),
           /*#__PURE__*/React.createElement("span", { className: "tag", style: { color: sc.color, background: (sc.color || "#fff") + "20", border: `1px solid ${(sc.color || "#fff")}40`, fontSize: 10 } }, sc.label || p.status)
         ),
@@ -4024,7 +3933,12 @@ function ProjectsList({
           p.client && p.producer && /*#__PURE__*/React.createElement("span", { style: { margin: "0 6px", opacity: .4 } }, "·"),
           p.producer && /*#__PURE__*/React.createElement("span", null, "👩‍💼 ", p.producer)
         ),
-        /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", fontSize: 10, color: "var(--muted)", marginBottom: 10, gap: 10 } },
+        /* Progress bar */
+        /*#__PURE__*/React.createElement("div", { className: "pbar", style: { marginBottom: 4 } },
+          /*#__PURE__*/React.createElement("div", { className: "pfill", style: { width: (p.progress || 0) + "%", background: "linear-gradient(90deg," + (sc.color || "var(--accent)") + "," + (sc.color || "#0ea5e9") + ")", borderRadius: 3 } })
+        ),
+        /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--muted)", marginBottom: 10 } },
+          /*#__PURE__*/React.createElement("span", null, "התקדמות: ", p.progress || 0, "%"),
           totalTasks > 0 && /*#__PURE__*/React.createElement("span", null, "✓ ", doneTasks, "/", totalTasks),
           totalHours > 0 && /*#__PURE__*/React.createElement("span", null, "⏱ ", totalHours.toFixed(1), "h")
         ),
@@ -5241,197 +5155,81 @@ function ProjectDetail({
 // ══════════════════════════════════════════
 const DELIVERABLE_RATIOS = ["16:9", "9:16 סטורי", "9:16 טיקטוק", "4:5", "1:1", "אחר"];
 
-function DeliverablesTable({ project, onChange, canEdit, user }) {
-  const effCanEdit = canEdit || (user && (user.role === "admin" || user.role === "producer" || (user.permissions && user.permissions.editDeliverables)));
+function DeliverablesTable({ project, onChange, canEdit }) {
   const deliverables = project.deliverables || [];
-  const [showExport, setShowExport] = React.useState(false);
 
   const addRow = () => {
-    const newRow = { id: uid(), name: "" };
-    DELIVERABLE_RATIOS.forEach(r => { newRow[r] = ""; });
+    const newRow = { id: uid(), name: "", "16:9": "", "9:16 סטורי": "", "9:16 טיקטוק": "", "4:5": "", "1:1": "", "אחר": "" };
     onChange({ ...project, deliverables: [...deliverables, newRow] });
   };
-  const updCell = (id, field, val) =>
+  const updCell = (id, field, val) => {
     onChange({ ...project, deliverables: deliverables.map(r => r.id === id ? { ...r, [field]: val } : r) });
-  const delRow = (id) =>
+  };
+  const delRow = (id) => {
     onChange({ ...project, deliverables: deliverables.filter(r => r.id !== id) });
+  };
 
-  // Count how many links per ratio
-  const countByRatio = DELIVERABLE_RATIOS.reduce((acc, ratio) => {
-    acc[ratio] = deliverables.filter(r => r[ratio] && r[ratio].trim()).length;
+  const totalByRatio = DELIVERABLE_RATIOS.reduce((acc, ratio) => {
+    acc[ratio] = deliverables.reduce((s, r) => s + (parseInt(r[ratio]) || 0), 0);
     return acc;
   }, {});
 
-  // Export to CSV for Google Sheets
-  const exportCSV = () => {
-    const headers = ["שם הסרט", ...DELIVERABLE_RATIOS];
-    const rows = deliverables.map(row => [
-      row.name || "",
-      ...DELIVERABLE_RATIOS.map(r => row[r] || "")
-    ]);
-    const csv = [headers, ...rows].map(function(r) {
-      return r.map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(",");
-    }).join("\n");
-    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `תוצרים_${project.name || "פרויקט"}_${new Date().toLocaleDateString("he-IL").replace(/\./g,"-")}.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    setShowExport(false);
-  };
-
-  // Export to PDF — open print window with HTML table + active links
-  const exportPDF = () => {
-    const ratioHeaders = DELIVERABLE_RATIOS.map(r => "<th>" + r + "</th>").join("");
-    const rowsHtml = deliverables.map(function(row) {
-      const cells = DELIVERABLE_RATIOS.map(function(r) {
-        const val = row[r] || "";
-        const cell = val
-          ? "<a href=\"" + val + "\" style=\"color:#0073ea;font-size:11px\">\uD83D\uDD17 \u05E7\u05D9\u05E9\u05D5\u05E8</a>"
-          : "<span style=\"color:#aaa\">\u2014</span>";
-        return "<td style=\"padding:8px 6px;text-align:center;border-bottom:1px solid #e2e8f0\">" + cell + "</td>";
-      }).join("");
-      return "<tr><td style=\"padding:8px 10px;font-weight:600;border-bottom:1px solid #e2e8f0\">" + (row.name || "\u2014") + "</td>" + cells + "</tr>";
-    }).join("");
-    const projTitle = "\u05D3\u05E3 \u05EA\u05D5\u05E6\u05E8\u05D9\u05DD \u2014 " + (project.name || "");
-    const dateStr = new Date().toLocaleDateString("he-IL");
-    const html = [
-      "<!DOCTYPE html><html dir=\"rtl\"><head><meta charset=\"UTF-8\">",
-      "<title>" + projTitle + "</title>",
-      "<style>body{font-family:Arial,sans-serif;padding:24px;direction:rtl}",
-      "h2{color:#1e2130;margin-bottom:16px}",
-      "table{border-collapse:collapse;width:100%;font-size:12px}",
-      "th{background:#f0f2f7;padding:8px;text-align:center;font-weight:700;color:#555;border-bottom:2px solid #cbd5e1}",
-      "th:first-child{text-align:right}",
-      "tr:nth-child(even){background:#f8fafc}",
-      "a{color:#0073ea;text-decoration:none}</style></head><body>",
-      "<h2>" + projTitle + "</h2>",
-      "<table><thead><tr><th style=\"text-align:right;min-width:160px\">\u05E9\u05DD \u05D4\u05E1\u05E8\u05D8</th>" + ratioHeaders + "</tr></thead>",
-      "<tbody>" + rowsHtml + "</tbody></table>",
-      "<div style=\"margin-top:16px;font-size:11px;color:#888\">\u05D9\u05D5\u05E6\u05D0 \u05DE-PostFlow \xB7 " + dateStr + "</div>",
-      "</body></html>"
-    ].join("");
-    const w = window.open("", "_blank");
-    if (w) {
-      w.document.write(html);
-      w.document.close();
-      setTimeout(function() { w.print(); }, 300);
-    }
-    setShowExport(false);
-  };
-
-  return React.createElement("div", { className: "card", style: { marginBottom: 14 } },
-    // Header
-    React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 } },
-      React.createElement("div", { style: { fontWeight: 700, fontSize: 14 } }, "📦 דף תוצרים"),
-      React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center", position: "relative" } },
-        // Export button
-        deliverables.length > 0 && React.createElement(React.Fragment, null,
-          React.createElement("button", { className: "btn-ghost btn-sm", onClick: () => setShowExport(x => !x) }, "⬇️ ייצוא"),
-          showExport && React.createElement("div", {
-            style: { position: "absolute", top: "calc(100% + 4px)", left: 0, background: "var(--card)",
-              border: "1px solid var(--border2)", borderRadius: 10, boxShadow: "var(--shadow2)",
-              padding: "6px 0", zIndex: 200, minWidth: 160 }
-          },
-            React.createElement("button", { onClick: exportCSV,
-              style: { display: "block", width: "100%", textAlign: "right", padding: "8px 14px",
-                background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--text)" }
-            }, "📊 ייצוא ל-Google Sheets (CSV)"),
-            React.createElement("button", { onClick: exportPDF,
-              style: { display: "block", width: "100%", textAlign: "right", padding: "8px 14px",
-                background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--text)" }
-            }, "🖨️ ייצוא PDF (עם לינקים)")
-          )
-        ),
-        canEdit && React.createElement("button", { className: "btn-gold btn-sm", onClick: addRow }, "+ הוסף סרט")
-      )
+  return /*#__PURE__*/React.createElement("div", { className: "card", style: { marginBottom: 14 } },
+    /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 } },
+      /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 14 } }, "📦 דף תוצרים"),
+      canEdit && /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", onClick: addRow }, "+ הוסף סרט")
     ),
-    // Click outside to close export menu
-    showExport && React.createElement("div", {
-      style: { position: "fixed", inset: 0, zIndex: 199 },
-      onClick: () => setShowExport(false)
-    }),
-    // Table
-    React.createElement("div", { style: { overflowX: "auto" } },
-      React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } },
-        React.createElement("thead", null,
-          React.createElement("tr", { style: { background: "var(--card2)", borderBottom: "2px solid var(--border)" } },
-            React.createElement("th", { style: { padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "var(--muted)", minWidth: 160 } }, "שם הסרט"),
+    /*#__PURE__*/React.createElement("div", { style: { overflowX: "auto" } },
+      /*#__PURE__*/React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } },
+        /*#__PURE__*/React.createElement("thead", null,
+          /*#__PURE__*/React.createElement("tr", { style: { background: "var(--card2)", borderBottom: "2px solid var(--border)" } },
+            /*#__PURE__*/React.createElement("th", { style: { padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "var(--muted)", minWidth: 160 } }, "שם הסרט"),
             ...DELIVERABLE_RATIOS.map(ratio =>
-              React.createElement("th", { key: ratio, style: { padding: "8px 8px", textAlign: "center", fontWeight: 700, color: "var(--muted)", whiteSpace: "nowrap" } },
-                ratio,
-                countByRatio[ratio] > 0 && React.createElement("span", {
-                  style: { marginRight: 4, background: "var(--accent)", color: "#fff",
-                    borderRadius: 10, padding: "1px 5px", fontSize: 9, fontWeight: 700 }
-                }, countByRatio[ratio])
-              )
+              /*#__PURE__*/React.createElement("th", { key: ratio, style: { padding: "8px 8px", textAlign: "center", fontWeight: 700, color: "var(--muted)", whiteSpace: "nowrap" } }, ratio)
             ),
-            canEdit && React.createElement("th", { style: { width: 36 } })
+            canEdit && /*#__PURE__*/React.createElement("th", { style: { width: 36 } })
           )
         ),
-        React.createElement("tbody", null,
-          deliverables.length === 0 && React.createElement("tr", null,
-            React.createElement("td", { colSpan: DELIVERABLE_RATIOS.length + (canEdit ? 2 : 1),
-              style: { padding: "24px", textAlign: "center", color: "var(--muted)" } },
+        /*#__PURE__*/React.createElement("tbody", null,
+          deliverables.length === 0 && /*#__PURE__*/React.createElement("tr", null,
+            /*#__PURE__*/React.createElement("td", { colSpan: DELIVERABLE_RATIOS.length + (canEdit ? 2 : 1), style: { padding: "24px", textAlign: "center", color: "var(--muted)" } },
               "לחץ '+ הוסף סרט' כדי להוסיף תוצר לטבלה"
             )
           ),
-          deliverables.map((row, ridx) =>
-            React.createElement("tr", { key: row.id, style: { borderBottom: "1px solid var(--border)", background: ridx % 2 === 0 ? "transparent" : "var(--card2)" } },
-              // Film name
-              React.createElement("td", { style: { padding: "6px 8px" } },
+          deliverables.map((row, idx) =>
+            /*#__PURE__*/React.createElement("tr", { key: row.id, style: { borderBottom: "1px solid var(--border)", background: idx % 2 === 0 ? "transparent" : "var(--card2)" } },
+              /*#__PURE__*/React.createElement("td", { style: { padding: "5px 8px" } },
                 canEdit
-                  ? React.createElement("input", { value: row.name || "", onChange: e => updCell(row.id, "name", e.target.value),
-                      placeholder: "שם הסרט...", style: { fontSize: 12, padding: "3px 7px" } })
-                  : React.createElement("span", { style: { fontWeight: 600 } }, row.name || "—")
+                  ? /*#__PURE__*/React.createElement("input", { value: row.name || "", onChange: e => updCell(row.id, "name", e.target.value), placeholder: "שם הסרט...", style: { fontSize: 12, padding: "3px 7px" } })
+                  : /*#__PURE__*/React.createElement("span", { style: { fontWeight: 600 } }, row.name || "—")
               ),
-              // Ratio URL cells
               ...DELIVERABLE_RATIOS.map(ratio =>
-                React.createElement("td", { key: ratio, style: { padding: "5px 6px", textAlign: "center", minWidth: 90 } },
+                /*#__PURE__*/React.createElement("td", { key: ratio, style: { padding: "5px 6px", textAlign: "center" } },
                   canEdit
-                    ? React.createElement("input", {
-                        value: row[ratio] || "",
-                        onChange: e => updCell(row.id, ratio, e.target.value),
-                        placeholder: "vimeo.com/...",
-                        style: { width: 90, fontSize: 11, padding: "3px 5px", direction: "ltr" }
-                      })
-                    : row[ratio]
-                      ? React.createElement("a", {
-                          href: row[ratio].startsWith("http") ? row[ratio] : "https://" + row[ratio],
-                          target: "_blank", rel: "noopener",
-                          style: { color: "var(--accent)", fontSize: 11, textDecoration: "none",
-                            display: "flex", alignItems: "center", justifyContent: "center", gap: 3 },
-                          title: row[ratio]
-                        }, "🔗", React.createElement("span", { style: { fontSize: 10, opacity: .7 } }, "Vimeo"))
-                      : React.createElement("span", { style: { color: "var(--border2)" } }, "—")
+                    ? /*#__PURE__*/React.createElement("input", { type: "number", min: 0, value: row[ratio] || "", onChange: e => updCell(row.id, ratio, e.target.value), style: { width: 50, textAlign: "center", fontSize: 12, padding: "3px 5px" } })
+                    : /*#__PURE__*/React.createElement("span", { style: { color: row[ratio] ? "var(--accent)" : "var(--muted)", fontWeight: row[ratio] ? 700 : 400 } }, row[ratio] || "—")
                 )
               ),
-              canEdit && React.createElement("td", { style: { padding: "5px 4px" } },
-                React.createElement("button", { className: "btn-red", style: { padding: "2px 6px", fontSize: 11 },
-                  onClick: () => delRow(row.id) }, "✕")
+              canEdit && /*#__PURE__*/React.createElement("td", { style: { padding: "5px 4px" } },
+                /*#__PURE__*/React.createElement("button", { className: "btn-red", style: { padding: "2px 6px", fontSize: 11 }, onClick: () => delRow(row.id) }, "✕")
               )
             )
           ),
-          // Summary row — count of links per ratio
-          deliverables.length > 0 && React.createElement("tr", {
-            style: { borderTop: "2px solid var(--border2)", background: "var(--accentbg)", fontWeight: 800 }
-          },
-            React.createElement("td", { style: { padding: "8px 10px", color: "var(--muted)", fontSize: 11 } }, "קישורים"),
+          // Totals row
+          deliverables.length > 0 && /*#__PURE__*/React.createElement("tr", { style: { borderTop: "2px solid var(--border2)", background: "var(--accentbg)", fontWeight: 800 } },
+            /*#__PURE__*/React.createElement("td", { style: { padding: "8px 10px", color: "var(--muted)", fontSize: 11 } }, "סה״כ"),
             ...DELIVERABLE_RATIOS.map(ratio =>
-              React.createElement("td", { key: ratio, style: { padding: "8px 6px", textAlign: "center",
-                color: countByRatio[ratio] > 0 ? "var(--accent)" : "var(--muted)" } },
-                countByRatio[ratio] > 0 ? countByRatio[ratio] + " 🔗" : "—"
+              /*#__PURE__*/React.createElement("td", { key: ratio, style: { padding: "8px 6px", textAlign: "center", color: totalByRatio[ratio] > 0 ? "var(--accent)" : "var(--muted)" } },
+                totalByRatio[ratio] > 0 ? totalByRatio[ratio] : "—"
               )
             ),
-            canEdit && React.createElement("td", null)
+            canEdit && /*#__PURE__*/React.createElement("td", null)
           )
         )
       )
     )
   );
 }
-
 
 function ProjectPlanning({
   project,
@@ -5446,42 +5244,14 @@ function ProjectPlanning({
   // ── Actual shifts from calendar linked to this project ──
   const actualShifts = project.shifts || [];
 
-  // ── Group actual shifts by person name (for matching to plan rows) ──
+  // ── Group actual shifts by person ──
   const actualByPerson = {};
   actualShifts.forEach(s => {
-    // Use personName (display name) for matching against plan row names
-    const displayName = users.find(u => u.id === s.person)?.name || s.freelancerName || s.personName || s.person || "—";
-    if (!actualByPerson[displayName]) actualByPerson[displayName] = { shifts: 0, hours: 0 };
-    actualByPerson[displayName].shifts += 1;
-    actualByPerson[displayName].hours += parseFloat(s.hours) || 0;
+    const key = s.person || s.personName || "—";
+    if (!actualByPerson[key]) actualByPerson[key] = { shifts: 0, hours: 0, name: s.personName || s.person || "—" };
+    actualByPerson[key].shifts += 1;
+    actualByPerson[key].hours += parseFloat(s.hours) || 0;
   });
-
-  // ── Also group by task/shift-type for role matching ──
-  const actualByTask = {};
-  actualShifts.forEach(s => {
-    (s.tasks || []).forEach(task => {
-      if (!actualByTask[task]) actualByTask[task] = { shifts: 0, hours: 0 };
-      actualByTask[task].shifts += 1;
-      actualByTask[task].hours += parseFloat(s.hours) || 0;
-    });
-  });
-
-  // ── Match a plan row to actual data ──
-  const matchActual = (row) => {
-    // 1. Try match by name
-    const nameKey = Object.keys(actualByPerson).find(k =>
-      row.name && k.toLowerCase().includes((row.name || "").toLowerCase())
-    );
-    if (nameKey) return actualByPerson[nameKey];
-    // 2. Try match by role keyword against task labels
-    const roleKw = (row.role || "").toLowerCase();
-    const taskKey = Object.keys(actualByTask).find(t => {
-      const tLabel = (shiftTypes || DEF_SHIFT_TYPES).find(st => st.id === t)?.label?.toLowerCase() || t.toLowerCase();
-      return roleKw && (tLabel.includes(roleKw) || roleKw.includes(tLabel.replace(/[^א-ת]/g,"")));
-    });
-    if (taskKey) return actualByTask[taskKey];
-    return null;
-  };
 
   // ── Totals ──
   const rows = plan.staffRows || [];
@@ -5546,7 +5316,11 @@ function ProjectPlanning({
           ),
           rows.map((row, idx) => {
             const total = (parseFloat(row.qty)||0) * (parseFloat(row.rate)||0);
-            const actual = matchActual(row);
+            // Match actual shifts by name
+            const actualKey = Object.keys(actualByPerson).find(k =>
+              (row.name && (k === row.name || actualByPerson[k].name.toLowerCase().includes((row.name||"").toLowerCase())))
+            );
+            const actual = actualKey ? actualByPerson[actualKey] : null;
             const rowBg = idx%2===0 ? "transparent" : "var(--card2)20";
             return /*#__PURE__*/React.createElement("tr", { key: row.id, style: { borderBottom: "1px solid var(--border)", background: rowBg } },
               /* Role */
@@ -5880,6 +5654,974 @@ function Reports({
       padding: "8px 6px"
     }
   }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 40
+    }
+  }, /*#__PURE__*/React.createElement(PBar, {
+    v: p.progress
+  })), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--accent)"
+    }
+  }, p.progress, "%"))), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: "8px 6px",
+      color: "var(--red)"
+    }
+  }, p.onlineScreening || "—"), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: "8px 6px",
+      color: "var(--blue)"
+    }
+  }, (p.hours || []).reduce((s, h) => s + h.hours, 0).toFixed(1), "h"), /*#__PURE__*/React.createElement("td", {
+    style: {
+      padding: "8px 6px",
+      color: "var(--muted)",
+      maxWidth: 130,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap"
+    }
+  }, p.statusNote || "—"))))), reportProjects.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "var(--muted)",
+      textAlign: "center",
+      padding: 32
+    }
+  }, "\u05D0\u05D9\u05DF \u05E4\u05E8\u05D5\u05D9\u05E7\u05D8\u05D9\u05DD \u05DC\u05EA\u05E6\u05D5\u05D2\u05D4"))), tab === "hours" && (() => {
+    const all = [];
+    projects.forEach(p => (p.hours || []).filter(h => h.date && h.date.startsWith(month)).forEach(h => {
+      const u = users.find(u => u.id === h.worker);
+      all.push({
+        ...h,
+        projName: p.name,
+        workerName: (u === null || u === void 0 ? void 0 : u.name) || h.worker
+      });
+    }));
+    all.sort((a, b) => b.date.localeCompare(a.date));
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 10,
+        marginBottom: 14,
+        alignItems: "center",
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "var(--muted2)"
+      }
+    }, "\u05E1\u05D4\"\u05DB ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "var(--accent)",
+        fontWeight: 800
+      }
+    }, all.reduce((s, h) => s + h.hours, 0).toFixed(1), "h")), /*#__PURE__*/React.createElement("button", {
+      className: "btn-green btn-sm",
+      onClick: () => {
+        const rows = [["עובד", "פרויקט", "תאריך", "כניסה", "יציאה", "שעות", "הערה"]];
+        all.forEach(h => rows.push([h.workerName, h.projName, h.date, h.timeIn || "", h.timeOut || "", h.hours.toFixed(1), h.note || ""]));
+        dlCSV(rows, `שעות_${month}.csv`);
+      }
+    }, "\uD83D\uDCE4 \u05D9\u05D9\u05E6\u05D5\u05D0 CSV")), [...new Set(all.map(h => h.worker))].map(wid => {
+      var _wh$;
+      const wh = all.filter(h => h.worker === wid);
+      const wt = wh.reduce((s, h) => s + h.hours, 0);
+      return /*#__PURE__*/React.createElement("div", {
+        key: wid,
+        className: "card",
+        style: {
+          marginBottom: 14
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 10
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontWeight: 700,
+          fontSize: 15
+        }
+      }, (_wh$ = wh[0]) === null || _wh$ === void 0 ? void 0 : _wh$.workerName), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontWeight: 900,
+          color: "var(--accent)",
+          fontSize: 18
+        }
+      }, wt.toFixed(1), "h")), wh.map(h => /*#__PURE__*/React.createElement("div", {
+        key: h.id,
+        style: {
+          display: "flex",
+          gap: 8,
+          justifyContent: "space-between",
+          fontSize: 12,
+          color: "var(--muted)",
+          padding: "5px 0",
+          borderBottom: "1px solid var(--border)"
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          minWidth: 80
+        }
+      }, h.date), /*#__PURE__*/React.createElement("span", {
+        style: {
+          flex: 1
+        }
+      }, h.projName), /*#__PURE__*/React.createElement("span", null, h.timeIn && h.timeOut ? `${h.timeIn}–${h.timeOut}` : ""), /*#__PURE__*/React.createElement("span", {
+        style: {
+          color: "var(--text)",
+          fontWeight: 700
+        }
+      }, h.hours.toFixed(1), "h"))));
+    }));
+  })(), tab === "monthly" && projects.filter(p => {
+    const d = p.onlineScreening || p.deliveryDate || "";
+    return d.startsWith(month);
+  }).map(p => /*#__PURE__*/React.createElement("div", {
+    key: p.id,
+    className: "card",
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      marginBottom: 10,
+      flexWrap: "wrap",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 800
+    }
+  }, p.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "var(--muted)"
+    }
+  }, p.client)), /*#__PURE__*/React.createElement(StatusBadge, {
+    s: p.status
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))",
+      gap: 10
+    }
+  }, [{
+    l: "התקדמות",
+    v: `${p.progress}%`,
+    c: "var(--accent)"
+  }, {
+    l: "משימות",
+    v: `${(p.tasks || []).filter(t => t.done).length}/${(p.tasks || []).length}`,
+    c: "var(--blue)"
+  }, {
+    l: "שעות",
+    v: `${(p.hours || []).reduce((s, h) => s + h.hours, 0).toFixed(1)}h`,
+    c: "var(--green)"
+  }, {
+    l: "הקרנה",
+    v: p.onlineScreening || "—",
+    c: "var(--red)"
+  }].map(x => /*#__PURE__*/React.createElement("div", {
+    key: x.l,
+    className: "card2",
+    style: {
+      padding: "10px 12px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "var(--muted)",
+      marginBottom: 3
+    }
+  }, x.l), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 800,
+      color: x.c
+    }
+  }, x.v)))))));
+}
+
+// ══════════════════════════════════════════
+// QUOTE BUILDER — with template editor + full customization
+// ══════════════════════════════════════════
+function SaveAsTemplateBtn({
+  lines,
+  payment,
+  tmpls,
+  onUpdateTemplates
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [msg, setMsg] = useState("");
+  const ref = useRef();
+  useEffect(() => {
+    const h = e => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+  const save = () => {
+    if (!name.trim()) {
+      setMsg("הזן שם");
+      return;
+    }
+    if (!lines || !lines.length) {
+      setMsg("אין שורות לשמירה");
+      return;
+    }
+    const newTmpl = {
+      id: uid(),
+      name: name.trim(),
+      lines: lines.map(l => ({
+        ...l,
+        id: uid()
+      })),
+      payment
+    };
+    onUpdateTemplates([...(tmpls || []), newTmpl]);
+    setMsg("✅ נשמר: " + name.trim());
+    setName("");
+    setTimeout(() => {
+      setMsg("");
+      setOpen(false);
+    }, 1800);
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    ref: ref,
+    style: {
+      position: "relative"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn-ghost btn-sm",
+    onClick: () => setOpen(x => !x)
+  }, "\uD83D\uDCCB \u05E9\u05DE\u05D5\u05E8 \u05DB\u05EA\u05D1\u05E0\u05D9\u05EA"), open && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      bottom: "calc(100% + 6px)",
+      right: 0,
+      background: "var(--card)",
+      border: "1px solid var(--border2)",
+      borderRadius: 10,
+      padding: 14,
+      minWidth: 240,
+      zIndex: 300,
+      boxShadow: "0 6px 24px rgba(0,0,0,.5)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      marginBottom: 8,
+      fontSize: 13
+    }
+  }, "\uD83D\uDCCB \u05E9\u05DE\u05D5\u05E8 \u05EA\u05D1\u05E0\u05D9\u05EA \u05D7\u05D3\u05E9\u05D4"), /*#__PURE__*/React.createElement("input", {
+    value: name,
+    onChange: e => setName(e.target.value),
+    placeholder: "\u05E9\u05DD \u05D4\u05EA\u05D1\u05E0\u05D9\u05EA...",
+    onKeyDown: e => e.key === "Enter" && save(),
+    autoFocus: true
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "var(--muted)",
+      marginTop: 4,
+      marginBottom: 8
+    }
+  }, (lines === null || lines === void 0 ? void 0 : lines.length) || 0, " \u05E9\u05D5\u05E8\u05D5\u05EA \u05D9\u05D9\u05E9\u05DE\u05E8\u05D5"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn-gold btn-sm",
+    onClick: save,
+    style: {
+      flex: 1
+    }
+  }, "\u05E9\u05DE\u05D5\u05E8"), /*#__PURE__*/React.createElement("button", {
+    className: "btn-ghost btn-sm",
+    onClick: () => setOpen(false)
+  }, "\u05D1\u05D9\u05D8\u05D5\u05DC")), msg && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 8,
+      fontSize: 12,
+      color: msg.startsWith("✅") ? "var(--green)" : "var(--red)"
+    }
+  }, msg)));
+}
+function QuoteBuilder({
+  projects,
+  quoteTemplates,
+  onSave,
+  onUpdateTemplates,
+  onConvertToProject,
+  user
+}) {
+  const isAdmin = user.role === "admin";
+  const [step, setStep] = useState("list");
+  const [projId, setProjId] = useState("");
+  const [lines, setLines] = useState([]);
+  const [tplName, setTplName] = useState("");
+  const [qClient, setQClient] = useState("");
+  const [qClientCustom, setQClientCustom] = useState(false);
+  const [qProjName, setQProjName] = useState("");
+  const [qProjDesc, setQProjDesc] = useState("");
+  const [qScope, setQScope] = useState("");
+  const [deliverRows, setDeliverRows] = useState([{
+    id: uid(),
+    text: "",
+    ratio: "",
+    resolution: "",
+    platform: ""
+  }]);
+  const addDeliverRow = () => setDeliverRows(r => [...r, {
+    id: uid(),
+    text: "",
+    ratio: "",
+    resolution: "",
+    platform: ""
+  }]);
+  const updDeliverRow = (id, field, v) => setDeliverRows(r => r.map(x => x.id === id ? {
+    ...x,
+    [field]: v
+  } : x));
+  const delDeliverRow = id => setDeliverRows(r => r.filter(x => x.id !== id));
+  const RATIO_OPTS = ["16:9", "9:16", "9:16 טיקטוק", "4:5", "1:1"];
+  const [selRatios, setSelRatios] = useState([]);
+  const [ratioCustom, setRatioCustom] = useState("");
+  const toggleRatio = v => setSelRatios(r => r.includes(v) ? r.filter(x => x !== v) : [...r, v]);
+  const getRatios = () => [...selRatios, ...(ratioCustom.trim() ? [ratioCustom.trim()] : [])].join(", ");
+  const RES_BY_RATIO = {
+    "16:9": ["4K (3840×2160)", "1080p (1920×1080)", "720p (1280×720)"],
+    "9:16": ["1080×1920", "720×1280"],
+    "9:16 טיקטוק": ["1080×1920"],
+    "4:5": ["1080×1350"],
+    "1:1": ["1080×1080"]
+  };
+  const resSuggestions = [...new Set(selRatios.flatMap(r => RES_BY_RATIO[r] || []))];
+  const [selRes, setSelRes] = useState([]);
+  const [resCustom, setResCustom] = useState("");
+  const toggleRes = v => setSelRes(r => r.includes(v) ? r.filter(x => x !== v) : [...r, v]);
+  const getRes = () => [...selRes, ...(resCustom.trim() ? [resCustom.trim()] : [])].join(", ");
+  const PLATFORM_OPTS = ["טלוויזיה", "רדיו", "דיגיטל", "קולנוע", "אינסטגרם", "יוטיוב", "פייסבוק", "טיקטוק"];
+  const [selPlatforms, setSelPlatforms] = useState([]);
+  const [platformCustom, setPlatformCustom] = useState("");
+  const togglePlatform = v => setSelPlatforms(r => r.includes(v) ? r.filter(x => x !== v) : [...r, v]);
+  const getPlatforms = () => [...selPlatforms, ...(platformCustom.trim() ? [platformCustom.trim()] : [])].join(", ");
+  const [qFormats, setQFormats] = useState("");
+  const [qUsageRights, setQUsageRights] = useState("");
+  const [qClientResp, setQClientResp] = useState("");
+  const [qPayment, setQPayment] = useState("שוטף+40");
+  const [paymentExtra, setPaymentExtra] = useState(false);
+  const DEFAULT_NOTE = `רישיון שימוש בלתי מוגבל:\nבהתאם למסמך תנאים והגבלות המצורף, ועם סיום הפרויקט וקבלת תשלום מלא, פלואו-פוסט-וידאו בע"מ תעניק רישיון שימוש בלעדי ובלתי מוגבל ללקוח כמפורט בסעיף "פלטפורמות" לעיל.\nרישיון זה הוא רישיון "חד-יישומי" ולא רישיון "רב שימושי".\nאין להפיץ מחדש את הסרט כחומרי ספרייה, בכלי או תבנית, או עם קבצי מקור.\n\nמדיניות ביטולים:\nביטול עד 48 שעות מתחילת עבודה — 5% דמי ביטול.\nביטול לאחר תחילת עבודה — חלק יחסי + 10% עמלת הפקה.`;
+  const [qNote, setQNote] = useState(DEFAULT_NOTE);
+  const [qDesign, setQDesign] = useState({ headerColor: "#1a2e45", rowColor: "#ffffff", altRowColor: "#f9f9f9", rowHeight: "normal", accentColor: "var(--accent)" });
+  const UNIT_OPTS = ["פרויקט", "משמרת", "יום", "סרט", "שעה", ""];
+  const tmpls = quoteTemplates || DEF_QUOTE_TMPLS;
+  const total = lines.reduce((s, l) => s + l.qty * l.price, 0);
+  const updLine = (id, k, v) => setLines(ls => ls.map(l => l.id === id ? {
+    ...l,
+    [k]: k === "qty" || k === "price" ? +v || 0 : v
+  } : l));
+  const clientList = [...new Set(projects.map(p => p.client).filter(Boolean))].sort();
+  const ChipSelect = ({
+    opts,
+    selected,
+    onToggle,
+    custom,
+    onCustom,
+    placeholder
+  }) => /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 6,
+      marginBottom: 6
+    }
+  }, opts.map(o => /*#__PURE__*/React.createElement("div", {
+    key: o,
+    onClick: () => onToggle(o),
+    style: {
+      padding: "4px 12px",
+      borderRadius: 20,
+      fontSize: 12,
+      cursor: "pointer",
+      border: "1px solid",
+      borderColor: selected.includes(o) ? "var(--accent)" : "var(--border)",
+      background: selected.includes(o) ? "var(--accent)20" : "transparent",
+      color: selected.includes(o) ? "var(--accent)" : "var(--muted2)"
+    }
+  }, o))), /*#__PURE__*/React.createElement("input", {
+    value: custom,
+    onChange: e => onCustom(e.target.value),
+    placeholder: placeholder || "הוסף ידנית...",
+    style: {
+      fontSize: 12,
+      padding: "5px 10px"
+    }
+  }));
+  const loadTemplate = tid => {
+    const t = tmpls.find(t => t.id === tid);
+    if (!t) return;
+    setTplName(t.name);
+    setLines(t.lines.map(l => ({
+      ...l,
+      id: uid()
+    })));
+    const p = projects.find(x => x.id === projId);
+    setQClient((p === null || p === void 0 ? void 0 : p.client) || "");
+    setQProjName((p === null || p === void 0 ? void 0 : p.name) || "");
+    setStep("build");
+  };
+  const resetForm = () => {
+    setLines([]);
+    setProjId("");
+    setQClient("");
+    setQClientCustom(false);
+    setQProjName("");
+    setQProjDesc("");
+    setQScope("");
+    setDeliverRows([{
+      id: uid(),
+      text: "",
+      ratio: "",
+      resolution: "",
+      platform: ""
+    }]);
+    setSelRatios([]);
+    setRatioCustom("");
+    setSelRes([]);
+    setResCustom("");
+    setSelPlatforms([]);
+    setPlatformCustom("");
+    setQFormats("");
+    setQUsageRights("");
+    setQClientResp("");
+    setQPayment("שוטף+40");
+    setPaymentExtra(false);
+    setTplName("");
+  };
+  const save = () => {
+    if (!projId) { alert("יש לבחור פרויקט לפני השמירה"); return; }
+    const q = {
+      id: uid(),
+      date: todayStr(),
+      client: qClient,
+      total,
+      note: qNote,
+      template: tplName,
+      approved: false,
+      projId,
+      projName: qProjName,
+      projDesc: qProjDesc,
+      deliverables: deliverRows.filter(r => r.text).map(r => [r.text, r.ratio, r.resolution, r.platform].filter(Boolean).join(" | ")).join("\n"),
+      formats: qFormats,
+      resolutions: getRes(),
+      ratios: getRatios(),
+      platforms: getPlatforms(),
+      usageRights: qUsageRights,
+      clientResp: qClientResp,
+      scope: qScope,
+      payment: qPayment + (paymentExtra ? " + 40%" : ""),
+      lines
+    };
+    onSave(projId, q);
+    resetForm();
+    setStep("list");
+  };
+  const printQuote = (q, lns, tot, design) => {
+    const d = design || qDesign || {};
+    const hdrColor = d.headerColor || "#1e3a8a";
+    const accentColor = d.accentColor || "#1d4ed8";
+    const altRow = d.altRowColor || "#f8fafc";
+    const rowPad = d.rowHeight === "compact" ? "4px 9px" : d.rowHeight === "spacious" ? "10px 9px" : "6px 9px";
+    const w = window.open("", "_blank");
+    const dateStr = new Date().toLocaleDateString("he-IL", { year: "numeric", month: "long", day: "numeric" });
+    const quoteNum = `QT-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
+    const sec = (label, val) => val ? `<div class="sec"><div class="sec-label">${label}</div><div class="sec-val">${String(val).replace(/\n/g,"<br/>")}</div></div>` : "";
+    const logo = document.querySelector("#appLogo");
+    const logoHtml = logo ? `<img src="${logo.src}" style="height:54px;object-fit:contain;"/>` : `<div class="co-logo-text">FLOW</div>`;
+    w.document.write(`<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>הצעת מחיר — ${q.client || ""}</title>
+<style>
+@page{size:A4 portrait;margin:14mm 15mm 14mm 15mm}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;background:#fff;color:#111827;direction:rtl;font-size:11.5px;line-height:1.5}
+.page{width:180mm;max-width:100%;margin:0 auto;padding:0}
+/* Header */
+.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid ${accentColor};padding-bottom:12px;margin-bottom:14px}
+.co-logo-text{font-size:24px;font-weight:900;color:#1d4ed8;letter-spacing:-1px}
+.co-info{text-align:left;font-size:9.5px;color:#4b5563;line-height:1.8}
+.co-info b{color:#111827;font-size:10px}
+.doc-block{margin-bottom:4px}
+.doc-title{font-size:22px;font-weight:900;color:#1d4ed8;letter-spacing:-.5px}
+.doc-sub{font-size:10px;color:#6b7280;margin-top:2px}
+/* Client strip */
+.client-strip{display:flex;justify-content:space-between;align-items:flex-end;background:#eff6ff;border:1px solid #bfdbfe;border-right:4px solid #1d4ed8;border-radius:0 6px 6px 0;padding:10px 14px;margin-bottom:12px}
+.cl-name{font-size:15px;font-weight:900;color:#1e3a8a}
+.cl-proj{font-size:11px;color:#3b82f6;margin-top:2px;font-weight:600}
+.quote-badge{font-size:9.5px;color:#6b7280;text-align:left}
+.quote-badge b{color:#1d4ed8;font-size:10.5px}
+/* Sections */
+.secs-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 20px;margin-bottom:10px}
+.sec{margin-bottom:9px}
+.sec-label{font-size:8.5px;font-weight:800;color:#1d4ed8;letter-spacing:.6px;text-transform:uppercase;margin-bottom:2px;border-bottom:1px solid #dbeafe;padding-bottom:2px}
+.sec-val{font-size:11px;color:#374151;line-height:1.55}
+.sec-full{grid-column:1/-1}
+/* Divider */
+.div{height:1px;background:#e5e7eb;margin:10px 0}
+/* Price table */
+.tbl-wrap{margin:10px 0}
+table{width:100%;border-collapse:collapse}
+thead tr{background:${hdrColor}}
+thead th{color:#fff;padding:7px 9px;text-align:right;font-size:10px;font-weight:700}
+tbody tr:nth-child(even){background:${altRow}}
+tbody td{padding:${rowPad};border-bottom:1px solid #e5e7eb;font-size:11px;color:#1f2937}
+tbody tr:last-child td{border-bottom:none}
+/* Total block */
+.total-wrap{display:flex;justify-content:flex-end;margin:8px 0 3px}
+.total-box{background:#1e3a8a;color:#fff;padding:11px 18px 11px 26px;border-radius:8px;min-width:250px}
+.total-label{font-size:10px;color:#93c5fd;font-weight:600;margin-bottom:3px}
+.total-amount{font-size:20px;font-weight:900;letter-spacing:-.5px}
+.total-vat{font-size:10px;color:#93c5fd;margin-top:3px;font-weight:500}
+/* Payment */
+.payment-row{display:flex;align-items:center;gap:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:8px 12px;margin:9px 0}
+.payment-icon{font-size:16px}
+.payment-label{font-size:9px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px}
+.payment-val{font-size:11.5px;color:#111827;font-weight:700}
+/* Notes */
+.note{background:#f9fafb;border:1px solid #e5e7eb;border-right:3px solid #1d4ed8;border-radius:0 6px 6px 0;padding:10px 13px;margin-top:9px;font-size:10px;line-height:1.75;color:#4b5563}
+.note b{color:#111827}
+/* Footer */
+.footer{margin-top:14px;border-top:2px solid #1d4ed8;padding-top:9px;display:flex;justify-content:space-between;align-items:center}
+.footer-text{font-size:9px;color:#6b7280}
+.footer-brand{font-size:10px;font-weight:800;color:#1d4ed8}
+@media print{
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .page{padding:0}
+  .note{page-break-inside:avoid}
+  .tbl-wrap{page-break-inside:avoid}
+  .total-wrap{page-break-inside:avoid}
+}
+</style></head><body><div class="page">
+<div class="header">
+  <div>
+    <div class="doc-block">${logoHtml}</div>
+  </div>
+  <div style="text-align:left">
+    <div class="doc-title">הצעת מחיר</div>
+    <div class="doc-sub">תאריך: ${dateStr}</div>
+    <div class="doc-sub" style="color:#1d4ed8;font-weight:700">${quoteNum}</div>
+  </div>
+  <div class="co-info">
+    <b>FLOW | Post Production</b><br/>
+    החשמונאים 99, תל אביב<br/>
+    fpp.co.il<br/>
+    077-5125110<br/>
+    ח.פ: 516791274
+  </div>
+</div>
+<div class="client-strip">
+  <div>
+    <div class="cl-name">${q.client || "—"}</div>
+    ${q.projName ? `<div class="cl-proj">פרויקט: ${q.projName}</div>` : ""}
+  </div>
+  <div class="quote-badge">מסמך מס׳<br/><b>${quoteNum}</b><br/>${dateStr}</div>
+</div>
+<div class="secs-grid">
+  ${q.projDesc ? `<div class="sec sec-full">${sec("תיאור הפרויקט", q.projDesc)}</div>` : ""}
+  ${q.scope ? `<div class="sec sec-full">${sec("תכולה מפורטת", q.scope)}</div>` : ""}
+  ${q.deliverables ? `<div class="sec sec-full"><div class="sec-label">תוצרים</div><table style="width:100%;border-collapse:collapse;margin-top:4px;font-size:11.5px"><thead><tr style="background:#eff6ff"><th style="padding:5px 8px;text-align:right;border:1px solid #dbeafe;font-weight:700">תוצר</th><th style="padding:5px 8px;text-align:right;border:1px solid #dbeafe;font-weight:700">פרופורציה</th><th style="padding:5px 8px;text-align:right;border:1px solid #dbeafe;font-weight:700">רזולוציה</th><th style="padding:5px 8px;text-align:right;border:1px solid #dbeafe;font-weight:700">פלטפורמה</th></tr></thead><tbody>${q.deliverables.split("\n").filter(Boolean).map((row,idx)=>{const p=row.split(" | ");return `<tr style="background:${idx%2===0?"#fff":"#f8fafc"}"><td style="padding:5px 8px;border:1px solid #e5e7eb">${p[0]||""}</td><td style="padding:5px 8px;border:1px solid #e5e7eb;color:#1d4ed8">${p[1]||"—"}</td><td style="padding:5px 8px;border:1px solid #e5e7eb">${p[2]||"—"}</td><td style="padding:5px 8px;border:1px solid #e5e7eb">${p[3]||"—"}</td></tr>`;}).join("")}</tbody></table></div>` : ""}
+  ${q.ratios ? `<div class="sec">${sec("פרופורציות", q.ratios)}</div>` : ""}
+  ${q.resolutions ? `<div class="sec">${sec("רזולוציות", q.resolutions)}</div>` : ""}
+  ${q.formats ? `<div class="sec">${sec("פורמטים", q.formats)}</div>` : ""}
+  ${q.platforms ? `<div class="sec">${sec("פלטפורמות שידור", q.platforms)}</div>` : ""}
+  ${q.usageRights ? `<div class="sec">${sec("סמן שימוש", q.usageRights)}</div>` : ""}
+  ${q.clientResp ? `<div class="sec">${sec("באחריות הלקוח", q.clientResp)}</div>` : ""}
+</div>
+<div class="div"></div>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>תיאור</th><th style="width:60px;text-align:center">כמות</th><th style="width:80px">יחידה</th><th style="width:110px">מחיר יחידה</th><th style="width:110px">סה״כ</th></tr></thead>
+  <tbody>
+    ${lns.map(l=>`<tr><td>${l.desc||""}</td><td style="text-align:center">${l.qty}</td><td>${l.unit||""}</td><td>${fmtMoney(l.price)}</td><td style="font-weight:700;color:#1e3a8a">${fmtMoney(l.qty*l.price)}</td></tr>`).join("")}
+  </tbody>
+</table>
+</div>
+<div class="total-wrap">
+  <div class="total-box">
+    <div class="total-label">סה״כ לתשלום</div>
+    <div class="total-amount">${fmtMoney(tot)}</div>
+    <div class="total-vat">+ מע"מ כחוק</div>
+  </div>
+</div>
+${q.payment ? `<div class="payment-row"><div class="payment-icon">💳</div><div><div class="payment-label">תנאי תשלום</div><div class="payment-val">${q.payment}</div></div></div>` : ""}
+${q.note ? `<div class="note"><b>הערות ותנאים:</b><br/><br/>${String(q.note).replace(/\n/g,"<br/>")}</div>` : ""}
+<div class="footer">
+  <div class="footer-text">מסמך זה הינו הצעת מחיר בלבד ואינו חשבונית מס</div>
+  <div class="footer-brand">FLOW | Post Production &nbsp;·&nbsp; fpp.co.il</div>
+  <div class="footer-text">077-5125110 &nbsp;·&nbsp; ח.פ 516791274</div>
+</div>
+</div></body></html>`);
+    w.document.close();
+    setTimeout(() => w.print(), 600);
+  };
+  const [clientFilter, setClientFilter] = useState(""); // filter for quotes list
+
+  if (step === "list") {
+    const allQuotes = projects.flatMap(p =>
+      (p.quotes || []).map(q => ({ ...q, projName: p.name, projNum: p.projectNumber, projId2: p.id }))
+    ).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+    const filteredQuotes = clientFilter
+      ? allQuotes.filter(q => (q.client || "").toLowerCase().includes(clientFilter.toLowerCase()))
+      : allQuotes;
+
+    const recentQuotes = filteredQuotes.slice(0, 20);
+
+    return /*#__PURE__*/React.createElement("div", { className: "fade" },
+      // ── Header ─────────────────────────────────────────────
+      /*#__PURE__*/React.createElement("div", {
+        style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 8 }
+      },
+        /*#__PURE__*/React.createElement("div", { className: "section-title", style: { marginBottom: 0 } }, "📝 הצעות מחיר"),
+        isAdmin && /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", onClick: () => setStep("pick") }, "+ הצעה חדשה")
+      ),
+
+      // ── Templates section ────────────────────────────────
+      /*#__PURE__*/React.createElement("div", { style: { marginBottom: 24 } },
+        /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 13, color: "var(--muted2)", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 } },
+          "📋 תבניות",
+          /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, background: "var(--card2)", padding: "2px 8px", borderRadius: 10 } }, tmpls.length)
+        ),
+        /*#__PURE__*/React.createElement("div", {
+          style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 8 }
+        },
+          tmpls.map(t => /*#__PURE__*/React.createElement("div", {
+            key: t.id,
+            className: "card2",
+            style: { position: "relative", padding: "12px 14px", transition: "border-color .15s" }
+          },
+            /*#__PURE__*/React.createElement("div", {
+              style: { cursor: "pointer" },
+              onClick: () => {
+                if (!isAdmin) return;
+                setTplName(t.name);
+                setLines(t.lines.map(l => ({ ...l, id: uid() })));
+                setQClient(""); setQProjName(""); setQProjDesc(""); setQScope("");
+                setQPayment(t.payment || "שוטף+40");
+                setStep("pick");
+              }
+            },
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, marginBottom: 4 } }, "📋"),
+              /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 12 } }, t.name),
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: "var(--muted)", marginTop: 2 } },
+                (t.lines?.length || 0), " שורות · ", fmtMoney(t.lines?.reduce((s, l) => s + l.qty * l.price, 0) || 0))
+            ),
+            isAdmin && /*#__PURE__*/React.createElement("div", {
+              style: { display: "flex", gap: 4, marginTop: 8 },
+              onClick: e => e.stopPropagation()
+            },
+              /*#__PURE__*/React.createElement("button", {
+                className: "btn-blue btn-sm",
+                style: { fontSize: 10, padding: "2px 7px", flex: 1 },
+                onClick: () => {
+                  // Edit template inline - open a rename prompt
+                  const newName = window.prompt("שם התבנית:", t.name);
+                  if (newName && newName.trim()) {
+                    onUpdateTemplates(tmpls.map(x => x.id === t.id ? { ...x, name: newName.trim() } : x));
+                  }
+                }
+              }, "✏️ ערוך"),
+              /*#__PURE__*/React.createElement("button", {
+                className: "btn-red",
+                style: { fontSize: 10, padding: "2px 6px" },
+                onClick: () => {
+                  if (window.confirm("למחוק תבנית \"" + t.name + "\"?")) {
+                    onUpdateTemplates(tmpls.filter(x => x.id !== t.id));
+                  }
+                }
+              }, "✕")
+            )
+          )),
+          isAdmin && /*#__PURE__*/React.createElement("div", {
+            className: "card2",
+            style: { cursor: "pointer", padding: "12px 14px", borderStyle: "dashed", textAlign: "center" },
+            onClick: () => {
+              setTplName("תבנית חדשה");
+              setLines([{ id: uid(), desc: "", qty: 1, unit: "פרויקט", price: 0 }]);
+              setQClient(""); setQProjName(""); setQProjDesc(""); setQScope("");
+              setQPayment("שוטף+40");
+              setStep("pick");
+            }
+          },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, marginBottom: 4 } }, "➕"),
+            /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 12 } }, "תבנית חדשה")
+          )
+        )
+      ),
+
+      // ── Recent quotes header + client filter ─────────────
+      /*#__PURE__*/React.createElement("div", {
+        style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }
+      },
+        /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 13, color: "var(--muted2)", display: "flex", alignItems: "center", gap: 8 } },
+          "🕐 הצעות אחרונות",
+          /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, background: "var(--card2)", padding: "2px 8px", borderRadius: 10 } }, filteredQuotes.length)
+        ),
+        /*#__PURE__*/React.createElement("div", { style: { position: "relative", minWidth: 200 } },
+          /*#__PURE__*/React.createElement("span", { className: "srch-icon" }, "🏢"),
+          /*#__PURE__*/React.createElement("input", {
+            value: clientFilter,
+            onChange: e => setClientFilter(e.target.value),
+            placeholder: "סינון לפי לקוח...",
+            className: "srch-wrap",
+            style: { paddingRight: 32, fontSize: 12 }
+          }),
+          clientFilter && /*#__PURE__*/React.createElement("button", {
+            onClick: () => setClientFilter(""),
+            style: { position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 14, padding: 0 }
+          }, "×")
+        )
+      ),
+
+      // ── Client filter chips (top clients) ────────────────
+      clientList.length > 0 && /*#__PURE__*/React.createElement("div", {
+        style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }
+      },
+        [""].concat(clientList.slice(0, 8)).map(cl => /*#__PURE__*/React.createElement("div", {
+          key: cl || "__all__",
+          onClick: () => setClientFilter(cl),
+          style: {
+            padding: "3px 10px", borderRadius: 20, fontSize: 11, cursor: "pointer",
+            border: "1px solid",
+            borderColor: clientFilter === cl ? "var(--accent)" : "var(--border)",
+            background: clientFilter === cl ? "var(--accent)20" : "transparent",
+            color: clientFilter === cl ? "var(--accent)" : "var(--muted2)",
+            fontWeight: clientFilter === cl ? 700 : 400
+          }
+        }, cl || "הכל"))
+      ),
+
+      // ── Quotes list ──────────────────────────────────────
+      recentQuotes.length === 0 && /*#__PURE__*/React.createElement("div", {
+        style: { color: "var(--muted)", textAlign: "center", padding: 40 }
+      }, clientFilter ? `אין הצעות ללקוח "${clientFilter}"` : "אין הצעות מחיר עדיין"),
+
+      /*#__PURE__*/React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 6 } },
+        recentQuotes.map(q => {
+          const proj = projects.find(p => p.id === q.projId2);
+          return /*#__PURE__*/React.createElement("div", {
+            key: q.id,
+            className: "card",
+            style: { padding: "12px 16px" }
+          },
+            /*#__PURE__*/React.createElement("div", {
+              style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }
+            },
+              /*#__PURE__*/React.createElement("div", null,
+                /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 14 } }, q.client || "—"),
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", marginTop: 2 } },
+                  q.date, " · ",
+                  /*#__PURE__*/React.createElement("span", { style: { color: "var(--accent)", fontWeight: 700 } }, fmtMoney(q.total)),
+                  q.projName && [" · ", /*#__PURE__*/React.createElement("span", { key: "pn", style: { color: "var(--blue)" } }, "#", q.projNum, " ", q.projName)]
+                )
+              ),
+              /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" } },
+                /*#__PURE__*/React.createElement("span", {
+                  style: { fontSize: 11, padding: "3px 10px", borderRadius: 12,
+                    background: q.quoteStatus === "approved" ? "var(--green)20" : q.quoteStatus === "sent" ? "var(--blue)20" : q.quoteStatus === "updated" ? "var(--purple)20" : "var(--orange)20",
+                    color: q.quoteStatus === "approved" ? "var(--green)" : q.quoteStatus === "sent" ? "var(--blue)" : q.quoteStatus === "updated" ? "var(--purple)" : "var(--orange)",
+                    fontWeight: 700, whiteSpace: "nowrap" }
+                },
+                  q.quoteStatus === "approved" ? "✓ אושרה" : q.quoteStatus === "sent" ? "📤 נשלחה" : q.quoteStatus === "updated" ? "🔄 עודכנה" : "⏳ טיוטה"
+                ),
+                isAdmin && /*#__PURE__*/React.createElement("button", {
+                  className: "btn-ghost btn-sm",
+                  title: "סמן: נשלחה",
+                  style: { padding: "3px 8px", fontSize: 12, color: q.quoteStatus === "sent" ? "var(--blue)" : undefined, borderColor: q.quoteStatus === "sent" ? "#4fc3f740" : undefined },
+                  onClick: () => onSave(q.projId2, { ...q, quoteStatus: q.quoteStatus === "sent" ? "draft" : "sent" }, true)
+                }, "📤 נשלחה"),
+                isAdmin && /*#__PURE__*/React.createElement("button", {
+                  className: "btn-ghost btn-sm",
+                  title: "סמן: אושרה",
+                  style: { padding: "3px 8px", fontSize: 12, color: q.quoteStatus === "approved" ? "var(--green)" : undefined, borderColor: q.quoteStatus === "approved" ? "#6ee7b740" : undefined },
+                  onClick: () => onSave(q.projId2, { ...q, quoteStatus: q.quoteStatus === "approved" ? "sent" : "approved", approved: q.quoteStatus !== "approved" }, true)
+                }, "✅ אושרה"),
+                isAdmin && q.quoteStatus === "approved" && !q.convertedToProjId && /*#__PURE__*/React.createElement("button", {
+                  className: "btn-gold btn-sm",
+                  title: "פתח פרויקט חדש מהצעה זו",
+                  style: { padding: "3px 10px", fontSize: 12, fontWeight: 800 },
+                  onClick: () => onConvertToProject && onConvertToProject(q)
+                }, "🚀 פתח פרויקט"),
+                q.convertedToProjId && /*#__PURE__*/React.createElement("span", {
+                  style: { fontSize: 11, color: "var(--green)", fontWeight: 700 }
+                }, "✓ פרויקט #", q.convertedProjNum),
+                isAdmin && /*#__PURE__*/React.createElement("button", {
+                  className: "btn-ghost btn-sm",
+                  title: "הצעה מעודכנת נשלחה",
+                  style: { padding: "3px 8px", fontSize: 12, color: q.quoteStatus === "updated" ? "var(--purple)" : undefined, borderColor: q.quoteStatus === "updated" ? "#c084fc40" : undefined },
+                  onClick: () => onSave(q.projId2, { ...q, quoteStatus: q.quoteStatus === "updated" ? "sent" : "updated" }, true)
+                }, "🔄 עודכנה"),
+                /*#__PURE__*/React.createElement("button", { className: "btn-blue btn-sm", onClick: () => {
+                const d = q.design || {};
+                printQuote(q, q.lines || [], q.total, d);
+              }}, "🖨️"),
+                /*#__PURE__*/React.createElement("button", {
+                  className: "btn-ghost btn-sm", title: "שכפל",
+                  onClick: () => { onSave(q.projId2, { ...q, id: uid(), date: todayStr(), quoteStatus: "draft", approved: false }); }
+                }, "📋"),
+                isAdmin && proj && /*#__PURE__*/React.createElement("button", {
+                  className: "btn-ghost btn-sm", title: "ערוך",
+                  onClick: () => {
+                    setProjId(q.projId2);
+                    setTplName(q.template || "");
+                    setLines((q.lines || []).map(l => ({ ...l, id: uid() })));
+                    setQClient(q.client || "");
+                    setQProjName(q.projName || "");
+                    setQProjDesc(q.projDesc || "");
+                    setQScope(q.scope || "");
+                    setQFormats(q.formats || "");
+                    setQUsageRights(q.usageRights || "");
+                    setQClientResp(q.clientResp || "");
+                    setQPayment(q.payment || "שוטף+40");
+                    setQNote(q.note || DEFAULT_NOTE);
+                    if (q.deliverables) setDeliverRows(q.deliverables.split("\n").filter(Boolean).map(t => {
+                      const parts = t.split(" | ");
+                      return { id: uid(), text: parts[0] || "", ratio: parts[1] || "", resolution: parts[2] || "", platform: parts[3] || "" };
+                    }));
+                    setStep("build");
+                  }
+                }, "✏️")
+              )
+            )
+          );
+        })
+      )
+    );
+  }
+  if (step === "pick") return /*#__PURE__*/React.createElement("div", {
+    className: "fade"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn-ghost btn-sm",
+    style: { marginBottom: 14 },
+    onClick: () => setStep("list")
+  }, "← חזרה"),
+  tplName && /*#__PURE__*/React.createElement("div", {
+    style: { marginBottom: 14, padding: "8px 14px", background: "var(--accent)15", border: "1px solid var(--accent)40", borderRadius: 8, fontSize: 13, display: "flex", alignItems: "center", gap: 8 }
+  }, "📋", /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700 } }, "תבנית: ", tplName), /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", style: { marginRight: "auto", fontSize: 11 }, onClick: () => setTplName("") }, "שנה תבנית")),
+  /*#__PURE__*/React.createElement("div", { className: "section-title" }, "בחר לקוח ופרויקט"),
+  /*#__PURE__*/React.createElement("div", { className: "card" },
+    /*#__PURE__*/React.createElement("div", { style: { marginBottom: 14 } },
+      /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 6 } }, "שם לקוח"),
+      /*#__PURE__*/React.createElement("input", {
+        list: "pick-client-list",
+        value: qClient,
+        onChange: e => { setQClient(e.target.value); setQClientCustom(true); },
+        placeholder: "בחר מרשימה או הקלד לקוח חדש..."
+      }),
+      /*#__PURE__*/React.createElement("datalist", { id: "pick-client-list" },
+        clientList.map(cl => /*#__PURE__*/React.createElement("option", { key: cl, value: cl }))
+      )
+    ),
+    /*#__PURE__*/React.createElement(ProjSearchSelect, {
+      projects: projects,
+      value: projId,
+      onChange: v => {
+        setProjId(v);
+        const p = projects.find(x => x.id === v);
+        if (p) {
+          if (!qClient) setQClient(p.client || "");
+          setQProjName(p.name || "");
+        }
+      }
+    }),
+    projId && /*#__PURE__*/React.createElement("div", {
+      style: { marginTop: 16 }
+    },
+    tplName
+      ? /*#__PURE__*/React.createElement("button", {
+          className: "btn-gold",
+          style: { width: "100%", marginTop: 8 },
+          onClick: () => setStep("build")
+        }, "המשך לעריכה ←")
+      : null
+    ),
+    !tplName && /*#__PURE__*/React.createElement(React.Fragment, null,
+        /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 10, marginTop: 16 } }, "בחר תבנית:"),
+        /*#__PURE__*/React.createElement("div", {
+          style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 10 }
+        }, tmpls.map(t => {
+          var _t$lines;
+          return /*#__PURE__*/React.createElement("div", {
+            key: t.id, className: "card",
+            style: { cursor: "pointer", padding: 14, textAlign: "center" },
+            onClick: () => loadTemplate(t.id)
+          },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 22, marginBottom: 4 } }, "📋"),
+            /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 13 } }, t.name),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "var(--muted)" } }, ((_t$lines = t.lines) === null || _t$lines === void 0 ? void 0 : _t$lines.length) || 0, " שורות")
+          );
+        }),
+        /*#__PURE__*/React.createElement("div", {
+          className: "card",
+          style: { cursor: "pointer", padding: 14, textAlign: "center", borderStyle: "dashed" },
+          onClick: () => {
+            setTplName("הצעה חדשה");
+            setLines([{ id: uid(), desc: "", qty: 1, unit: "פרויקט", price: 0 }]);
+            setStep("build");
+          }
+        },
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 22, marginBottom: 4 } }, "✏️"),
+          /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 13 } }, "ריק")
+        ))
+      )
+  ));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "fade"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn-ghost btn-sm",
+    style: {
+      marginBottom: 14
+    },
+    onClick: () => setStep("list")
+  }, "\u2190 \u05D7\u05D6\u05E8\u05D4"), /*#__PURE__*/React.createElement("div", {
+    className: "section-title"
+  }, "\uD83D\uDCDD \u05D4\u05E6\u05E2\u05EA \u05DE\u05D7\u05D9\u05E8 \u2014 ", tplName), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { fontWeight: 700, marginBottom: 12 }
+  }, "👤 פרטי לקוח ופרויקט"), /*#__PURE__*/React.createElement("div", {
+    style: { marginBottom: 12 }
+  }, /*#__PURE__*/React.createElement(Lbl, null, "פרויקט מקושר"),
+    /*#__PURE__*/React.createElement("select", {
+      value: projId,
+      onChange: e => {
+        setProjId(e.target.value);
+        const p = projects.find(x => x.id === e.target.value);
+        if (p) { if (!qClient) setQClient(p.client || ""); if (!qProjName) setQProjName(p.name || ""); }
+      },
+      style: { borderColor: !projId ? "var(--red)" : undefined }
+    },
+      /*#__PURE__*/React.createElement("option", { value: "" }, "— בחר פרויקט (חובה) —"),
+      projects.filter(p => p.status !== "cancelled").map(p =>
+        /*#__PURE__*/React.createElement("option", { key: p.id, value: p.id }, `#${p.projectNumber} ${p.name}`)
+      )
+    )
+  ), /*#__PURE__*/React.createElement("div", {
     className: "frow"
   }, /*#__PURE__*/React.createElement("div", {
     className: "fcol"
@@ -6223,7 +6965,7 @@ function Reports({
     onClick: () => {
       const cols = ["תיאור", "כמות", "יחידה", "מחיר יחידה", 'סה״כ'];
       const rows = lines.map(l => [l.desc, l.qty, l.unit || "", l.price, l.qty * l.price].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
-      const csv = "﻿" + ["לקוח," + qClient, "פרויקט," + qProjName, "תאריך," + todayStr(), "", ""].join("\n") + cols.join(",") + "\n" + rows.join("\n") + "\n,\nסה\"כ," + total;
+      const csv = "﻿" + ["לקוח," + qClient, "פרויקט," + qProjName, "תאריך," + todayStr(), "", ""].join("\n") + cols.join(",") + "\n" + rows.join("\n") + "\n,,,,\nסה\"כ,,,," + total;
       const a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([csv], {
         type: "text/csv;charset=utf-8"
@@ -6253,7 +6995,7 @@ function Reports({
     payment: qPayment,
     tmpls: tmpls,
     onUpdateTemplates: onUpdateTemplates
-  })))))))))
+  })));
 }
 
 // ══════════════════════════════════════════
@@ -7326,23 +8068,16 @@ function Settings({
   onUpdateSheetsUrl
 }) {
   const LIGHT_THEMES = [
-    { id: "default",      label: "כחול (ברירת מחדל)", bg: "#f0f2f7", surf: "#ffffff",  accent: "#0073ea", sidebar: "#1a2236" },
-    { id: "light-purple", label: "סגול עדין",          bg: "#f0eef8", surf: "#faf9ff",  accent: "#7c4dff", sidebar: "#2d1b69" },
-    { id: "light-forest", label: "ירוק יער",            bg: "#edf4f0", surf: "#f8fcf9",  accent: "#1a7a45", sidebar: "#0d3d20" },
-    { id: "ios-light",    label: "🍎 iOS Light",        bg: "#f2f2f7", surf: "#ffffff",  accent: "#007aff", sidebar: "#1c1c1e" },
-    { id: "ios-teal",     label: "🍎 iOS Teal",         bg: "#f2f2f7", surf: "#ffffff",  accent: "#30b0c7", sidebar: "#1c1c1e" },
-    { id: "ios-mint",     label: "🍎 iOS Mint",         bg: "#f2f2f7", surf: "#ffffff",  accent: "#00c7be", sidebar: "#1c1c1e" },
+    { id: "default",      label: "כחול (ברירת מחדל)", bg: "#f0f2f7", surf: "#ffffff", accent: "#0073ea", sidebar: "#1a2236" },
+    { id: "light-gray",   label: "אפור נקי",           bg: "#e8eaed", surf: "#f2f3f5", accent: "#2563eb", sidebar: "#232529" },
+    { id: "light-purple", label: "סגול עדין",           bg: "#f0eef8", surf: "#faf9ff", accent: "#7c4dff", sidebar: "#2d1b69" },
+    { id: "light-forest", label: "ירוק יער",             bg: "#edf4f0", surf: "#f8fcf9", accent: "#1a7a45", sidebar: "#0d3d20" },
   ];
   const DARK_THEMES = [
-    { id: "default",    label: "כהה רגיל",      bg: "#16181f", surf: "#1e2130", accent: "#0073ea", sidebar: "#1a2236" },
-    { id: "dark-deep",  label: "שחור עמוק",      bg: "#0a0b0f", surf: "#111318", accent: "#0073ea", sidebar: "#070809" },
-    { id: "dark-navy",  label: "כחול נייבי",     bg: "#0d1628", surf: "#112040", accent: "#0073ea", sidebar: "#080f20" },
-    { id: "dark-warm",  label: "חום חמים",       bg: "#1a1510", surf: "#221c15", accent: "#d4a85a", sidebar: "#110e09" },
-    { id: "ios-dark",   label: "🍎 iOS Dark",    bg: "#000000", surf: "#1c1c1e", accent: "#0a84ff", sidebar: "#000000" },
-    { id: "ios-dark-blue", label: "🍎 iOS Indigo", bg: "#000000", surf: "#1c1c1e", accent: "#5e5ce6", sidebar: "#000000" },
-    { id: "ios-dark-teal", label: "🍎 iOS Teal D", bg: "#000000", surf: "#1c1c1e", accent: "#5ac8fa", sidebar: "#000000" },
-    { id: "gray-vivid",    label: "🎨 אפור + צבעים חזקים (בהיר)", bg: "#e5e5ea", surf: "#f2f2f7", accent: "#ff3b30", sidebar: "#1c1c1e" },
-    { id: "gray-vivid-dark", label: "🎨 אפור + צבעים חזקים (כהה)", bg: "#1c1c1e", surf: "#2c2c2e", accent: "#ff453a", sidebar: "#000000" },
+    { id: "default",   label: "כהה רגיל",     bg: "#16181f", surf: "#1e2130", accent: "#0073ea", sidebar: "#1a2236" },
+    { id: "dark-deep", label: "שחור עמוק",     bg: "#0a0b0f", surf: "#111318", accent: "#0073ea", sidebar: "#070809" },
+    { id: "dark-navy", label: "כחול נייבי",    bg: "#0d1628", surf: "#112040", accent: "#0073ea", sidebar: "#080f20" },
+    { id: "dark-warm", label: "חום חמים",      bg: "#1a1510", surf: "#221c15", accent: "#d4a85a", sidebar: "#110e09" },
   ];
   const currentThemes = isDark ? DARK_THEMES : LIGHT_THEMES;
   const [etSt, setEtSt] = useState(shiftTypes || DEF_SHIFT_TYPES);
@@ -8459,7 +9194,11 @@ function App({
     id: "finance",
     icon: "💰",
     label: "Finance"
-  }] : []), ...(isAdmin ? [{
+  }] : []), {
+    id: "vault",
+    icon: "🔐",
+    label: "סיסמאות"
+  }, ...(isAdmin ? [{
     id: "clients",
     icon: "🏢",
     label: "לקוחות"
@@ -8486,8 +9225,6 @@ function App({
     style: {
       background: "var(--sidebar-bg)",
       borderLeft: mobile ? "none" : "1px solid rgba(255,255,255,0.06)",
-      backdropFilter: "blur(20px)",
-      WebkitBackdropFilter: "blur(20px)",
       padding: "16px 10px",
       display: "flex",
       flexDirection: "column",
@@ -8575,7 +9312,7 @@ function App({
 
 view === n.id && !selProjId ? " active" : ""}`,
     onClick: () => goto(n.id)
-  }, /*#__PURE__*/React.createElement("span", { className:"nav-icon" }, n.icon), n.label, n.id === "finance" && /*#__PURE__*/React.createElement("span", { style: { marginRight: "auto", fontSize: 8, background: "rgba(0,200,117,0.15)", color: "#4ade80", padding: "2px 6px", borderRadius: 8, border: "1px solid rgba(74,222,128,0.25)", fontWeight: 800 } }, "ADMIN"))), (isAdmin || isProd) && projects.filter(p => p.status === "active").length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, n.icon), n.label, n.id === "finance" && /*#__PURE__*/React.createElement("span", { style: { marginRight: "auto", fontSize: 8, background: "rgba(0,200,117,0.15)", color: "#4ade80", padding: "2px 6px", borderRadius: 8, border: "1px solid rgba(74,222,128,0.25)", fontWeight: 800 } }, "ADMIN"))), (isAdmin || isProd) && projects.filter(p => p.status === "active").length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: "var(--sidebar-muted)",
@@ -8608,7 +9345,12 @@ view === n.id && !selProjId ? " active" : ""}`,
       textOverflow: "ellipsis",
       whiteSpace: "nowrap"
     }
-  }, p.name)))),
+  }, p.name)))), /*#__PURE__*/React.createElement("a", {
+    href: "#",
+    className: "nav-item",
+    onClick: e => { e.preventDefault(); window.open("https://app.fppstudio.co.il/outputs", "_blank"); },
+    style: { textDecoration: "none", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, cursor: "pointer" }
+  }, /*#__PURE__*/React.createElement("span", null, "🎥"), "דף תוצרים ↗"),
   /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: "auto",
@@ -8909,9 +9651,7 @@ view === n.id && !selProjId ? " active" : ""}`,
     onSelect: gotoProj,
     onNew: () => setShowNewProj(true),
     onUpdate: updateProject,
-    onDelete: isAdmin ? deleteProject : null,
-    onAdd: addProject,
-    nextProjNum: data.nextProjNum || 1
+    onDelete: isAdmin ? deleteProject : null
   }) : view === "hours" ? /*#__PURE__*/React.createElement(HoursLog, {
     projects: projects,
     user: currentUser,
@@ -9048,7 +9788,7 @@ view === n.id && !selProjId ? " active" : ""}`,
     key: n.id,
     className: `mob-btn${view === n.id ? " active" : ""}`,
     onClick: () => goto(n.id)
-  }, React.createElement("span", {className:"mob-icon"}, n.icon), React.createElement("span", null, n.label)))), showNewProj && /*#__PURE__*/React.createElement(NewProjectModal, {
+  }, n.icon, /*#__PURE__*/React.createElement("span", null, n.label)))), showNewProj && /*#__PURE__*/React.createElement(NewProjectModal, {
     onClose: () => setShowNewProj(false),
     onAdd: p => {
       addProject(p);
@@ -9456,13 +10196,7 @@ function loadPriceLists() {
     return { base: DEF_PRICE_BASE, byClient: [] };
   } catch { return { base: DEF_PRICE_BASE, byClient: [] }; }
 }
-function savePriceLists(d) {
-    try { localStorage.setItem(PRICELIST_LS_KEY, JSON.stringify(d)); } catch {}
-    // Sync to Supabase
-    if (typeof sbUpsert === "function") {
-      sbUpsert("settings", { key: "pricelists", value: JSON.stringify(d), updated_at: new Date().toISOString() }).catch(() => {});
-    }
-  }
+function savePriceLists(d) { try { localStorage.setItem(PRICELIST_LS_KEY, JSON.stringify(d)); } catch {} }
 
 // ── Standalone quotes store ─────────────────────────────────────
 const STANDALONE_QUOTES_KEY = "postflow_v27_standalone_quotes";
@@ -9585,7 +10319,7 @@ function FinanceModule({ projects, users, currentUser, quoteTemplates, onSaveQuo
 
     // ── TAB: מחירון ─────────────────────────────────────────────
     finTab === "pricelist" && React.createElement(PriceListModule, {
-      priceLists, onSave: savePL, projects, user: currentUser
+      priceLists, onSave: savePL, projects, user
     }),
 
     // ── TAB: דוחות ──────────────────────────────────────────────
@@ -10390,30 +11124,6 @@ function QuoteBuilderForm({ projects, quoteTemplates, onUpdateTemplates, editing
 // ══════════════════════════════════════════
 // PRICE LIST MODULE
 // ══════════════════════════════════════════
-function NamedListItems({ list, UNITS, isAdminPL, updItem, delItem, addItem }) {
-  if (!list) return null;
-  return React.createElement("div", null,
-    React.createElement("div", {style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px 90px 36px",gap:4,marginBottom:6,padding:"0 4px"}},
-      ["תיאור","יחידה","קטגוריה","מחיר","עלות",""].map((h,i) =>
-        React.createElement("div",{key:i,style:{fontSize:10,fontWeight:700,color:"var(--muted)"}},h)
-      )
-    ),
-    list.items.map(item =>
-      React.createElement("div",{key:item.id,
-        style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px 90px 36px",gap:4,alignItems:"center",padding:"5px 4px",borderBottom:"1px solid var(--border)"}},
-        React.createElement("input",{value:item.desc,onChange:e=>updItem(list.id,item.id,"desc",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
-        React.createElement("select",{value:item.unit,onChange:e=>updItem(list.id,item.id,"unit",e.target.value),style:{fontSize:12,padding:"3px 5px"}},
-          UNITS.map(u=>React.createElement("option",{key:u,value:u},u))),
-        React.createElement("input",{value:item.category||"",onChange:e=>updItem(list.id,item.id,"category",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
-        React.createElement("input",{type:"number",value:item.price,onChange:e=>updItem(list.id,item.id,"price",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
-        React.createElement("input",{type:"number",value:item.cost_price||0,onChange:e=>updItem(list.id,item.id,"cost_price",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
-        React.createElement("button",{className:"btn-red",style:{padding:"2px 5px",fontSize:10},onClick:()=>delItem(list.id,item.id)},"✕")
-      )
-    ),
-    isAdminPL && React.createElement("button",{className:"btn-ghost btn-sm",style:{marginTop:8},onClick:()=>addItem(list.id)},"+")
-  );
-}
-
 function PriceListModule({ priceLists, onSave, projects, user }) {
   const [tab, setTab] = useState("base");
   const [selClient, setSelClient] = useState("");
@@ -10540,13 +11250,25 @@ function PriceListModule({ priceLists, onSave, projects, user }) {
                 isAdminPL && React.createElement("span",{style:{cursor:"pointer",fontSize:11,opacity:.6},onClick:()=>deleteNamedList(l.id)},"🗑️")
               ))
             ),
-            selNamedList ? React.createElement(NamedListItems, {
-              list: namedLists.find(l=>l.id===selNamedList),
-              UNITS, isAdminPL,
-              updItem: updNamedItem,
-              delItem: delNamedItem,
-              addItem: addNamedItem
-            }) : null
+            selNamedList && (() => {
+              const list = namedLists.find(l=>l.id===selNamedList);
+              if (!list) return null;
+              return React.createElement("div",null,
+                React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px 90px 36px",gap:4,marginBottom:6,padding:"0 4px"}},
+                  ["תיאור","יחידה","קטגוריה","מחיר","עלות",""].map((h,i)=>React.createElement("div",{key:i,style:{fontSize:10,fontWeight:700,color:"var(--muted)"}},h))
+                ),
+                list.items.map(item => React.createElement("div",{key:item.id,
+                  style:{display:"grid",gridTemplateColumns:"1fr 80px 90px 90px 90px 36px",gap:4,alignItems:"center",padding:"5px 4px",borderBottom:"1px solid var(--border)"}},
+                  React.createElement("input",{value:item.desc,onChange:e=>updNamedItem(list.id,item.id,"desc",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
+                  React.createElement("select",{value:item.unit,onChange:e=>updNamedItem(list.id,item.id,"unit",e.target.value),style:{fontSize:12,padding:"3px 5px"}},UNITS.map(u=>React.createElement("option",{key:u,value:u},u))),
+                  React.createElement("input",{value:item.category||"",onChange:e=>updNamedItem(list.id,item.id,"category",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
+                  React.createElement("input",{type:"number",value:item.price,onChange:e=>updNamedItem(list.id,item.id,"price",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
+                  React.createElement("input",{type:"number",value:item.cost_price||0,onChange:e=>updNamedItem(list.id,item.id,"cost_price",e.target.value),style:{fontSize:12,padding:"3px 6px"}}),
+                  React.createElement("button",{className:"btn-red",style:{padding:"2px 5px",fontSize:10},onClick:()=>delNamedItem(list.id,item.id)},"✕")
+                )),
+                isAdminPL && React.createElement("button",{className:"btn-ghost btn-sm",style:{marginTop:8},onClick:()=>addNamedItem(list.id)},"+")
+              );
+            })()
           )
     ),
 
