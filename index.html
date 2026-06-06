@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow 12</title>
+<title>PostFlow v07</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -982,7 +982,7 @@ function shiftToRow(s, users, projects) {
     ...(projIds.length > 1 ? { proj_ids: JSON.stringify(projIds) } : {}),
     person: s.person || "",
     person_name: pn,
-    ...(s.freelanceName ? { freelance_name: s.freelanceName } : {}),
+    freelance_name: s.freelanceName || "",
     date: s.date || "",
     time_start: s.timeStart || "09:00",
     hours: s.hours || 2,
@@ -1012,7 +1012,7 @@ function rowToShift(r) {
     hours: r.hours || 2,
     tasks: r.tasks || [],
     note: r.note || "",
-    freelanceName: r.freelance_name || ""
+    freelanceName: r.freelance_name || (!r.person && r.person_name ? r.person_name : "")
   };
 }
 function hourToRow(h, users, projects) {
@@ -9001,13 +9001,17 @@ function App({
       if (!rec) return;
       const isDeleted = evt === "DELETE" || rec.deleted === true;
       const s = rowToShift(rec);
-      // Always remove from globalShifts first, then re-add if not deleted
       upd(d => {
         const gs = d.globalShifts || [];
-        const filtered = gs.filter(x => x.id !== s.id);
+        const existing = gs.find(x => x.id === s.id);
+        // Preserve freelanceName if DB returned empty but local has it
+        const merged = (!s.freelanceName && existing && existing.freelanceName)
+          ? { ...s, freelanceName: existing.freelanceName, personName: existing.personName || s.personName }
+          : s;
+        const filtered = gs.filter(x => x.id !== merged.id);
         return {
           ...d,
-          globalShifts: isDeleted ? filtered : [...filtered, s]
+          globalShifts: isDeleted ? filtered : [...filtered, merged]
         };
       });
     });
