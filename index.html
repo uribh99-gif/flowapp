@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow GCL</title>
+<title>PostFlow 998</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -9214,8 +9214,12 @@ function App({
     const row = shiftToRow(s, users, projects);
     sbUpsert("shifts", row).catch(e => console.error("[shifts upsert]", e.message));
 
-    // 🗓 Sync screening shifts to internal events + Google Calendar
-    const SCREENING_TYPES = { screening_off: { label: "🖥 הקרנת אופליין", type: "screening" }, screening_on: { label: "📡 הקרנת אונליין", type: "screening" } };
+    // 🗓 Sync screening/shoot shifts to internal events + Google Calendar
+    const SCREENING_TYPES = {
+      screening_off: { label: "🖥 הקרנת אופליין", type: "screening" },
+      screening_on:  { label: "📡 הקרנת אונליין", type: "screening" },
+      shoot:         { label: "🎬 יום צילום",         type: "shoot" }
+    };
     const screeningTask = (s.tasks || []).find(t => SCREENING_TYPES[t]);
     if (screeningTask && s.date) {
       const screeningProj = s.projId ? projects.find(p => p.id === s.projId) : null;
@@ -9231,23 +9235,33 @@ function App({
       sbUpsert("events", eventToRow(ev)).catch(() => {});
 
       // ── Google Calendar API sync ──
-      const projName = screeningProj ? screeningProj.name : "";
-      const summary = `${stInfo.label}${projName ? ": " + projName : ""}`;
-      const sWorkerLabel = s.freelanceName ? "👤 פרילאנס: " + s.freelanceName : (s.personName || "");
-      const desc = `עובד: ${sWorkerLabel}\\nפרויקט: ${projName}`;
-      const existingShift = (data.globalShifts||[]).find(x=>x.id===s.id) ||
-        (screeningProj ? (screeningProj.shifts||[]).find(x=>x.id===s.id) : null);
-      const prevGcalId = existingShift ? existingShift.gcalEventId : null;
-      if (prevGcalId) {
-        gcalUpdateEvent(prevGcalId, { summary, description: desc, date: s.date, timeStart: s.timeStart, timeEnd: s.timeEnd }).catch(()=>{});
-      } else {
-        gcalCreateEvent({ summary, description: desc, date: s.date, timeStart: s.timeStart, timeEnd: s.timeEnd }).then(gcalId => {
+      (async () => {
+        try {
+          const projName = screeningProj ? screeningProj.name : "";
+          const summary = `${stInfo.label}${projName ? ": " + projName : ""}`;
+          const sWorkerLabel = s.freelanceName ? "👤 פרילאנס: " + s.freelanceName : (s.personName || "");
+          const desc = `עובד: ${sWorkerLabel}\\nפרויקט: ${projName}`;
+          const existingShift = (data.globalShifts||[]).find(x=>x.id===s.id);
+          const prevGcalId = existingShift ? existingShift.gcalEventId : null;
+          let gcalId;
+          if (prevGcalId) {
+            await gcalUpdateEvent(prevGcalId, { summary, description: desc, date: s.date, timeStart: s.timeStart, timeEnd: s.timeEnd });
+            gcalId = prevGcalId;
+          } else {
+            gcalId = await gcalCreateEvent({ summary, description: desc, date: s.date, timeStart: s.timeStart, timeEnd: s.timeEnd });
+          }
           if (gcalId) {
             const withGcal = { ...s, gcalEventId: gcalId };
             sbUpsert("shifts", shiftToRow(withGcal, users, projects)).catch(()=>{});
+            // update local state so re-saves use the same gcalId
+            upd(d => ({ ...d, globalShifts: (d.globalShifts||[]).map(x => x.id===s.id ? { ...x, gcalEventId: gcalId } : x) }));
           }
-        }).catch(()=>{});
-      }
+          if (window.__pfNotify) window.__pfNotify(`הארוע נוסף ליומן גוגל ✅`, "success");
+        } catch (e) {
+          console.warn("[gcal shift sync]", e.message);
+          if (window.__pfNotify) window.__pfNotify("סינכרון יומן נכשל - בדוק הרשאות יומן", "warn");
+        }
+      })();
     }
 
     // Optimistic local update (immediate UI feedback on this browser)
