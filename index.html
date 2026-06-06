@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow v08</title>
+<title>PostFlow 12</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -985,7 +985,6 @@ function shiftToRow(s, users, projects) {
     ...(s.freelanceName ? { freelance_name: s.freelanceName } : {}),
     date: s.date || "",
     time_start: s.timeStart || "09:00",
-    time_end: s.timeEnd || "",
     hours: s.hours || 2,
     tasks: s.tasks || [],
     note: s.note || "",
@@ -1009,7 +1008,7 @@ function rowToShift(r) {
     personName: r.person_name,
     date: r.date,
     timeStart: r.time_start,
-    timeEnd: r.time_end || "",
+    timeEnd: r.time_end || (r.time_start && r.hours ? (() => { const [h,m]=(r.time_start||"09:00").split(":").map(Number); const t=h*60+m+(r.hours||2)*60; return String(Math.floor(t/60)%24).padStart(2,"0")+":"+String(t%60).padStart(2,"0"); })() : ""),
     hours: r.hours || 2,
     tasks: r.tasks || [],
     note: r.note || "",
@@ -1134,10 +1133,18 @@ function rowToEvent(r) {
 }
 // ── Real-time subscriptions ───────────────────────────────────
 const _rtSubs = {};
+const _rtCallbacks = {}; // ref-based: always latest callback per table
+
 function sbSubscribe(table, onEvent) {
-  if (_rtSubs[table]) return () => {};
-  let ws, hbTimer, reconnectTimer;
+  // Always update the callback ref (handles re-mounts with fresh closures)
+  _rtCallbacks[table] = onEvent;
+
+  // Already connected for this table
+  if (_rtSubs[table]) return () => { delete _rtCallbacks[table]; };
+
+  let ws, hbTimer, reconnectTimer, pollTimer;
   let destroyed = false;
+  let lastPollTime = Date.now();
 
   const connect = () => {
     if (destroyed) return;
@@ -1145,10 +1152,11 @@ function sbSubscribe(table, onEvent) {
       ws = new WebSocket(
         `wss://vbdpwuuzxlzjzqwlxcxk.supabase.co/realtime/v1/websocket?apikey=${SB_KEY}&vsn=1.0.0`
       );
-    } catch(e) { return; }
+    } catch(e) { scheduleReconnect(); return; }
 
     ws.onopen = () => {
       clearTimeout(reconnectTimer);
+      // Send JWT in payload so RLS-gated tables work correctly
       ws.send(JSON.stringify({
         topic: "realtime:public:" + table,
         event: "phx_join",
@@ -1156,11 +1164,11 @@ function sbSubscribe(table, onEvent) {
           config: {
             broadcast: { self: false },
             postgres_changes: [{ event: "*", schema: "public", table }]
-          }
+          },
+          access_token: SB_KEY
         },
         ref: "1"
       }));
-      // Heartbeat every 25s to keep connection alive
       hbTimer = setInterval(() => {
         if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ topic: "phoenix", event: "heartbeat", payload: {}, ref: "hb" }));
@@ -1171,21 +1179,26 @@ function sbSubscribe(table, onEvent) {
     ws.onmessage = e => {
       try {
         const m = JSON.parse(e.data);
-
         const pl = m.payload;
-        // Supabase Realtime v2: postgres_changes arrive as pl.data with nested record
+        const cb = _rtCallbacks[table];
+        if (!cb) return;
+
+        // Supabase Realtime v2
         if (pl && pl.data) {
           const d = pl.data;
           if (d.type && (d.record || d.old_record)) {
             const rec = d.type === "DELETE" ? d.old_record : d.record;
-            onEvent(d.type, rec, d.old_record);
+            console.log("[RT]", table, d.type, rec?.id || "");
+            cb(d.type, rec, d.old_record);
+            lastPollTime = Date.now(); // WS is working, reset poll baseline
             return;
           }
         }
         // v1 / broadcast fallback
         if (pl && pl.type && (pl.record || pl.old_record)) {
           const rec = pl.type === "DELETE" ? pl.old_record : pl.record;
-          onEvent(pl.type, rec, pl.old_record);
+          cb(pl.type, rec, pl.old_record);
+          lastPollTime = Date.now();
         }
       } catch(err) {
         console.warn("[sbSubscribe] parse error", err);
@@ -1193,25 +1206,50 @@ function sbSubscribe(table, onEvent) {
     };
 
     ws.onerror = () => {};
-
     ws.onclose = () => {
       clearInterval(hbTimer);
-      if (!destroyed) {
-        // Reconnect after 4 seconds
-        reconnectTimer = setTimeout(connect, 4000);
-      }
+      if (!destroyed) scheduleReconnect();
     };
   };
 
+  const scheduleReconnect = () => {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(connect, 4000);
+  };
+
+  // Polling fallback: if WS has been silent for >35s, fetch latest rows
+  const startPoll = () => {
+    pollTimer = setInterval(async () => {
+      if (destroyed) return;
+      if (Date.now() - lastPollTime < 32000) return; // WS is alive, skip
+      try {
+        const since = new Date(lastPollTime - 5000).toISOString();
+        const r = await fetch(
+          `${SB_URL}/rest/v1/${table}?updated_at=gte.${encodeURIComponent(since)}&order=updated_at.desc&limit=50`,
+          { headers: SB_HEADERS }
+        );
+        if (!r.ok) return;
+        const rows = await r.json();
+        const cb = _rtCallbacks[table];
+        if (!cb || !rows.length) return;
+        rows.forEach(rec => cb("UPDATE", rec));
+        lastPollTime = Date.now();
+      } catch {}
+    }, 10000);
+  };
+
   connect();
+  startPoll();
   _rtSubs[table] = true;
 
   return () => {
     destroyed = true;
     clearInterval(hbTimer);
+    clearInterval(pollTimer);
     clearTimeout(reconnectTimer);
     if (ws) { ws.onclose = null; ws.close(); }
     delete _rtSubs[table];
+    delete _rtCallbacks[table];
   };
 }
 // legacy stubs so old call sites compile
