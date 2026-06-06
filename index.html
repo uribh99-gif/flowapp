@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow fix</title>
+<title>PostFlow v07</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -896,7 +896,8 @@ async function sbSoftDelete(table, id, by) {
   return sbPatch(table, id, {
     deleted: true,
     deleted_by: by,
-    deleted_at: new Date().toISOString()
+    deleted_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   });
 }
 async function sbSetting(key, value, label) {
@@ -8999,7 +9000,7 @@ function App({
     // Shifts real-time
     const unsubShifts = sbSubscribe("shifts", (evt, rec) => {
       if (!rec) return;
-      const isDeleted = evt === "DELETE" || rec.deleted === true;
+      const isDeleted = evt === "DELETE" || rec.deleted === true || rec.deleted === "true" || rec.deleted === 1;
       const s = rowToShift(rec);
       upd(d => {
         const gs = d.globalShifts || [];
