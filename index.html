@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow 998</title>
+<title>PostFlow GCL</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -1325,7 +1325,7 @@ async function importProjectsFromSheets() {
 // GOOGLE CALENDAR — OAuth 2.0
 // ══════════════════════════════════════════
 const GCAL_CLIENT_ID = "533069670646-u4b5cbco32bok4e7r816c63i3dlju2v5.apps.googleusercontent.com";
-const GCAL_SCOPES    = "https://www.googleapis.com/auth/calendar.events";
+const GCAL_SCOPES    = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly";
 const GCAL_DEFAULT_ID = "c_87bb67ed3985df304fd866f902791cfcdc720f1a825c6e8a0e1680941f86fb87@group.calendar.google.com";
 
 let _gcalToken = null;       // current access token
