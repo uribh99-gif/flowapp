@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow V01</title>
+<title>PostFlow 998</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -3332,9 +3332,7 @@ function WeeklyCalendar({
                           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                           display: "flex", alignItems: "center", gap: 2 }
                       },
-                        React.createElement("span", { style: { background: fc, color: "#fff", borderRadius: 3,
-                          padding: "0 3px", fontSize: 8, fontWeight: 900, flexShrink: 0, lineHeight: "14px" } },
-                          "#" + (p.projectNumber || "—")),
+                        React.createElement("span", { style: { color: fc, fontSize: 9, fontWeight: 900, flexShrink: 0 } }, "#" + (p.projectNumber || "—")),
                         p.name
                       ))
                     )
@@ -3342,9 +3340,7 @@ function WeeklyCalendar({
                     ? React.createElement("div", { style: { fontSize: 10, fontWeight: 800,
                         lineHeight: 1.2, marginBottom: 1, display: "flex", alignItems: "center", gap: 3,
                         overflow: "hidden", color: "var(--text)" } },
-                        React.createElement("span", { style: { background: fc, color: "#fff", borderRadius: 3,
-                          padding: "0 4px", fontSize: 8, fontWeight: 900, flexShrink: 0, lineHeight: "14px",
-                          whiteSpace: "nowrap" } }, "#" + (evProjs[0].projectNumber || "—")),
+                        React.createElement("span", { style: { color: fc, fontSize: 9, fontWeight: 900, flexShrink: 0, whiteSpace: "nowrap" } }, "#" + (evProjs[0].projectNumber || "—")),
                         React.createElement("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text)" } },
                           evProjs[0].name)
                       )
