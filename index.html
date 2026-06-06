@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow 998</title>
+<title>PostFlow V03</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -1387,13 +1387,15 @@ function getCalendarApiKey() {
   } catch { return ""; }
 }
 
-async function gcalCreateEvent({ summary, description, date, timeStart, timeEnd, location }) {
+async function gcalCreateEvent({ summary, description, date, timeStart, timeEnd, location, colorId }) {
   const calId = encodeURIComponent(getCalendarId());
   const isAllDay = !timeStart;
   const body = isAllDay
     ? { summary, description: description||"", location: location||"",
+        ...(colorId ? { colorId: String(colorId) } : {}),
         start: { date }, end: { date } }
     : { summary, description: description||"", location: location||"",
+        ...(colorId ? { colorId: String(colorId) } : {}),
         start: { dateTime: `${date}T${timeStart || "09:00"}:00`, timeZone: "Asia/Jerusalem" },
         end:   { dateTime: `${date}T${timeEnd   || "18:00"}:00`, timeZone: "Asia/Jerusalem" } };
   try {
@@ -1419,14 +1421,16 @@ async function gcalCreateEvent({ summary, description, date, timeStart, timeEnd,
   } catch(e) { console.warn("gcal create:", e); return null; }
 }
 
-async function gcalUpdateEvent(eventId, { summary, description, date, timeStart, timeEnd, location }) {
+async function gcalUpdateEvent(eventId, { summary, description, date, timeStart, timeEnd, location, colorId }) {
   if (!eventId) return null;
   const calId = encodeURIComponent(getCalendarId());
   const isAllDay = !timeStart;
   const body = isAllDay
     ? { summary, description: description||"", location: location||"",
+        ...(colorId ? { colorId: String(colorId) } : {}),
         start: { date }, end: { date } }
     : { summary, description: description||"", location: location||"",
+        ...(colorId ? { colorId: String(colorId) } : {}),
         start: { dateTime: `${date}T${timeStart}:00`, timeZone: "Asia/Jerusalem" },
         end:   { dateTime: `${date}T${timeEnd  }:00`, timeZone: "Asia/Jerusalem" } };
   try {
@@ -1466,15 +1470,15 @@ async function gcalDeleteEvent(eventId) {
 // Sync all 4 project schedule dates to Calendar
 async function syncProjectDatesToCalendar(proj, prevProj) {
   const fields = [
-    { key: "shootDate",        icon: "🎬", label: "יום צילום" },
-    { key: "offlineScreening", icon: "🖥",  label: "הקרנת אופליין" },
-    { key: "onlineScreening",  icon: "📡", label: "הקרנת אונליין" },
-    { key: "deliveryDate",     icon: "📦", label: "הגשה" }
+    { key: "shootDate",        icon: "🎬", label: "יום צילום",         colorId: "5" },
+    { key: "offlineScreening", icon: "🖥",  label: "הקרנת אופליין", colorId: "2" },
+    { key: "onlineScreening",  icon: "📡", label: "הקרנת אונליין", colorId: "9" },
+    { key: "deliveryDate",     icon: "📦", label: "הגשה",          colorId: "8" }
   ];
   const ids = { ...(proj.calendarEventIds || {}) };
   const location = getStudioLocation();
 
-  for (const { key, icon, label } of fields) {
+  for (const { key, icon, label, colorId } of fields) {
     const date = proj[key] || "";
     const prevDate = prevProj ? (prevProj[key] || "") : "";
     const eventId = ids[key] || null;
@@ -1488,11 +1492,11 @@ async function syncProjectDatesToCalendar(proj, prevProj) {
     }
     if (!eventId) {
       // New event
-      const newId = await gcalCreateEvent({ summary, description: desc, date, location });
+      const newId = await gcalCreateEvent({ summary, description: desc, date, location, colorId });
       if (newId) ids[key] = newId;
     } else if (date !== prevDate) {
       // Date changed → update
-      await gcalUpdateEvent(eventId, { summary, description: desc, date, location });
+      await gcalUpdateEvent(eventId, { summary, description: desc, date, location, colorId });
     }
     // else: same date, nothing to do
   }
@@ -9215,10 +9219,11 @@ function App({
     sbUpsert("shifts", row).catch(e => console.error("[shifts upsert]", e.message));
 
     // 🗓 Sync screening/shoot shifts to internal events + Google Calendar
+    // Google Calendar colorId: 2=sage/green, 5=banana/yellow, 9=blueberry/blue
     const SCREENING_TYPES = {
-      screening_off: { label: "🖥 הקרנת אופליין", type: "screening" },
-      screening_on:  { label: "📡 הקרנת אונליין", type: "screening" },
-      shoot:         { label: "🎬 יום צילום",         type: "shoot" }
+      screening_off: { label: "🖥 הקרנת אופליין", type: "screening", colorId: "2" },
+      screening_on:  { label: "📡 הקרנת אונליין", type: "screening", colorId: "9" },
+      shoot:         { label: "🎬 יום צילום",         type: "shoot",     colorId: "5" }
     };
     const screeningTask = (s.tasks || []).find(t => SCREENING_TYPES[t]);
     if (screeningTask && s.date) {
@@ -9245,10 +9250,10 @@ function App({
           const prevGcalId = existingShift ? existingShift.gcalEventId : null;
           let gcalId;
           if (prevGcalId) {
-            await gcalUpdateEvent(prevGcalId, { summary, description: desc, date: s.date, timeStart: s.timeStart, timeEnd: s.timeEnd });
+            await gcalUpdateEvent(prevGcalId, { summary, description: desc, date: s.date, timeStart: s.timeStart, timeEnd: s.timeEnd, colorId: stInfo.colorId });
             gcalId = prevGcalId;
           } else {
-            gcalId = await gcalCreateEvent({ summary, description: desc, date: s.date, timeStart: s.timeStart, timeEnd: s.timeEnd });
+            gcalId = await gcalCreateEvent({ summary, description: desc, date: s.date, timeStart: s.timeStart, timeEnd: s.timeEnd, colorId: stInfo.colorId });
           }
           if (gcalId) {
             const withGcal = { ...s, gcalEventId: gcalId };
