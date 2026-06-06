@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow BETA02</title>
+<title>PostFlow BETA</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -804,7 +804,8 @@ function defData() {
     calendarApiKey: "",
     clients: [],
     globalShifts: [],
-    events: []
+    events: [],
+    workerOrder: [...DEFAULT_WORKER_NAMES]
   };
 }
 function loadLocal() {
@@ -826,7 +827,8 @@ function loadLocal() {
       calendarApiKey: typeof d.calendarApiKey === "string" ? d.calendarApiKey : def.calendarApiKey,
       clients: Array.isArray(d.clients) ? d.clients : def.clients,
       globalShifts: Array.isArray(d.globalShifts) ? d.globalShifts : def.globalShifts,
-      events: Array.isArray(d.events) ? d.events : def.events
+      events: Array.isArray(d.events) ? d.events : def.events,
+      workerOrder: Array.isArray(d.workerOrder) && d.workerOrder.length ? d.workerOrder : def.workerOrder
     };
   } catch (e) {
     console.warn("loadLocal error", e);
@@ -2109,19 +2111,14 @@ function ProjSearchSelect({
 // ══════════════════════════════════════════
 // WORKER ORDER EDITOR
 // ══════════════════════════════════════════
-function WorkerOrderEditor({ users }) {
-  const storageKey = 'pf_worker_order';
+function WorkerOrderEditor({ users, currentOrder, onSave }) {
   const allNames = users.filter(u => u.active !== "false" && u.active !== "0").map(u => u.name);
 
   const getOrder = () => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
-      if (Array.isArray(saved) && saved.length) {
-        // merge: saved order + any new users not yet in list
-        const extra = allNames.filter(n => !saved.includes(n));
-        return [...saved.filter(n => allNames.includes(n)), ...extra];
-      }
-    } catch {}
+    if (Array.isArray(currentOrder) && currentOrder.length) {
+      const extra = allNames.filter(n => !currentOrder.includes(n));
+      return [...currentOrder.filter(n => allNames.includes(n)), ...extra];
+    }
     return [...DEFAULT_WORKER_NAMES.filter(n => allNames.includes(n)),
             ...allNames.filter(n => !DEFAULT_WORKER_NAMES.includes(n))];
   };
@@ -2130,6 +2127,9 @@ function WorkerOrderEditor({ users }) {
   const [dragIdx, setDragIdx] = useState(null);
   const [overIdx, setOverIdx] = useState(null);
   const [saved, setSaved] = useState(false);
+
+  // Sync if currentOrder changes from outside
+  useEffect(() => { setOrder(getOrder()); }, [currentOrder]);
 
   const onDragStart = (e, i) => { setDragIdx(i); e.dataTransfer.effectAllowed = "move"; };
   const onDragOver = (e, i) => { e.preventDefault(); setOverIdx(i); };
@@ -2147,8 +2147,8 @@ function WorkerOrderEditor({ users }) {
   const moveUp = i => { if (i === 0) return; const n = [...order]; [n[i-1], n[i]] = [n[i], n[i-1]]; setOrder(n); };
   const moveDown = i => { if (i === order.length-1) return; const n = [...order]; [n[i], n[i+1]] = [n[i+1], n[i]]; setOrder(n); };
 
-  const save = () => {
-    localStorage.setItem(storageKey, JSON.stringify(order));
+  const save = async () => {
+    await onSave(order);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
@@ -2201,7 +2201,7 @@ function WorkerOrderEditor({ users }) {
     React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center" } },
       React.createElement("button", { className: "btn-green btn-sm", onClick: save }, "💾 שמור סדר"),
       React.createElement("button", { className: "btn-ghost btn-sm", onClick: reset }, "↺ אפס"),
-      saved && React.createElement("span", { style: { fontSize: 12, color: "var(--green)", fontWeight: 700 } }, "✅ נשמר! רענן את הדף לראות שינויים")
+      saved && React.createElement("span", { style: { fontSize: 12, color: "var(--green)", fontWeight: 700 } }, "✅ נשמר! הסדר מסונכרן לכל המשתמשים")
     )
   );
 }
@@ -2283,8 +2283,8 @@ const CUSTOM_THEME_DEFAULTS_LIGHT = {
 const CUSTOM_THEME_DEFAULTS_DARK = {
   "--bg": "#16181f", "--surf": "#1e2130", "--card": "#242840", "--card2": "#1a1d28",
   "--border": "#2e3348", "--border2": "#3d4460",
-  "--accent": "#0073ea", "--text": "#ffffff", "--muted": "#c0c8dc", "--muted2": "#8a93a8",
-  "--sidebar-bg": "#0f1118", "--sidebar-text": "#c8d0e0"
+  "--accent": "#0073ea", "--text": "#ffffff", "--muted": "#ffffff", "--muted2": "#ffffff",
+  "--sidebar-bg": "#0f1118", "--sidebar-text": "#ffffff"
 };
 const CUSTOM_VAR_LABELS = [
   { key: "--bg",          label: "רקע ראשי",       group: "layout" },
@@ -2812,7 +2812,7 @@ function projColor(projId, projects) {
 
 function Dashboard({ projects, user, logoUrl, onSelect, onGoto, globalSearch,
   events, globalShifts, shiftTypes, users, onSaveShift, onDeleteShift,
-  calEditModal, setCalEditModal }) {
+  workerOrder, calEditModal, setCalEditModal }) {
 
   const myP = user.role === "worker"
     ? projects.filter(p => (p.shifts||[]).some(s=>s.person===user.id)||(p.hours||[]).some(h=>h.worker===user.id))
@@ -2990,7 +2990,7 @@ function Dashboard({ projects, user, logoUrl, onSelect, onGoto, globalSearch,
       },
         /*#__PURE__*/React.createElement(WeeklyCalendar, {
           projects:projects, user:user, users:users, shiftTypes:shiftTypes,
-          globalShifts:globalShifts, onSaveShift:onSaveShift,
+          globalShifts:globalShifts, workerOrder:workerOrder, onSaveShift:onSaveShift,
           onDeleteShift:onDeleteShift, editModal:calEditModal,
           setEditModal:setCalEditModal, onGoToProject:onSelect,
           initialNumWeeks:2
@@ -3018,6 +3018,7 @@ function WeeklyCalendar({
   users,
   shiftTypes,
   globalShifts,
+  workerOrder: workerOrderProp,
   onSaveShift,
   onDeleteShift,
   editModal,
@@ -3130,12 +3131,9 @@ function WeeklyCalendar({
   }, [weekStart]);
 
   // Workers sorted by default order
-  const workerOrder = useMemo(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('pf_worker_order') || 'null');
-      return Array.isArray(saved) && saved.length ? saved : DEFAULT_WORKER_NAMES;
-    } catch { return DEFAULT_WORKER_NAMES; }
-  }, []);
+  const workerOrder = useMemo(() =>
+    Array.isArray(workerOrderProp) && workerOrderProp.length ? workerOrderProp : DEFAULT_WORKER_NAMES,
+  [workerOrderProp]);
   const orderedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
       const ai = workerOrder.indexOf(a.name);
@@ -8311,6 +8309,9 @@ function Settings({
   logoUrl,
   onUpdateLogo,
   users,
+  workerOrder,
+  onSaveWorkerOrder,
+  isAdmin,
   driveFolder,
   onUpdateDriveFolder,
   calendarId,
@@ -8385,301 +8386,160 @@ function Settings({
     setStMsg(r ? "✅ עודכן מגליון" : "❌ שגיאה");
     setTimeout(() => setStMsg(""), 3000);
   };
-  return /*#__PURE__*/React.createElement("div", {
-    className: "fade"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "section-title"
-  }, "\u2699\uFE0F \u05D4\u05D2\u05D3\u05E8\u05D5\u05EA \u05DE\u05E2\u05E8\u05DB\u05EA"), /*#__PURE__*/React.createElement("div", {
-    className: "card",
-    style: { marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }
-  },
-    /*#__PURE__*/React.createElement("div", null,
-      /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 14 } }, "🌙 מצב תצוגה"),
-      /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: "var(--muted)", marginTop: 2 } },
-        isDark ? "מצב כהה פעיל" : "מצב בהיר פעיל"
-      )
+  const [tab, setTab] = useState("display");
+  const TABS = [
+    { id: "display",      label: "🎨 תצוגה" },
+    { id: "shifts",       label: "🎬 משמרות" },
+    { id: "integrations", label: "🔗 אינטגרציות" },
+    ...(isAdmin ? [{ id: "backup", label: "💾 גיבוי" }] : []),
+  ];
+  return React.createElement("div", { className: "fade" },
+    React.createElement("div", { className: "section-title" }, "⚙️ הגדרות מערכת"),
+    React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 } },
+      TABS.map(t => React.createElement("button", {
+        key: t.id, onClick: () => setTab(t.id),
+        style: { padding: "7px 16px", borderRadius: 20, fontSize: 13, fontWeight: tab === t.id ? 700 : 500,
+          border: tab === t.id ? "2px solid var(--accent)" : "2px solid var(--border)",
+          background: tab === t.id ? "var(--accentbg)" : "var(--card2)",
+          color: tab === t.id ? "var(--accent)" : "var(--text)", cursor: "pointer", transition: "all .15s" }
+      }, t.label))
     ),
-    /*#__PURE__*/React.createElement("div", {
-      onClick: onToggleDark,
-      style: { width: 52, height: 28, borderRadius: 14, cursor: "pointer", transition: "all .3s",
-        background: isDark ? "var(--accent)" : "var(--border2)", position: "relative", flexShrink: 0 }
-    },
-      /*#__PURE__*/React.createElement("div", { style: {
-        position: "absolute", top: 3, transition: "all .3s",
-        left: isDark ? 27 : 3, width: 22, height: 22,
-        borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)"
-      } })
-    )
-  ),
-  /*#__PURE__*/React.createElement("div", {
-    className: "card",
-    style: { marginBottom: 14 }
-  },
-    /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 14, marginBottom: 6 } }, "\uD83C\uDFA8 \u05E2\u05E8\u05DB\u05EA \u05E6\u05D1\u05E2\u05D9\u05DD"),
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: "var(--muted)", marginBottom: 14 } },
-      isDark ? "\u05D1\u05D7\u05E8 \u05E2\u05E8\u05DB\u05EA \u05E6\u05D1\u05E2\u05D9\u05DD \u05DC\u05DE\u05E6\u05D1 \u05D4\u05DB\u05D4" : "\u05D1\u05D7\u05E8 \u05E2\u05E8\u05DB\u05EA \u05E6\u05D1\u05E2\u05D9\u05DD \u05DC\u05DE\u05E6\u05D1 \u05D4\u05D1\u05D4\u05D9\u05E8"
-    ),
-    /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } },
-      currentThemes.map(th => {
-        const isActive = (colorTheme === th.id) || (th.id === "default" && (!colorTheme || colorTheme === "default"));
-        return /*#__PURE__*/React.createElement("div", {
-          key: th.id,
-          onClick: () => onChangeTheme(th.id),
-          style: {
-            cursor: "pointer",
-            borderRadius: 12,
-            overflow: "hidden",
-            border: isActive ? "2.5px solid var(--accent)" : "2px solid var(--border)",
-            boxShadow: isActive ? "0 0 0 3px rgba(0,115,234,0.2)" : "none",
-            transition: "all .15s",
-            width: 120,
-            flexShrink: 0
-          }
-        },
-          th.isCustom
-            ? /*#__PURE__*/React.createElement("div", { style: { height: 56, display: "flex", alignItems: "center",
-                justifyContent: "center", fontSize: 28,
-                background: "linear-gradient(135deg,#f0f2f7 0%,#e0e4ed 25%,#acb4c8 50%,#1a2236 75%,#0073ea 100%)" } }, "🎨")
-            : /*#__PURE__*/React.createElement("div", { style: { display: "flex", height: 56 } },
-                /*#__PURE__*/React.createElement("div", { style: { width: 36, background: th.sidebar, flexShrink: 0 } }),
-                /*#__PURE__*/React.createElement("div", { style: { flex: 1, background: th.bg, display: "flex", flexDirection: "column", gap: 4, padding: "8px 7px" } },
-                  /*#__PURE__*/React.createElement("div", { style: { height: 7, borderRadius: 3, background: th.surf, border: "1px solid rgba(0,0,0,0.07)" } }),
-                  /*#__PURE__*/React.createElement("div", { style: { height: 7, borderRadius: 3, background: th.accent, width: "60%" } }),
-                  /*#__PURE__*/React.createElement("div", { style: { height: 5, borderRadius: 3, background: th.surf, border: "1px solid rgba(0,0,0,0.07)", width: "80%" } })
-                )
-              ),
-          /*#__PURE__*/React.createElement("div", { style: {
-            padding: "5px 8px",
-            fontSize: 11, fontWeight: isActive ? 700 : 500,
-            background: "var(--card2)",
-            color: isActive ? "var(--accent)" : "var(--muted)",
-            display: "flex", alignItems: "center", gap: 5,
-            borderTop: "1px solid var(--border)"
-          } },
-            isActive && /*#__PURE__*/React.createElement("span", { style: { fontSize: 10 } }, "✓"),
-            th.label
+    tab === "display" && React.createElement("div", null,
+      React.createElement("div", { className: "card", style: { marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between" } },
+        React.createElement("div", null,
+          React.createElement("div", { style: { fontWeight: 700, fontSize: 14 } }, "🌙 מצב תצוגה"),
+          React.createElement("div", { style: { fontSize: 12, color: "var(--muted)", marginTop: 2 } }, isDark ? "מצב כהה פעיל" : "מצב בהיר פעיל")
+        ),
+        React.createElement("div", { onClick: onToggleDark,
+          style: { width: 52, height: 28, borderRadius: 14, cursor: "pointer", transition: "all .3s",
+            background: isDark ? "var(--accent)" : "var(--border2)", position: "relative", flexShrink: 0 } },
+          React.createElement("div", { style: { position: "absolute", top: 3, transition: "all .3s",
+            left: isDark ? 27 : 3, width: 22, height: 22, borderRadius: "50%",
+            background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)" } })
+        )
+      ),
+      React.createElement("div", { className: "card", style: { marginBottom: 14 } },
+        React.createElement("div", { style: { fontWeight: 700, fontSize: 14, marginBottom: 6 } }, "🎨 ערכת צבעים"),
+        React.createElement("div", { style: { fontSize: 12, color: "var(--muted)", marginBottom: 14 } }, isDark ? "בחר ערכת צבעים למצב הכהה" : "בחר ערכת צבעים למצב הבהיר"),
+        React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } },
+          currentThemes.map(th => {
+            const isActive = (colorTheme === th.id) || (th.id === "default" && (!colorTheme || colorTheme === "default"));
+            return React.createElement("div", { key: th.id, onClick: () => onChangeTheme(th.id),
+              style: { cursor: "pointer", borderRadius: 12, overflow: "hidden",
+                border: isActive ? "2.5px solid var(--accent)" : "2px solid var(--border)",
+                boxShadow: isActive ? "0 0 0 3px rgba(0,115,234,0.2)" : "none",
+                transition: "all .15s", width: 120, flexShrink: 0 } },
+              th.isCustom
+                ? React.createElement("div", { style: { height: 56, display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 28, background: "linear-gradient(135deg,#f0f2f7 0%,#e0e4ed 25%,#acb4c8 50%,#1a2236 75%,#0073ea 100%)" } }, "🎨")
+                : React.createElement("div", { style: { display: "flex", height: 56 } },
+                    React.createElement("div", { style: { width: 36, background: th.sidebar, flexShrink: 0 } }),
+                    React.createElement("div", { style: { flex: 1, background: th.bg, display: "flex", flexDirection: "column", gap: 4, padding: "8px 7px" } },
+                      React.createElement("div", { style: { height: 7, borderRadius: 3, background: th.surf, border: "1px solid rgba(0,0,0,0.07)" } }),
+                      React.createElement("div", { style: { height: 7, borderRadius: 3, background: th.accent, width: "60%" } }),
+                      React.createElement("div", { style: { height: 5, borderRadius: 3, background: th.surf, border: "1px solid rgba(0,0,0,0.07)", width: "80%" } })
+                    )
+                  ),
+              React.createElement("div", { style: { padding: "5px 8px", fontSize: 11, fontWeight: isActive ? 700 : 500,
+                background: "var(--card2)", color: isActive ? "var(--accent)" : "var(--muted)",
+                display: "flex", alignItems: "center", gap: 5, borderTop: "1px solid var(--border)" } },
+                isActive && React.createElement("span", { style: { fontSize: 10 } }, "✓"), th.label)
+            );
+          })
+        )
+      ),
+      colorTheme === "custom" && React.createElement("div", { className: "card", style: { marginBottom: 14 } },
+        React.createElement(CustomThemeEditor, { isDark, onActivate: onChangeTheme })
+      ),
+      React.createElement("div", { className: "card", style: { marginBottom: 14 } },
+        React.createElement("div", { style: { fontWeight: 700, marginBottom: 12 } }, "🖼 לוגו מותאם אישית"),
+        logoUrl && React.createElement("div", { style: { marginBottom: 12 } },
+          React.createElement("img", { src: logoUrl, style: { height: 50, objectFit: "contain", borderRadius: 6 }, alt: "logo" })
+        ),
+        React.createElement("div", { className: "frow" },
+          React.createElement("div", { className: "fcol" },
+            React.createElement(Lbl, null, "URL של תמונה (PNG/JPG/SVG)"),
+            React.createElement("input", { value: logoUrl || "", onChange: e => onUpdateLogo(e.target.value), placeholder: "https://..." })
           )
-        );
-      })
-    )
-  ),
-  colorTheme === "custom" && /*#__PURE__*/React.createElement("div", { className: "card", style: { marginBottom: 14 } },
-    /*#__PURE__*/React.createElement(CustomThemeEditor, { isDark, onActivate: onChangeTheme })
-  ),
-  /*#__PURE__*/React.createElement("div", { className: "card", style: { marginBottom: 14 } },
-    /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, fontSize: 14, marginBottom: 4 } }, "📋 סדר תצוגת עובדים ביומן"),
-    /*#__PURE__*/React.createElement(WorkerOrderEditor, { users })
-  ),
-  /*#__PURE__*/React.createElement("div", {
-    className: "card",
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      marginBottom: 12
-    }
-  }, "\uD83D\uDDBC \u05DC\u05D5\u05D2\u05D5 \u05DE\u05D5\u05EA\u05D0\u05DD \u05D0\u05D9\u05E9\u05D9\u05EA"), logoUrl && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement("img", {
-    src: logoUrl,
-    style: {
-      height: 50,
-      objectFit: "contain",
-      borderRadius: 6
-    },
-    alt: "logo"
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "frow"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "fcol"
-  }, /*#__PURE__*/React.createElement(Lbl, null, "URL \u05E9\u05DC \u05EA\u05DE\u05D5\u05E0\u05D4 (PNG/JPG/SVG)"), /*#__PURE__*/React.createElement("input", {
-    value: logoUrl || "",
-    onChange: e => onUpdateLogo(e.target.value),
-    placeholder: "https://..."
-  }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "var(--muted)"
-    }
-  }, "\uD83D\uDCA1 \u05D4\u05E2\u05DC\u05D4 \u05EA\u05DE\u05D5\u05E0\u05D4 \u05DC-imgur.com \u05D0\u05D5 Cloudinary, \u05D4\u05D3\u05D1\u05E7 \u05D0\u05EA \u05D4-URL \u05D9\u05E9\u05D9\u05E8\u05D5\u05EA \u05DB\u05D0\u05DF")), /*#__PURE__*/React.createElement("div", { className: "card", style: { marginBottom: 14 } },
-    /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 10 } }, "📊 שעות — סנכרון Google Sheets"),
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: "var(--muted)", marginBottom: 10 } }, "הגדר כתובת Google Sheet לסנכרון שעות עובדים. הוסף את ה-URL של הגיליון (וודא שיתוף מתאים)."),
-    /*#__PURE__*/React.createElement("div", { className: "fcol" },
-      /*#__PURE__*/React.createElement(Lbl, null, "Google Sheet URL"),
-      /*#__PURE__*/React.createElement("input", {
-        value: sheetsUrl,
-        onChange: e => setSheetsUrl(e.target.value),
-        placeholder: "https://docs.google.com/spreadsheets/d/...",
-        style: { fontSize: 12 }
-      })
-    ),
-    /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 10 } },
-      /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", onClick: () => {
-        if (onUpdateSheetsUrl) onUpdateSheetsUrl(sheetsUrl);
-        alert("✅ כתובת Google Sheets נשמרה");
-      }}, "💾 שמור"),
-      sheetsUrl && /*#__PURE__*/React.createElement("a", { href: sheetsUrl, target: "_blank", className: "btn-ghost btn-sm", style: { textDecoration: "none" } }, "🔗 פתח גיליון")
-    )
-  ),
-
-  /*#__PURE__*/React.createElement("div", {
-    className: "card",
-    style: { marginBottom: 14 }
-  }, /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 12 } }, "\uD83D\uDCC5 Google Calendar \u2014 \u05D9\u05D5\u05DE\u05DF \u05E1\u05D8\u05D5\u05D3\u05D9\u05D5"),
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: "var(--muted)", marginBottom: 10 } }, "\u05D0\u05D9\u05E8\u05D5\u05E2\u05D9 \u05DC\u05D5\u05D6 (\u05E6\u05D9\u05DC\u05D5\u05DD, \u05D4\u05E7\u05E8\u05E0\u05D5\u05EA, \u05D4\u05D2\u05E9\u05D4) \u05D9\u05E1\u05EA\u05E0\u05DB\u05E8\u05E0\u05D5 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA \u05DC\u05D9\u05D5\u05DE\u05DF \u05D4\u05E1\u05D8\u05D5\u05D3\u05D9\u05D5."),
-    /*#__PURE__*/React.createElement("div", { className: "frow" },
-      /*#__PURE__*/React.createElement("div", { className: "fcol" },
-        /*#__PURE__*/React.createElement(Lbl, null, "Calendar ID"),
-        /*#__PURE__*/React.createElement("input", { value: calId, onChange: e => setCalId(e.target.value), placeholder: "xxx@group.calendar.google.com", style: { fontSize: 12 } })
+        ),
+        React.createElement("div", { style: { fontSize: 11, color: "var(--muted)" } }, "💡 העלה תמונה ל-imgur.com או Cloudinary, הדבק את ה-URL ישירות כאן")
       ),
-      /*#__PURE__*/React.createElement("div", { className: "fcol" },
-        /*#__PURE__*/React.createElement(Lbl, null, "API Key"),
-        /*#__PURE__*/React.createElement("input", { value: calKey, onChange: e => setCalKey(e.target.value), placeholder: "AIzaSy...", style: { fontSize: 12 } })
-      ),
-      /*#__PURE__*/React.createElement("div", { className: "fcol" },
-        /*#__PURE__*/React.createElement(Lbl, null, "\u05DE\u05D9\u05E7\u05D5\u05DD \u05D4\u05E1\u05D8\u05D5\u05D3\u05D9\u05D5"),
-        /*#__PURE__*/React.createElement("input", { value: calLoc, onChange: e => setCalLoc(e.target.value), placeholder: "\u05E8\u05D7\u05D5\u05D1, \u05E2\u05D9\u05E8...", style: { fontSize: 12 } })
+      isAdmin && React.createElement("div", { className: "card", style: { marginBottom: 14 } },
+        React.createElement("div", { style: { fontWeight: 700, fontSize: 14, marginBottom: 4 } }, "📋 סדר תצוגת עובדים ביומן"),
+        React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", marginBottom: 8 } }, "גלוי לאדמין בלבד — הסדר מסונכרן לכל המשתמשים"),
+        React.createElement(WorkerOrderEditor, { users, currentOrder: workerOrder, onSave: onSaveWorkerOrder })
       )
     ),
-    /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" } },
-      /*#__PURE__*/React.createElement("button", { className: "btn-gold btn-sm", onClick: () => {
-        if (onUpdateCalendar) onUpdateCalendar({ calendarId: calId, calendarApiKey: calKey, studioLocation: calLoc });
-      }}, "\uD83D\uDCBE \u05E9\u05DE\u05D5\u05E8 \u05D4\u05D2\u05D3\u05E8\u05D5\u05EA"),
-      /*#__PURE__*/React.createElement("button", { className: "btn-ghost btn-sm", onClick: () => {
-        gcalRequestToken().then(() => {
-          alert("\u2705 \u05D4\u05EA\u05D7\u05D1\u05E8\u05EA \u05DC-Google Calendar \u05D1\u05D4\u05E6\u05DC\u05D7\u05D4!");
-        }).catch(e => alert("\u274C \u05E9\u05D2\u05D9\u05D0\u05D4: " + e.message));
-      }}, "\uD83D\uDD17 \u05D4\u05EA\u05D7\u05D1\u05E8 \u05DC-Google Calendar")
+    tab === "shifts" && React.createElement("div", null,
+      React.createElement("div", { className: "card" },
+        React.createElement("div", { style: { fontWeight: 700, marginBottom: 14 } }, "🎬 סוגי משמרות / משימות"),
+        etSt.map(t => React.createElement("div", { key: t.id, style: { display: "flex", gap: 10, alignItems: "center", marginBottom: 10 } },
+          React.createElement("input", { type: "color", value: t.color, onChange: e => updSt(t.id, "color", e.target.value),
+            style: { width: 36, height: 36, padding: 2, cursor: "pointer", background: "none", border: "1px solid var(--border)", borderRadius: 6 } }),
+          React.createElement("input", { value: t.label, onChange: e => updSt(t.id, "label", e.target.value), style: { flex: 1 } }),
+          React.createElement("span", { className: "tag", style: { background: t.color + "20", color: t.color, border: "1px solid " + t.color + "40", minWidth: 80, justifyContent: "center" } }, t.label),
+          React.createElement("button", { className: "btn-red", onClick: () => setEtSt(ts => ts.filter(x => x.id !== t.id)) }, "✕")
+        )),
+        React.createElement("div", { style: { display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" } },
+          React.createElement("button", { className: "btn-ghost btn-sm", onClick: () => setEtSt(ts => [...ts, { id: uid(), label: "חדש", color: "#94a3b8" }]) }, "+ הוסף סוג"),
+          React.createElement("button", { className: "btn-gold btn-sm", onClick: saveSt }, "💾 שמור + סנכרן Sheets"),
+          React.createElement("button", { className: "btn-ghost btn-sm", onClick: pullSt }, "☁️ משוך מגליון"),
+          stMsg && React.createElement("span", { style: { fontSize: 12, alignSelf: "center",
+            color: stMsg.startsWith("✅") ? "var(--green)" : stMsg.startsWith("❌") ? "var(--red)" : "var(--muted)" } }, stMsg)
+        ),
+        React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", marginTop: 8 } }, "💡 גליון ",
+          React.createElement("code", { style: { color: "var(--accent)" } }, "settings"), " — ניתן לערוך שם ולמשוך חזרה לאפליקציה")
+      )
     ),
-    calId && /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "var(--green)", marginTop: 8 } }, "\u2705 \u05D9\u05D5\u05DE\u05DF \u05DE\u05D5\u05D2\u05D3\u05E8 \u2014 \u05D0\u05D9\u05E8\u05D5\u05E2\u05D9\u05DD \u05D9\u05E1\u05EA\u05E0\u05DB\u05E8\u05E0\u05D5 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA")
-  ), /*#__PURE__*/React.createElement("div", {
-    className: "card",
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      marginBottom: 12
-    }
-  }, "\uD83D\uDCC1 \u05EA\u05D9\u05E7\u05D9\u05D9\u05EA \u05D2\u05D9\u05D1\u05D5\u05D9 \u05D1-Google Drive"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: "var(--muted)",
-      marginBottom: 10
-    }
-  }, "\u05D4\u05DB\u05E0\u05E1 \u05D0\u05EA \u05D4-ID \u05E9\u05DC \u05D4\u05EA\u05D9\u05E7\u05D9\u05D4 \u05D1-Drive \u05DC\u05E9\u05DE\u05D9\u05E8\u05EA \u05D2\u05D9\u05D1\u05D5\u05D9\u05D9\u05DD \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05D9\u05DD. \u05E0\u05DE\u05E6\u05D0 \u05D1-URL \u05E9\u05DC \u05D4\u05EA\u05D9\u05E7\u05D9\u05D4: ", /*#__PURE__*/React.createElement("code", {
-    style: {
-      color: "var(--accent)"
-    }
-  }, "drive.google.com/drive/folders/", /*#__PURE__*/React.createElement("b", null, "FOLDER_ID"))), /*#__PURE__*/React.createElement("div", {
-    className: "frow"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "fcol"
-  }, /*#__PURE__*/React.createElement(Lbl, null, "Folder ID"), /*#__PURE__*/React.createElement("input", {
-    value: dFolder,
-    onChange: e => setDFolder(e.target.value),
-    placeholder: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs..."
-  }))), /*#__PURE__*/React.createElement("button", {
-    className: "btn-gold btn-sm",
-    onClick: () => {
-      setDriveFolder(dFolder);
-      onUpdateDriveFolder(dFolder);
-    }
-  }, "\uD83D\uDCBE \u05E9\u05DE\u05D5\u05E8"), dFolder && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "var(--green)",
-      marginTop: 8
-    }
-  }, "\u2705 \u05EA\u05D9\u05E7\u05D9\u05D4 \u05DE\u05D5\u05D2\u05D3\u05E8\u05EA \u2014 \u05D2\u05D9\u05D1\u05D5\u05D9\u05D9\u05DD \u05D9\u05E9\u05DE\u05E8\u05D5 \u05E9\u05DD")), /*#__PURE__*/React.createElement("div", {
-    className: "card"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      marginBottom: 14
-    }
-  }, "\uD83C\uDFAC \u05E1\u05D5\u05D2\u05D9 \u05DE\u05E9\u05DE\u05E8\u05D5\u05EA / \u05DE\u05E9\u05D9\u05DE\u05D5\u05EA"), etSt.map(t => /*#__PURE__*/React.createElement("div", {
-    key: t.id,
-    style: {
-      display: "flex",
-      gap: 10,
-      alignItems: "center",
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "color",
-    value: t.color,
-    onChange: e => updSt(t.id, "color", e.target.value),
-    style: {
-      width: 36,
-      height: 36,
-      padding: 2,
-      cursor: "pointer",
-      background: "none",
-      border: "1px solid var(--border)",
-      borderRadius: 6
-    }
-  }), /*#__PURE__*/React.createElement("input", {
-    value: t.label,
-    onChange: e => updSt(t.id, "label", e.target.value),
-    style: {
-      flex: 1
-    }
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "tag",
-    style: {
-      background: t.color + "20",
-      color: t.color,
-      border: `1px solid ${t.color}40`,
-      minWidth: 80,
-      justifyContent: "center"
-    }
-  }, t.label), /*#__PURE__*/React.createElement("button", {
-    className: "btn-red",
-    onClick: () => setEtSt(ts => ts.filter(x => x.id !== t.id))
-  }, "\u2715"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 10,
-      marginTop: 8,
-      flexWrap: "wrap"
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "btn-ghost btn-sm",
-    onClick: () => setEtSt(ts => [...ts, {
-      id: uid(),
-      label: "חדש",
-      color: "#94a3b8"
-    }])
-  }, "+ \u05D4\u05D5\u05E1\u05E3 \u05E1\u05D5\u05D2"), /*#__PURE__*/React.createElement("button", {
-    className: "btn-gold btn-sm",
-    onClick: saveSt
-  }, "\uD83D\uDCBE \u05E9\u05DE\u05D5\u05E8 + \u05E1\u05E0\u05DB\u05E8\u05DF Sheets"), /*#__PURE__*/React.createElement("button", {
-    className: "btn-ghost btn-sm",
-    onClick: pullSt
-  }, "\u2601\uFE0F \u05DE\u05E9\u05D5\u05DA \u05DE\u05D2\u05DC\u05D9\u05D5\u05DF"), stMsg && /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12,
-      color: stMsg.startsWith("✅") ? "var(--green)" : stMsg.startsWith("❌") ? "var(--red)" : "var(--muted)",
-      alignSelf: "center"
-    }
-  }, stMsg)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "var(--muted)",
-      marginTop: 8
-    }
-  }, "\uD83D\uDCA1 \u05D2\u05DC\u05D9\u05D5\u05DF ", /*#__PURE__*/React.createElement("code", {
-    style: {
-      color: "var(--accent)"
-    }
-  }, "settings"), " \u2014 \u05E0\u05D9\u05EA\u05DF \u05DC\u05E2\u05E8\u05D5\u05DA \u05E9\u05DD \u05D5\u05DC\u05DE\u05E9\u05D5\u05DA \u05D7\u05D6\u05E8\u05D4 \u05DC\u05D0\u05E4\u05DC\u05D9\u05E7\u05E6\u05D9\u05D4")));
+    tab === "integrations" && React.createElement("div", null,
+      React.createElement("div", { className: "card", style: { marginBottom: 14 } },
+        React.createElement("div", { style: { fontWeight: 700, marginBottom: 10 } }, "📊 שעות — סנכרון Google Sheets"),
+        React.createElement("div", { style: { fontSize: 12, color: "var(--muted)", marginBottom: 10 } }, "הגדר כתובת Google Sheet לסנכרון שעות עובדים."),
+        React.createElement("div", { className: "fcol" },
+          React.createElement(Lbl, null, "Google Sheet URL"),
+          React.createElement("input", { value: sheetsUrl, onChange: e => setSheetsUrl(e.target.value), placeholder: "https://docs.google.com/spreadsheets/d/...", style: { fontSize: 12 } })
+        ),
+        React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 10 } },
+          React.createElement("button", { className: "btn-gold btn-sm", onClick: () => { if (onUpdateSheetsUrl) onUpdateSheetsUrl(sheetsUrl); alert("✅ כתובת Google Sheets נשמרה"); } }, "💾 שמור"),
+          sheetsUrl && React.createElement("a", { href: sheetsUrl, target: "_blank", className: "btn-ghost btn-sm", style: { textDecoration: "none" } }, "🔗 פתח גיליון")
+        )
+      ),
+      React.createElement("div", { className: "card", style: { marginBottom: 14 } },
+        React.createElement("div", { style: { fontWeight: 700, marginBottom: 12 } }, "📅 Google Calendar — יומן סטודיו"),
+        React.createElement("div", { style: { fontSize: 12, color: "var(--muted)", marginBottom: 10 } }, "אירועי לוז יסתנכרנו אוטומטית ליומן הסטודיו."),
+        React.createElement("div", { className: "frow" },
+          React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "Calendar ID"), React.createElement("input", { value: calId, onChange: e => setCalId(e.target.value), placeholder: "xxx@group.calendar.google.com", style: { fontSize: 12 } })),
+          React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "API Key"), React.createElement("input", { value: calKey, onChange: e => setCalKey(e.target.value), placeholder: "AIzaSy...", style: { fontSize: 12 } })),
+          React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "מיקום הסטודיו"), React.createElement("input", { value: calLoc, onChange: e => setCalLoc(e.target.value), placeholder: "רחוב, עיר...", style: { fontSize: 12 } }))
+        ),
+        React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" } },
+          React.createElement("button", { className: "btn-gold btn-sm", onClick: () => { if (onUpdateCalendar) onUpdateCalendar({ calendarId: calId, calendarApiKey: calKey, studioLocation: calLoc }); } }, "💾 שמור הגדרות"),
+          React.createElement("button", { className: "btn-ghost btn-sm", onClick: () => gcalRequestToken().then(() => alert("✅ התחברת ל-Google Calendar!")).catch(e => alert("❌ שגיאה: " + e.message)) }, "🔗 התחבר ל-Google Calendar")
+        ),
+        calId && React.createElement("div", { style: { fontSize: 11, color: "var(--green)", marginTop: 8 } }, "✅ יומן מוגדר — אירועים יסתנכרנו אוטומטית")
+      ),
+      React.createElement("div", { className: "card", style: { marginBottom: 14 } },
+        React.createElement("div", { style: { fontWeight: 700, marginBottom: 12 } }, "📁 תיקיית גיבוי ב-Google Drive"),
+        React.createElement("div", { style: { fontSize: 12, color: "var(--muted)", marginBottom: 10 } },
+          "הכנס את ה-ID של התיקייה ב-Drive. נמצא ב-URL: ",
+          React.createElement("code", { style: { color: "var(--accent)" } }, "drive.google.com/drive/folders/", React.createElement("b", null, "FOLDER_ID"))
+        ),
+        React.createElement("div", { className: "frow" },
+          React.createElement("div", { className: "fcol" }, React.createElement(Lbl, null, "Folder ID"), React.createElement("input", { value: dFolder, onChange: e => setDFolder(e.target.value), placeholder: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs..." }))
+        ),
+        React.createElement("button", { className: "btn-gold btn-sm", onClick: () => { setDriveFolder(dFolder); onUpdateDriveFolder(dFolder); } }, "💾 שמור"),
+        dFolder && React.createElement("div", { style: { fontSize: 11, color: "var(--green)", marginTop: 8 } }, "✅ תיקייה מוגדרת"),
+        React.createElement("div", { style: { marginTop: 14 } },
+          React.createElement("a", { href: "https://supabase.com/dashboard/project/vbdpwuuzxlzjzqwlxcxk", target: "_blank", style: { fontSize: 12, color: "var(--accent)" } }, "🔗 פתח Supabase Dashboard")
+        )
+      )
+    ),
+    tab === "backup" && isAdmin && React.createElement(BackupPanel, {
+      data: backupPanelData, onRestore: onRestoreBackup
+    })
+  );
 }
+
 
 // ══════════════════════════════════════════
 // NEW PROJECT MODAL
@@ -9082,9 +8942,13 @@ function App({
       try {
         if (rec.key === "shiftTypes") {
           const st = JSON.parse(rec.value);
-          if (Array.isArray(st)) upd({
-            shiftTypes: st
-          });
+          if (Array.isArray(st)) upd({ shiftTypes: st });
+        }
+        if (rec.key === "workerOrder") {
+          try {
+            const wo = JSON.parse(rec.value);
+            if (Array.isArray(wo) && wo.length) upd({ workerOrder: wo });
+          } catch {}
         }
         if (rec.key === "logoUrl") upd({
           logoUrl: rec.value
@@ -9739,7 +9603,15 @@ view === n.id && !selProjId ? " active" : ""}`,
   }, isAdmin && view === "projects" && /*#__PURE__*/React.createElement("button", {
     className: "btn-gold btn-sm",
     onClick: () => setShowNewProj(true)
-  }, "+ \u05E4\u05E8\u05D5\u05D9\u05E7\u05D8 \u05D7\u05D3\u05E9"), isAdmin && /*#__PURE__*/React.createElement("button", {
+  }, "+ \u05E4\u05E8\u05D5\u05D9\u05E7\u05D8 \u05D7\u05D3\u05E9"),
+  /*#__PURE__*/React.createElement("button", {
+    onClick: () => setIsDark(d => !d),
+    title: isDark ? "\u05E2\u05D1\u05D5\u05E8 \u05DC\u05DE\u05E6\u05D1 \u05D1\u05D4\u05D9\u05E8" : "\u05E2\u05D1\u05D5\u05E8 \u05DC\u05DE\u05E6\u05D1 \u05DB\u05D4\u05D4",
+    style: { background: "none", border: "1.5px solid var(--border)", borderRadius: 8,
+      padding: "4px 9px", cursor: "pointer", fontSize: 16, lineHeight: 1,
+      color: "var(--text)", transition: "all .2s" }
+  }, isDark ? "\u2600\uFE0F" : "\uD83C\uDF19"),
+  isAdmin && /*#__PURE__*/React.createElement("button", {
     className: "btn-green btn-sm",
     onClick: () => {
       saveLocal(data);
@@ -9875,6 +9747,7 @@ view === n.id && !selProjId ? " active" : ""}`,
     globalSearch: globalSearch,
     events: events || [],
     globalShifts: data.globalShifts || [],
+    workerOrder: data.workerOrder,
     shiftTypes: sts,
     onSaveShift: onSaveShift,
     onDeleteShift: onDeleteShift,
@@ -9886,6 +9759,7 @@ view === n.id && !selProjId ? " active" : ""}`,
     users: users,
     shiftTypes: sts,
     globalShifts: data.globalShifts || [],
+    workerOrder: data.workerOrder,
     onSaveShift: onSaveShift,
     onDeleteShift: onDeleteShift,
     editModal: calEditModal,
@@ -9997,6 +9871,12 @@ view === n.id && !selProjId ? " active" : ""}`,
     colorTheme: colorTheme,
     onChangeTheme: t => setColorTheme(t),
     users: users,
+    workerOrder: data.workerOrder,
+    onSaveWorkerOrder: async (order) => {
+      upd({ workerOrder: order });
+      await sbUpsert("settings", { key: "workerOrder", value: JSON.stringify(order) });
+    },
+    isAdmin: currentUser && (currentUser.role === "admin" || currentUser.isAdmin),
     shiftTypes: sts,
     onUpdateShiftTypes: st => {
       upd({ shiftTypes: st });
@@ -11896,7 +11776,7 @@ function AppLoader() {
         const settingsMap = {};
         (sbSettings || []).forEach(s => {
           try {
-            settingsMap[s.key] = (s.key === "shiftTypes" || s.key === "quoteTemplates") ? JSON.parse(s.value) : s.value;
+            settingsMap[s.key] = (s.key === "shiftTypes" || s.key === "quoteTemplates" || s.key === "workerOrder") ? JSON.parse(s.value) : s.value;
           } catch {
             settingsMap[s.key] = s.value;
           }
@@ -11923,6 +11803,7 @@ function AppLoader() {
           users: sbUsers && sbUsers.length ? sbUsers : local.users,
           projects: Object.values(projMap).length ? Object.values(projMap) : local.projects,
           globalShifts,
+          workerOrder: (Array.isArray(settingsMap.workerOrder) && settingsMap.workerOrder.length ? settingsMap.workerOrder : null) || local.workerOrder || [...DEFAULT_WORKER_NAMES],
           shiftTypes: settingsMap.shiftTypes || local.shiftTypes || [...DEF_SHIFT_TYPES],
           quoteTemplates: settingsMap.quoteTemplates || local.quoteTemplates || [...DEF_QUOTE_TMPLS],
           logoUrl: settingsMap.logoUrl || local.logoUrl || "",
