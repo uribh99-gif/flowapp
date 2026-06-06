@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow v07</title>
+<title>PostFlow v08</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -985,6 +985,7 @@ function shiftToRow(s, users, projects) {
     ...(s.freelanceName ? { freelance_name: s.freelanceName } : {}),
     date: s.date || "",
     time_start: s.timeStart || "09:00",
+    time_end: s.timeEnd || "",
     hours: s.hours || 2,
     tasks: s.tasks || [],
     note: s.note || "",
@@ -1008,6 +1009,7 @@ function rowToShift(r) {
     personName: r.person_name,
     date: r.date,
     timeStart: r.time_start,
+    timeEnd: r.time_end || "",
     hours: r.hours || 2,
     tasks: r.tasks || [],
     note: r.note || "",
@@ -1366,6 +1368,7 @@ const GCAL_DEFAULT_ID = "c_87bb67ed3985df304fd866f902791cfcdc720f1a825c6e8a0e168
 let _gcalToken = null;       // current access token
 let _gcalTokenClient = null; // GIS token client
 let _gcalTokenExpiry = 0;
+let _gcalNeedsConsent = false; // force re-consent on next auth
 
 function getCalendarId() {
   try {
@@ -1386,7 +1389,12 @@ function gcalRequestToken() {
         client_id: GCAL_CLIENT_ID,
         scope: GCAL_SCOPES,
         callback: (resp) => {
-          if (resp.error) { reject(new Error(resp.error)); return; }
+          if (resp.error) {
+            _gcalToken = null; _gcalTokenExpiry = 0;
+            const errMsg = resp.error === "access_denied" ? "גישה ליומן גוגל נדחה. אנא אשר גישה בהגדרות." : resp.error;
+            if (window.__pfNotify) window.__pfNotify(errMsg, "warn");
+            reject(new Error(resp.error)); return;
+          }
           _gcalToken = resp.access_token;
           _gcalTokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
           resolve(_gcalToken);
@@ -1398,7 +1406,8 @@ function gcalRequestToken() {
       resolve(_gcalToken);
       return;
     }
-    _gcalTokenClient.requestAccessToken({ prompt: "" });
+    _gcalTokenClient.requestAccessToken({ prompt: _gcalNeedsConsent ? "consent" : "" });
+    _gcalNeedsConsent = false;
   });
 }
 
@@ -1432,7 +1441,16 @@ async function gcalCreateEvent({ summary, description, date, timeStart, timeEnd,
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify(body) }
     );
-    if (!res.ok) { console.warn("gcal create error", await res.text()); return null; }
+    if (!res.ok) {
+      const errText = await res.text();
+      console.warn("gcal create error", errText);
+      if (res.status === 401 || res.status === 403) {
+        // Token expired or insufficient scope - reset and show notification
+        _gcalToken = null; _gcalTokenExpiry = 0; _gcalNeedsConsent = true; _gcalTokenClient = null;
+        if (window.__pfNotify) window.__pfNotify('\u05d0\u05d9\u05df \u05d4\u05e8\u05e9\u05d0\u05d4 \u05dc\u05d9\u05d5\u05de\u05df \u05d2\u05d5\u05d2\u05dc. \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1 \u05d0\u05d7\u05e8\u05d9 \u05d4\u05ea\u05d7\u05d1\u05e8\u05d5\u05ea \u05de\u05d7\u05d3\u05e9.', 'warn');
+      }
+      return null;
+    }
     const ev = await res.json();
     return ev.id || null;
   } catch(e) { console.warn("gcal create:", e); return null; }
@@ -1456,7 +1474,15 @@ async function gcalUpdateEvent(eventId, { summary, description, date, timeStart,
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify(body) }
     );
-    if (!res.ok) { console.warn("gcal update error", await res.text()); return null; }
+    if (!res.ok) {
+      const errText2 = await res.text();
+      console.warn("gcal update error", errText2);
+      if (res.status === 401 || res.status === 403) {
+        _gcalToken = null; _gcalTokenExpiry = 0; _gcalNeedsConsent = true; _gcalTokenClient = null;
+        if (window.__pfNotify) window.__pfNotify('\u05d0\u05d9\u05df \u05d4\u05e8\u05e9\u05d0\u05d4 \u05dc\u05d9\u05d5\u05de\u05df \u05d2\u05d5\u05d2\u05dc. \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1.', 'warn');
+      }
+      return null;
+    }
     const ev = await res.json();
     return ev.id || eventId;
   } catch(e) { console.warn("gcal update:", e); return null; }
@@ -1535,7 +1561,8 @@ async function syncShiftToCalendar(shift, projName, shiftTypes, action = "create
   }).filter(Boolean).join(", ");
   const icon = taskLabel.includes("אונליין") ? "📡" : "🖥";
   const summary = `${icon} ${projName} — ${taskLabel}`;
-  const desc = `עובד: ${shift.personName||""}\nפרויקט: ${projName}`;
+  const workerLabel = shift.freelanceName ? "👤 פרילאנס: " + shift.freelanceName : (shift.personName || "");
+  const desc = `עובד: ${workerLabel}\\nפרויקט: ${projName}`;
   const location = getStudioLocation();
 
   if (action === "delete") {
@@ -9249,7 +9276,8 @@ function App({
       // ── Google Calendar API sync ──
       const projName = screeningProj ? screeningProj.name : "";
       const summary = `${stInfo.label}${projName ? ": " + projName : ""}`;
-      const desc = `עובד: ${s.personName||""}\nפרויקט: ${projName}`;
+      const sWorkerLabel = s.freelanceName ? "👤 פרילאנס: " + s.freelanceName : (s.personName || "");
+      const desc = `עובד: ${sWorkerLabel}\\nפרויקט: ${projName}`;
       const existingShift = (data.globalShifts||[]).find(x=>x.id===s.id) ||
         (screeningProj ? (screeningProj.shifts||[]).find(x=>x.id===s.id) : null);
       const prevGcalId = existingShift ? existingShift.gcalEventId : null;
