@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PostFlow 007</title>
+<title>PostFlow 008</title>
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -86,9 +86,9 @@ const GS = () => /*#__PURE__*/React.createElement("style", null, `
   --red:#e44258;
   --purple:#a25ddc;
   --orange:#fdab3d;
-  --text:#1a2236;
-  --muted:#6b7280;
-  --muted2:#9ba3af;
+  --text:#000000;
+  --muted:#323338;
+  --muted2:#676879;
   --shadow:0 1px 4px rgba(0,0,0,0.07);
   --shadow2:0 6px 24px rgba(0,0,0,0.12);
   --radius:8px;
@@ -102,144 +102,70 @@ const GS = () => /*#__PURE__*/React.createElement("style", null, `
   --sidebar-border:rgba(255,255,255,0.08);
   --sidebar-width:220px;
 }
-/* ── DARK: Standard ───────────────────────────────── */
-[data-dark="true"]{
-  --bg:#16181f;
-  --surf:#1e2130;
-  --card:#242840;
-  --card2:#1a1d28;
-  --border:#2e3348;
-  --border2:#3d4460;
-  --accentbg:#1a2a4a;
-  --text:#ffffff;
-  --muted:#ffffff;
-  --muted2:#ffffff;
-  --shadow:0 2px 10px rgba(0,0,0,0.4);
-  --shadow2:0 6px 24px rgba(0,0,0,0.5);
-}
-
-/* ── DARK: Deep Black ──────────────────────────────── */
-[data-dark="true"][data-theme="dark-deep"]{
-  --bg:#0a0b0f;
-  --surf:#111318;
-  --card:#16191f;
-  --card2:#0f1115;
-  --border:#1e2230;
-  --border2:#2a2f40;
-  --accentbg:#0d1a30;
-  --text:#ffffff;
-  --muted:#ffffff;
-  --muted2:#ffffff;
-  --shadow:0 2px 10px rgba(0,0,0,0.6);
-  --shadow2:0 6px 28px rgba(0,0,0,0.7);
-  --sidebar-bg:#070809;
-  --sidebar-border:rgba(255,255,255,0.05);
-}
-
-/* ── DARK: Navy Blue ───────────────────────────────── */
-[data-dark="true"][data-theme="dark-navy"]{
-  --bg:#0d1628;
-  --surf:#112040;
-  --card:#152650;
-  --card2:#0f1c38;
-  --border:#1e3058;
-  --border2:#2a4278;
-  --accentbg:#1a3060;
-  --text:#ffffff;
-  --muted:#ffffff;
-  --muted2:#ffffff;
-  --shadow:0 2px 10px rgba(0,10,40,0.5);
-  --shadow2:0 6px 24px rgba(0,10,40,0.6);
-  --sidebar-bg:#080f20;
-  --sidebar-muted:#4a6298;
-  --sidebar-border:rgba(100,160,255,0.08);
-}
-
-/* ── DARK: Warm Mocha ──────────────────────────────── */
-[data-dark="true"][data-theme="dark-warm"]{
-  --bg:#1a1510;
-  --surf:#221c15;
-  --card:#2a2018;
-  --card2:#1e1912;
-  --border:#352a1e;
-  --border2:#4a3a28;
-  --accent:#d4853a;
-  --accent2:#b8692c;
-  --accentbg:#2a1e0e;
-  --text:#ffffff;
-  --muted:#ffffff;
-  --muted2:#ffffff;
-  --shadow:0 2px 10px rgba(20,10,0,0.4);
-  --shadow2:0 6px 24px rgba(20,10,0,0.5);
-  --sidebar-bg:#110e09;
-  --sidebar-muted:#6a5040;
-  --sidebar-active:#e8a060;
-  --sidebar-active-bg:rgba(212,133,58,0.2);
-  --sidebar-border:rgba(255,200,120,0.08);
-}
-
-/* ── LIGHT: Default ────────────────────────────────── */
-[data-dark="false"][data-theme="default"],
-[data-dark="false"]{
-  --bg:#f0f2f7;
-}
-
-/* ── LIGHT: Soft Purple ────────────────────────────── */
-[data-dark="false"][data-theme="light-purple"]{
-  --bg:#f0eef8;
-  --surf:#faf9ff;
+/* ══════════════════════════════════════════════════════
+   LIGHT THEME — Monday.com style
+   טקסטים שחורים, ניגודיות מקסימלית
+═══════════════════════════════════════════════════════ */
+[data-dark="false"],
+[data-dark="false"][data-theme="light"],
+[data-dark="false"][data-theme="default"]{
+  --bg:#f6f7fb;
+  --surf:#ffffff;
   --card:#ffffff;
-  --card2:#f5f3fc;
-  --border:#ddd8f0;
-  --border2:#c8c0e8;
-  --accent:#7c4dff;
-  --accent2:#6038cc;
-  --accentbg:#ede8ff;
-  --sidebar-bg:#2d1b69;
-  --sidebar-active-bg:rgba(124,77,255,0.2);
-  --sidebar-active:#b39dff;
+  --card2:#f0f1f5;
+  --border:#d9dbe6;
+  --border2:#b8bcd0;
+  --accent:#0073ea;
+  --accent2:#0060c0;
+  --accentbg:#e6f0ff;
+  --text:#000000;
+  --muted:#323338;
+  --muted2:#676879;
+  --shadow:0 1px 4px rgba(0,0,0,0.08);
+  --shadow2:0 4px 20px rgba(0,0,0,0.14);
+  --sidebar-bg:#2b2d42;
+  --sidebar-text:#ffffff;
+  --sidebar-muted:#a0a3b8;
+  --sidebar-active-bg:rgba(0,115,234,0.22);
+  --sidebar-active:#7ab3ff;
+  --sidebar-hover:rgba(255,255,255,0.08);
+  --sidebar-border:rgba(255,255,255,0.1);
 }
 
-/* ── LIGHT: Forest Green ───────────────────────────── */
-[data-dark="false"][data-theme="light-forest"]{
-  --bg:#edf4f0;
-  --surf:#f8fcf9;
-  --card:#ffffff;
-  --card2:#f2f8f4;
-  --border:#d4e8da;
-  --border2:#b8d8c0;
-  --accent:#1a7a45;
-  --accent2:#15623a;
-  --accentbg:#e0f4e8;
-  --sidebar-bg:#0d3d20;
-  --sidebar-active-bg:rgba(26,122,69,0.2);
-  --sidebar-active:#6bc68a;
+/* ══════════════════════════════════════════════════════
+   DARK THEME — iOS / Apple style
+   טקסטים לבנים, ניגודיות מקסימלית
+═══════════════════════════════════════════════════════ */
+[data-dark="true"],
+[data-dark="true"][data-theme="dark"],
+[data-dark="true"][data-theme="default"]{
+  --bg:#000000;
+  --surf:#1c1c1e;
+  --card:#2c2c2e;
+  --card2:#3a3a3c;
+  --border:#3a3a3c;
+  --border2:#48484a;
+  --accent:#0a84ff;
+  --accent2:#409cff;
+  --accentbg:#0a2a4a;
+  --text:#ffffff;
+  --muted:#ffffff;
+  --muted2:#ffffff;
+  --shadow:0 2px 12px rgba(0,0,0,0.6);
+  --shadow2:0 6px 28px rgba(0,0,0,0.8);
+  --sidebar-bg:#1c1c1e;
+  --sidebar-text:#ffffff;
+  --sidebar-muted:#ebebf5;
+  --sidebar-active-bg:rgba(10,132,255,0.25);
+  --sidebar-active:#409cff;
+  --sidebar-hover:rgba(255,255,255,0.08);
+  --sidebar-border:rgba(255,255,255,0.1);
 }
 
-/* ── CUSTOM THEME ──────────────────────────────────── */
-/* vars are written inline on :root by JS — no CSS needed here */
-
-/* ── LIGHT: Clean Gray ─────────────────────────────── */
-[data-dark="false"][data-theme="light-gray"]{
-  --bg:#e8eaed;
-  --surf:#f2f3f5;
-  --card:#ffffff;
-  --card2:#eeeff2;
-  --border:#d0d3da;
-  --border2:#b0b5c0;
-  --accent:#2563eb;
-  --accent2:#1d4ed8;
-  --accentbg:#dbeafe;
-  --text:#111318;
-  --muted:#444750;
-  --muted2:#6b7280;
-  --sidebar-bg:#232529;
-  --sidebar-text:#e8eaed;
-  --sidebar-muted:#9ba3af;
-  --sidebar-active-bg:rgba(37,99,235,0.18);
-  --sidebar-active:#93bbfc;
-}
+/* ── CUSTOM THEME — vars written inline by JS ───────── */
 body{background:var(--bg);color:var(--text);font-family:'Heebo',sans-serif;direction:rtl;min-height:100vh;overflow-x:hidden;font-size:14px}
+[data-dark="true"] *{color:var(--text)}
+[data-dark="true"] .cal-ev,.cal-ev *{color:inherit!important}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
@@ -338,8 +264,6 @@ h2,.section-title{color:var(--text)}
 .cal-day.weekend{background:var(--card2);opacity:.9}
 .cal-day.weekend:hover{border-color:var(--accent);background:var(--accentbg)}
 .cal-ev{border-radius:7px;padding:4px 7px;font-size:10px;font-weight:600;margin-bottom:3px;cursor:pointer;transition:opacity .12s,transform .1s;line-height:1.4;border-right:3px solid transparent}
-[data-dark="true"] .cal-ev{color:#ffffff!important}
-[data-dark="true"] .cal-ev *{color:#ffffff!important}
 .cal-ev:hover{opacity:.85;transform:translateX(-1px)}
 
 /* Search */
@@ -2341,16 +2265,16 @@ function MultiProjSelect({ projects, values, onChange }) {
 // CUSTOM THEME EDITOR
 // ══════════════════════════════════════════
 const CUSTOM_THEME_DEFAULTS_LIGHT = {
-  "--bg": "#f0f2f7", "--surf": "#ffffff", "--card": "#ffffff", "--card2": "#f5f7fb",
-  "--border": "#e0e4ed", "--border2": "#c8cdd9",
-  "--accent": "#0073ea", "--text": "#1a2236", "--muted": "#6b7280", "--muted2": "#9ba3af",
-  "--sidebar-bg": "#1a2236", "--sidebar-text": "#c8d0e0"
+  "--bg": "#f6f7fb", "--surf": "#ffffff", "--card": "#ffffff", "--card2": "#f0f1f5",
+  "--border": "#d9dbe6", "--border2": "#b8bcd0",
+  "--accent": "#0073ea", "--text": "#000000", "--muted": "#323338", "--muted2": "#676879",
+  "--sidebar-bg": "#2b2d42", "--sidebar-text": "#ffffff"
 };
 const CUSTOM_THEME_DEFAULTS_DARK = {
-  "--bg": "#16181f", "--surf": "#1e2130", "--card": "#242840", "--card2": "#1a1d28",
-  "--border": "#2e3348", "--border2": "#3d4460",
-  "--accent": "#0073ea", "--text": "#ffffff", "--muted": "#ffffff", "--muted2": "#ffffff",
-  "--sidebar-bg": "#0f1118", "--sidebar-text": "#ffffff"
+  "--bg": "#000000", "--surf": "#1c1c1e", "--card": "#2c2c2e", "--card2": "#3a3a3c",
+  "--border": "#3a3a3c", "--border2": "#48484a",
+  "--accent": "#0a84ff", "--text": "#ffffff", "--muted": "#ffffff", "--muted2": "#ffffff",
+  "--sidebar-bg": "#1c1c1e", "--sidebar-text": "#ffffff"
 };
 const CUSTOM_VAR_LABELS = [
   { key: "--bg",          label: "רקע ראשי",       group: "layout" },
@@ -8408,18 +8332,12 @@ function Settings({
   onUpdateSheetsUrl
 }) {
   const LIGHT_THEMES = [
-    { id: "default",      label: "כחול (ברירת מחדל)", bg: "#f0f2f7", surf: "#ffffff", accent: "#0073ea", sidebar: "#1a2236" },
-    { id: "light-gray",   label: "אפור נקי",           bg: "#e8eaed", surf: "#f2f3f5", accent: "#2563eb", sidebar: "#232529" },
-    { id: "light-purple", label: "סגול עדין",           bg: "#f0eef8", surf: "#faf9ff", accent: "#7c4dff", sidebar: "#2d1b69" },
-    { id: "light-forest", label: "ירוק יער",             bg: "#edf4f0", surf: "#f8fcf9", accent: "#1a7a45", sidebar: "#0d3d20" },
-    { id: "custom",       label: "מותאם אישית ✏️",     bg: null, surf: null, accent: null, sidebar: null, isCustom: true },
+    { id: "default", label: "בהיר — Monday style", bg: "#f6f7fb", surf: "#ffffff", accent: "#0073ea", sidebar: "#2b2d42" },
+    { id: "custom",  label: "מותאם אישית ✏️", bg: null, surf: null, accent: null, sidebar: null, isCustom: true },
   ];
   const DARK_THEMES = [
-    { id: "default",   label: "כהה רגיל",     bg: "#16181f", surf: "#1e2130", accent: "#0073ea", sidebar: "#1a2236" },
-    { id: "dark-deep", label: "שחור עמוק",     bg: "#0a0b0f", surf: "#111318", accent: "#0073ea", sidebar: "#070809" },
-    { id: "dark-navy", label: "כחול נייבי",    bg: "#0d1628", surf: "#112040", accent: "#0073ea", sidebar: "#080f20" },
-    { id: "dark-warm", label: "חום חמים",      bg: "#1a1510", surf: "#221c15", accent: "#d4a85a", sidebar: "#110e09" },
-    { id: "custom",    label: "מותאם אישית ✏️", bg: null, surf: null, accent: null, sidebar: null, isCustom: true },
+    { id: "default", label: "כהה — iOS style", bg: "#000000", surf: "#1c1c1e", accent: "#0a84ff", sidebar: "#1c1c1e" },
+    { id: "custom",  label: "מותאם אישית ✏️", bg: null, surf: null, accent: null, sidebar: null, isCustom: true },
   ];
   const currentThemes = isDark ? DARK_THEMES : LIGHT_THEMES;
   const [etSt, setEtSt] = useState(shiftTypes || DEF_SHIFT_TYPES);
