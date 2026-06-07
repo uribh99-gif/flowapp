@@ -1370,7 +1370,7 @@ async function gcalDeleteEvent(eventId) {
 function gcalRequestToken() { return Promise.resolve("edge"); }
 function getCalendarId()    { return GCAL_DEFAULT_ID; }
 
- to Calendar
+// Sync all 4 project schedule dates to Calendar
 async function syncProjectDatesToCalendar(proj, prevProj) {
   const fields = [
     { key: "shootDate",        icon: "🎬", label: "יום צילום",         colorId: "5" },
